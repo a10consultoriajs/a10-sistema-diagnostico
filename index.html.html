@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A10 Consultoria — Sistema de Diagnóstico</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root{
+    --navy: #0B2A4A; --navy-deep: #071b30; --gold: #C9A227; --gold-soft: #E6C766;
+    --paper: #F6F4EE; --paper-panel: #FFFFFF; --ink: #16202B; --ink-soft: #57626F; --line: #E1DCCF;
+    --status-pending: #E8A33D; --status-pending-bg: #FBEAD1;
+    --status-info: #3E6FA6; --status-info-bg: #E5EDF6;
+    --status-good: #3B8F6D; --status-good-bg: #E1F1E9;
+    --status-neutral: #8B93A1; --status-neutral-bg: #EDEEF0;
+  }
+  *{ box-sizing: border-box; }
+  body{ margin:0; background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.5; }
+  h1,h2,h3,.display{ font-family: 'Fraunces', serif; font-weight: 600; letter-spacing: -0.01em; }
+  .app{ max-width: 1180px; margin: 0 auto; padding: 28px 24px 80px; }
+
+  header.brand{
+    display:flex; align-items:center; justify-content:space-between;
+    background: linear-gradient(120deg, var(--navy-deep), var(--navy) 70%);
+    border-radius: 14px; padding: 22px 28px; color: #fff; margin-bottom: 22px;
+  }
+  header.brand .mark{ display:flex; align-items:baseline; gap:10px; }
+  header.brand .mark .a10{ font-family:'Fraunces',serif; font-size: 30px; font-weight:700; color: var(--gold-soft); }
+  header.brand .mark .name{ font-size: 14px; letter-spacing: 0.06em; color: #d9e2ec; }
+  header.brand .tagline{ font-size: 13px; color:#c4d1de; max-width: 280px; text-align:right; }
+
+  /* ---------- List view ---------- */
+  .clients-toolbar{
+    display:flex; gap:12px; align-items:center; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .clients-toolbar input{
+    flex: 1 1 220px; border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px;
+    font-family: inherit; font-size: 14px; background: var(--paper-panel);
+  }
+  .btn-primary{
+    background: var(--navy); color:#fff; border:none; border-radius: 9px; padding: 10px 18px;
+    font-size: 13.5px; font-weight:500; cursor:pointer; white-space:nowrap;
+  }
+  .btn-primary:hover{ background: var(--navy-deep); }
+  .client-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .client-card{
+    background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px; cursor:pointer; position:relative; transition: border-color 0.15s;
+  }
+  .client-card:hover{ border-color: var(--gold); }
+  .client-card .cname{ font-family:'Fraunces',serif; font-size: 16px; font-weight:600; margin-bottom: 10px; padding-right: 20px; }
+  .client-card .crow{ display:flex; align-items:center; justify-content:space-between; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; }
+  .mini-badge{
+    display:inline-flex; align-items:center; justify-content:center; min-width: 26px; height:26px;
+    border-radius: 50%; font-family:'Fraunces',serif; font-weight:700; font-size: 13px;
+  }
+  .mini-badge.good{ background: var(--status-good-bg); color:#215538; }
+  .mini-badge.pending{ background: var(--status-pending-bg); color:#7a5115; }
+  .client-card .updated{ font-size: 11px; color: var(--ink-soft); margin-top: 8px; }
+  .client-card .del-btn{
+    position:absolute; top: 10px; right: 10px; border:none; background:none;
+    color: var(--ink-soft); cursor:pointer; font-size: 14px; padding: 2px 6px; border-radius: 6px;
+  }
+  .client-card .del-btn:hover{ background: var(--status-pending-bg); color:#7a5115; }
+  .empty-state{
+    text-align:center; padding: 50px 20px; color: var(--ink-soft); font-size: 14px;
+    background: var(--paper-panel); border: 1px dashed var(--line); border-radius: 12px;
+  }
+  .back-btn{
+    background:none; border:1px solid var(--line); border-radius: 8px; padding: 7px 14px;
+    font-size: 12.5px; color: var(--ink-soft); cursor:pointer; margin-bottom: 16px;
+  }
+  .back-btn:hover{ border-color: var(--navy); color: var(--navy); }
+
+  /* ---------- Client bar ---------- */
+  .client-bar{
+    background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px;
+    display:flex; flex-wrap: wrap; gap: 18px; align-items:flex-end; margin-bottom: 10px;
+  }
+  .field{ display:flex; flex-direction:column; gap:4px; flex: 1 1 160px; }
+  .field label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
+  .field input, .field select{
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+    font-family: inherit; font-size: 14px; background: var(--paper); color: var(--ink); width: 100%;
+  }
+  .field.protected label{ display:flex; align-items:center; gap:5px; }
+  .field.protected label::before{ content: "🔒"; font-size: 10px; }
+  .protected-input-row{ display:flex; gap:6px; }
+  .protected-input-row input{ font-family: monospace; letter-spacing: 2px; }
+  .eye-btn{ border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 0 10px; cursor: pointer; font-size: 14px; flex-shrink:0; }
+  .protect-note{ font-size: 11px; color: var(--status-good); display:flex; align-items:center; gap:6px; flex-basis: 100%; margin-top: -4px; }
+
+  section{ margin-bottom: 26px; }
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 12px; }
+  .section-head h2{ font-size: 19px; margin:0; }
+  .section-head .hint{ font-size: 12.5px; color: var(--ink-soft); }
+
+  .board{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 820px){ .board{ grid-template-columns: 1fr; } }
+  .board-col{ background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .board-col h3{ font-size: 14.5px; margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .item{ border-radius: 9px; padding: 10px 12px; margin-bottom: 8px; font-size: 13.5px; border: 1px solid transparent; }
+  .item:last-child{ margin-bottom:0; }
+  .item-row{ display:flex; align-items:flex-start; gap: 10px; cursor:pointer; }
+  .item .dot{ width:9px; height:9px; border-radius:50%; margin-top: 5px; flex-shrink:0; }
+  .item .txt{ flex:1; }
+  .item .txt textarea{ width:100%; border:none; background:transparent; font-family:inherit; font-size:13.5px; resize:none; color: inherit; padding:0; }
+  .item .txt textarea:focus{ outline:none; }
+  .warn-icon{ margin-right: 4px; }
+  .chevron{ font-size: 11px; opacity: 0.6; margin-top: 3px; transition: transform 0.15s; flex-shrink:0; }
+  .item.open .chevron{ transform: rotate(90deg); }
+  .item-detail{ margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.12); }
+  .item-detail textarea{
+    width:100%; min-height: 54px; border: 1px solid rgba(0,0,0,0.12); border-radius: 7px;
+    padding: 7px 9px; font-family: inherit; font-size: 13px; background: rgba(255,255,255,0.6); color: inherit; resize: vertical;
+  }
+  .item-detail textarea:focus{ outline: none; border-color: var(--navy); }
+  .regularidade-row{ display:flex; align-items:center; gap: 8px; margin-top: 4px; }
+  .regularidade-row select{ border: 1px solid rgba(0,0,0,0.15); border-radius: 7px; padding: 5px 8px; font-family: inherit; font-size: 12.5px; background: rgba(255,255,255,0.7); color: inherit; }
+  .list-rows{ display:flex; flex-direction:column; gap: 6px; margin-bottom: 8px; }
+  .list-row{ display:flex; gap: 6px; align-items:center; }
+  .list-row input{ flex:1; border: 1px solid rgba(0,0,0,0.15); border-radius: 7px; padding: 6px 8px; font-family: inherit; font-size: 13px; background: rgba(255,255,255,0.7); color: inherit; }
+  .list-row .rm-btn{ border:none; background:none; color: var(--ink-soft); cursor:pointer; font-size: 14px; padding: 2px 6px; }
+  .add-list-row{ border: 1px dashed rgba(0,0,0,0.2); background:none; border-radius: 7px; padding: 5px 9px; font-size: 12px; color: var(--ink-soft); cursor:pointer; }
+
+  .status-pending{ background: var(--status-pending-bg); color:#7a5115; }
+  .status-pending .dot{ background: var(--status-pending); }
+  .status-info{ background: var(--status-info-bg); color:#1f4269; }
+  .status-info .dot{ background: var(--status-info); }
+  .status-good{ background: var(--status-good-bg); color:#215538; }
+  .status-good .dot{ background: var(--status-good); }
+  .status-neutral{ background: var(--status-neutral-bg); color:#4b525c; }
+  .status-neutral .dot{ background: var(--status-neutral); }
+
+  .income-row{ display:flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .income-row select, .income-row input{ border: 1px solid rgba(0,0,0,0.15); border-radius: 7px; padding: 6px 8px; font-family: inherit; font-size: 13px; background: rgba(255,255,255,0.7); color: inherit; }
+  .income-row select{ flex: 1 1 130px; }
+  .income-row input{ flex: 1 1 110px; }
+
+  .add-item{ width:100%; border: 1px dashed var(--line); background: none; border-radius: 9px; padding: 8px; font-size: 12.5px; color: var(--ink-soft); cursor:pointer; margin-top: 4px; }
+  .legend{ display:flex; flex-wrap:wrap; gap: 14px; font-size: 12px; color: var(--ink-soft); margin-top: 14px; }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .legend .dot{ width:8px; height:8px; border-radius:50%; }
+
+  .criteria-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .criteria-grid.secondary{ margin-top: 14px; }
+  @media (max-width: 820px){ .criteria-grid{ grid-template-columns: 1fr; } }
+  .criteria-card{ background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .criteria-card label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); display:block; margin-bottom: 8px; }
+  .criteria-card .value-row{ display:flex; align-items:center; gap: 10px; }
+  .criteria-card input[type=number], .criteria-card input[type=text], .criteria-card select{
+    flex:1; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 15px; font-family: inherit; background: var(--paper);
+  }
+  .criteria-card .readonly-value{ font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; color: var(--navy); }
+  .criteria-card .sub-note{ font-size: 11.5px; color: var(--ink-soft); margin-top: 6px; }
+  .flag{ margin-top: 10px; font-size: 12.5px; font-weight: 500; padding: 6px 10px; border-radius: 7px; display:inline-block; }
+  .flag.acao{ background: var(--status-pending-bg); color:#7a5115; }
+  .flag.ok{ background: var(--status-good-bg); color:#215538; }
+
+  .plan-list{ background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .plan-row{ display:flex; align-items:center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .plan-row:last-child{ border-bottom:none; }
+  .plan-row input[type=checkbox]{ width:16px; height:16px; accent-color: var(--navy); }
+  .plan-row .lbl{ flex:1; }
+  .plan-row .lbl input{ width:100%; border:none; background:transparent; font-family:inherit; font-size:13.5px; color:inherit; padding:2px 0; }
+  .plan-row .lbl input:focus{ outline:none; border-bottom: 1px solid var(--gold); }
+  .plan-row.done .lbl{ color: var(--status-good); text-decoration: line-through; text-decoration-color: var(--status-good); opacity: 0.75; }
+  .add-plan{ margin-top: 10px; background:none; border:1px dashed var(--line); border-radius: 8px; padding: 7px 10px; font-size: 12.5px; color: var(--ink-soft); cursor:pointer; }
+
+  .result{ display:flex; align-items:center; justify-content:center; gap: 28px; background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px; padding: 24px; flex-wrap: wrap; }
+  .result-card{ text-align:center; min-width: 150px; }
+  .result-card .label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); margin-bottom: 8px; }
+  .result-card .rating-badge{ width: 64px; height:64px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-size: 26px; font-weight:700; margin: 0 auto 8px; cursor: pointer; }
+  .rating-badge.before{ background: var(--status-pending-bg); color:#7a5115; }
+  .rating-badge.after{ background: var(--status-good-bg); color:#215538; }
+  .arrow{ font-size: 26px; color: var(--gold); }
+  .result-note{ font-size: 12.5px; color: var(--ink-soft); }
+  .goal-tag{ margin: 18px auto 0; display:block; width:fit-content; background: var(--navy); color:#fff; padding: 8px 18px; border-radius: 999px; font-size: 13px; letter-spacing: 0.02em; }
+
+  footer.note{ margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align:center; }
+  .save-status{ font-size: 11.5px; color: var(--ink-soft); text-align:right; margin-top: -8px; margin-bottom: 18px; min-height: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="brand">
+    <div class="mark"><span class="a10">A10.</span><span class="name">CONSULTORIA</span></div>
+    <div class="tagline">Diagnóstico e acompanhamento de reputação financeira</div>
+  </header>
+
+  <!-- ===================== LIST VIEW ===================== -->
+  <div id="listView">
+    <div class="clients-toolbar">
+      <input type="text" id="searchInput" placeholder="Buscar cliente por nome...">
+      <button class="btn-primary" id="newClientBtn">+ Novo cliente</button>
+    </div>
+    <div class="client-grid" id="clientGrid"></div>
+    <div class="empty-state" id="emptyState" style="display:none;">Nenhum cliente cadastrado ainda. Clique em "+ Novo cliente" para começar.</div>
+  </div>
+
+  <!-- ===================== CLIENT VIEW ===================== -->
+  <div id="clientView" style="display:none;">
+    <button class="back-btn" id="backBtn">← Todos os clientes</button>
+
+    <div class="client-bar">
+      <div class="field">
+        <label>Cliente</label>
+        <input type="text" id="clientName" placeholder="Nome do cliente" value="">
+      </div>
+      <div class="field protected">
+        <label>Identificador (CPF/CNPJ)</label>
+        <div class="protected-input-row">
+          <input type="password" id="clientDoc" placeholder="•••.•••.•••-••" value="">
+          <button type="button" class="eye-btn" data-target="clientDoc">👁</button>
+        </div>
+      </div>
+      <div class="field protected">
+        <label>Senha Serasa</label>
+        <div class="protected-input-row">
+          <input type="password" id="serasaPass" placeholder="••••••••" value="">
+          <button type="button" class="eye-btn" data-target="serasaPass">👁</button>
+        </div>
+      </div>
+      <div class="field protected">
+        <label>Senha GOV</label>
+        <div class="protected-input-row">
+          <input type="password" id="govPass" placeholder="••••••••" value="">
+          <button type="button" class="eye-btn" data-target="govPass">👁</button>
+        </div>
+      </div>
+      <div class="field"><label>Início</label><input type="date" id="startDate"></div>
+      <div class="field"><label>Conclusão</label><input type="date" id="endDate"></div>
+      <div class="protect-note">🔒 dados sensíveis — ficam mascarados por padrão; use o ícone de olho pra ver quando precisar</div>
+    </div>
+
+    <section>
+      <div class="section-head">
+        <h2>1. Diagnóstico</h2>
+        <span class="hint">clique na bolinha pra mudar o status · clique no texto pra expandir os detalhes</span>
+      </div>
+      <div class="board" id="board"></div>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--status-pending)"></span> pendente / irregular</span>
+        <span><span class="dot" style="background:var(--status-info)"></span> informação</span>
+        <span><span class="dot" style="background:var(--status-good)"></span> regular / já está bom</span>
+        <span><span class="dot" style="background:var(--status-neutral)"></span> observação</span>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>2. Critérios de ação</h2>
+        <span class="hint">regras fixas — sinalizam automaticamente se o caso precisa de intervenção</span>
+      </div>
+      <div class="criteria-grid">
+        <div class="criteria-card">
+          <label>Score atual</label>
+          <div class="value-row"><input type="number" id="scoreInput" value="320" min="0" max="1000"></div>
+          <div class="flag" id="scoreFlag"></div>
+        </div>
+        <div class="criteria-card">
+          <label>Rating atual</label>
+          <div class="value-row">
+            <select id="ratingInput"><option>A</option><option>B</option><option selected>C</option><option>D</option><option>E</option><option>F</option></select>
+          </div>
+          <div class="flag" id="ratingFlag"></div>
+        </div>
+        <div class="criteria-card">
+          <label>Restrição de débito ativa?</label>
+          <div class="value-row"><select id="restrInput"><option value="sim" selected>Sim</option><option value="nao">Não</option></select></div>
+          <div class="flag" id="restrFlag"></div>
+        </div>
+      </div>
+      <div class="criteria-grid secondary">
+        <div class="criteria-card">
+          <label>Renda presumida</label>
+          <div class="readonly-value" id="rendaPresumidaOut">R$ 0,00</div>
+          <div class="sub-note">puxado do campo Fonte de renda</div>
+        </div>
+        <div class="criteria-card">
+          <label>Comprometimento salarial atual</label>
+          <div class="value-row"><input type="text" id="comprometimentoInput" value="R$ 0,00"></div>
+          <div class="sub-note" id="comprometimentoPercentOut">0% da renda presumida</div>
+        </div>
+        <div class="criteria-card">
+          <label>Limite de crédito sugerido</label>
+          <div class="readonly-value" id="limiteSugeridoOut">R$ 0,00</div>
+          <div class="sub-note">máx. 33% da renda − comprometimento atual</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>3. Plano de ação</h2>
+        <span class="hint">personalizado — marque o que se aplica a este cliente</span>
+      </div>
+      <div class="plan-list" id="planList"></div>
+      <button class="add-plan" id="addPlanBtn">+ adicionar ação</button>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>4. Resultado</h2></div>
+      <div class="result">
+        <div class="result-card">
+          <div class="label">Rating antes</div>
+          <div class="rating-badge before" id="ratingBeforeBadge">F</div>
+          <div class="result-note">no início do acompanhamento</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="result-card">
+          <div class="label">Rating depois</div>
+          <div class="rating-badge after" id="ratingAfterBadge">B</div>
+          <div class="result-note">meta ao concluir</div>
+        </div>
+      </div>
+      <input class="goal-tag" id="goalInput" value="FINANCIAMENTO IMOBILIÁRIO" style="border:none; text-align:center; cursor:text;">
+    </section>
+
+    <div class="save-status" id="saveStatus">&nbsp;</div>
+  </div>
+
+  <footer class="note">Sistema A10 Consultoria — cada cliente é salvo individualmente neste navegador.</footer>
+</div>
+
+<script>
+const STATUS_CYCLE = ['status-info','status-pending','status-good','status-neutral'];
+const RENDA_OPCOES = ['Autônomo','Empresário','CLT','Servidor público','Aposentado'];
+const INDEX_KEY = 'a10:clientes:index';
+
+function formatBRL(value){ return (Number(value)||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
+function parseBRLInput(el){
+  const digits = el.value.replace(/\D/g,'');
+  const num = digits ? parseInt(digits,10)/100 : 0;
+  el.value = formatBRL(num);
+  return num;
+}
+
+function defaultBoard(){
+  return {
+    "Renda e relacionamento": [
+      {type:"income", status:"status-info", fonte:"CLT", valor:0},
+      {type:"expandable", text:"Principais instituições financeiras", status:"status-info", detail:"", expanded:false},
+      {type:"expandable", text:"Produtos bancários (seguros, poupança, CDB, ações, etc...)", status:"status-neutral", detail:"", expanded:false},
+      {type:"list", text:"Contas bancárias que o cliente usa", status:"status-info", items:[], expanded:false},
+      {type:"list", text:"Contas mensais a vincular ao CPF (débito automático)", status:"status-info", items:[], expanded:false},
+      {type:"list", text:"Produtos bancários que precisam ser contratados", status:"status-pending", items:[], expanded:false},
+    ],
+    "Débitos mensais vinculados diretamente ao CPF": [
+      {type:"expandable", text:"Contas básicas", status:"status-neutral", detail:"", expanded:false},
+      {type:"expandable", text:"Contas intermediárias", status:"status-neutral", detail:"", expanded:false},
+      {type:"expandable", text:"Contas avançadas", status:"status-neutral", detail:"", expanded:false},
+    ],
+    "Perfil financeiro": [
+      {type:"regulatable", text:"Cadastro positivo", status:"status-pending", detail:"", expanded:false, regularidade:"Irregular"},
+      {type:"regulatable", text:"Órgãos de proteção (Serasa / SPC)", status:"status-pending", detail:"", expanded:false, regularidade:"Irregular"},
+      {type:"regulatable", text:"BACEN (SCR / CCS / CCF / CADIN)", status:"status-pending", detail:"", expanded:false, regularidade:"Irregular"},
+      {type:"regulatable", text:"Rating de Crédito e Receita Federal", status:"status-pending", detail:"", expanded:false, regularidade:"Irregular"},
+    ]
+  };
+}
+
+function defaultPlan(){
+  return [
+    {label:"Consulta completa (Serasa, SPC, SCR, CCF, CADIN, Receita Federal)", done:false},
+    {label:"Entrevista de relacionamento bancário (contas movimentadas / pagas)", done:false},
+    {label:"Regularização de inadimplências (negociação / base legal)", done:false},
+    {label:"Vínculo de débitos automáticos para reforçar relacionamento bancário", done:false},
+  ];
+}
+
+function newClientState(){
+  return {
+    clientName: "", clientDoc: "", serasaPass: "", govPass: "", startDate: "", endDate: "",
+    board: defaultBoard(),
+    score: 0, rating: "F", restricao: "sim", comprometimentoAtual: 0,
+    plan: defaultPlan(),
+    ratingBefore: "F", ratingAfter: "B", goal: ""
+  };
+}
+
+let clientIndex = [];
+let state = null;
+let currentClientId = null;
+let saveTimeout = null;
+
+async function loadIndex(){
+  try{
+    const res = await window.storage.get(INDEX_KEY, false);
+    if(res && res.value) return JSON.parse(res.value);
+  }catch(e){}
+  return [];
+}
+async function saveIndex(){
+  try{ await window.storage.set(INDEX_KEY, JSON.stringify(clientIndex), false); }catch(e){}
+}
+
+async function loadClient(id){
+  try{
+    const res = await window.storage.get('a10:cliente:'+id, false);
+    if(res && res.value) return JSON.parse(res.value);
+  }catch(e){}
+  return newClientState();
+}
+
+async function saveClient(){
+  const statusEl = document.getElementById('saveStatus');
+  try{
+    await window.storage.set('a10:cliente:'+currentClientId, JSON.stringify(state), false);
+    const entry = clientIndex.find(c => c.id === currentClientId);
+    if(entry){
+      entry.nome = state.clientName || 'Sem nome';
+      entry.score = state.score;
+      entry.rating = state.rating;
+      entry.updatedAt = Date.now();
+    }
+    await saveIndex();
+    if(statusEl){
+      statusEl.textContent = 'Salvo ✓';
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(()=>{ statusEl.textContent = '\u00A0'; }, 1500);
+    }
+  }catch(e){
+    if(statusEl) statusEl.textContent = 'Não foi possível salvar agora';
+  }
+}
+
+/* ---------- View switching ---------- */
+function showListView(){
+  document.getElementById('listView').style.display = 'block';
+  document.getElementById('clientView').style.display = 'none';
+  renderClientGrid();
+}
+async function openClient(id){
+  currentClientId = id;
+  state = await loadClient(id);
+  document.getElementById('listView').style.display = 'none';
+  document.getElementById('clientView').style.display = 'block';
+  wireStaticFields();
+  renderBoard();
+  renderCriteria();
+  renderPlan();
+  renderResult();
+}
+async function createClient(){
+  const id = 'c_' + Date.now();
+  clientIndex.unshift({id, nome:'Novo cliente', score:0, rating:'F', updatedAt: Date.now()});
+  await saveIndex();
+  await openClient(id);
+}
+async function deleteClient(id, ev){
+  if(ev) ev.stopPropagation();
+  if(!confirm('Excluir este cliente e todos os dados dele? Essa ação não pode ser desfeita.')) return;
+  try{ await window.storage.delete('a10:cliente:'+id, false); }catch(e){}
+  clientIndex = clientIndex.filter(c => c.id !== id);
+  await saveIndex();
+  renderClientGrid();
+}
+
+function renderClientGrid(){
+  const grid = document.getElementById('clientGrid');
+  const empty = document.getElementById('emptyState');
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  const filtered = clientIndex.filter(c => (c.nome||'').toLowerCase().includes(q));
+
+  grid.innerHTML = '';
+  if(clientIndex.length === 0){
+    empty.style.display = 'block';
+    grid.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.style.display = 'grid';
+
+  filtered.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
+  filtered.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'client-card';
+    const badgeClass = ['A','B'].includes(c.rating) ? 'good' : 'pending';
+    const dateStr = c.updatedAt ? new Date(c.updatedAt).toLocaleDateString('pt-BR') : '';
+    card.innerHTML = `
+      <button type="button" class="del-btn" title="Excluir">✕</button>
+      <div class="cname">${c.nome || 'Sem nome'}</div>
+      <div class="crow"><span>Score</span><strong>${c.score || 0}</strong></div>
+      <div class="crow"><span>Rating</span><span class="mini-badge ${badgeClass}">${c.rating || '-'}</span></div>
+      <div class="updated">Atualizado em ${dateStr}</div>
+    `;
+    card.addEventListener('click', () => openClient(c.id));
+    card.querySelector('.del-btn').addEventListener('click', (e) => deleteClient(c.id, e));
+    grid.appendChild(card);
+  });
+}
+
+/* ---------- Board rendering (same behavior as before, now per-client) ---------- */
+function renderIncomeItem(item){
+  const opts = RENDA_OPCOES.map(o => `<option ${o===item.fonte?'selected':''}>${o}</option>`).join('');
+  return `<div class="income-row">
+    <select data-role="fonte">${opts}</select>
+    <input type="text" data-role="valor" placeholder="R$ 0,00" value="${formatBRL(item.valor)}">
+  </div>`;
+}
+function renderListDetail(item){
+  const rows = item.items.map((val, idx) => `
+    <div class="list-row">
+      <input type="text" data-idx="${idx}" value="${val}">
+      <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
+    </div>`).join('');
+  return `<div class="item-detail" style="display:${item.expanded?'block':'none'}">
+      <div class="list-rows">${rows}</div>
+      <button type="button" class="add-list-row">+ adicionar</button>
+    </div>`;
+}
+
+function renderBoard(){
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  Object.keys(state.board).forEach(colName => {
+    const col = document.createElement('div');
+    col.className = 'board-col';
+    const h3 = document.createElement('h3'); h3.textContent = colName; col.appendChild(h3);
+
+    state.board[colName].forEach((item) => {
+      const div = document.createElement('div');
+      div.className = 'item ' + item.status + (item.expanded ? ' open' : '');
+
+      if(item.type === 'income'){
+        div.innerHTML = `<div class="item-row"><span class="dot"></span><span class="txt">Fonte de renda${renderIncomeItem(item)}</span></div>`;
+        div.querySelector('.dot').addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const i = STATUS_CYCLE.indexOf(item.status);
+          item.status = STATUS_CYCLE[(i+1) % STATUS_CYCLE.length];
+          renderBoard(); saveClient();
+        });
+        div.querySelector('[data-role=fonte]').addEventListener('change', (e)=>{ item.fonte = e.target.value; saveClient(); });
+        div.querySelector('[data-role=valor]').addEventListener('input', (e)=>{
+          item.valor = parseBRLInput(e.target); renderCriteria(); saveClient();
+        });
+
+      } else if(item.type === 'expandable'){
+        div.innerHTML = `<div class="item-row"><span class="dot"></span><span class="txt">${item.text}</span><span class="chevron">▸</span></div>
+          <div class="item-detail" style="display:${item.expanded?'block':'none'}">
+            <textarea placeholder="Descreva os detalhes...">${item.detail || ''}</textarea>
+          </div>`;
+        div.querySelector('.dot').addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const i = STATUS_CYCLE.indexOf(item.status);
+          item.status = STATUS_CYCLE[(i+1) % STATUS_CYCLE.length];
+          renderBoard(); saveClient();
+        });
+        div.querySelector('.item-row').addEventListener('click', (e)=>{
+          if(e.target.classList.contains('dot')) return;
+          item.expanded = !item.expanded; renderBoard(); saveClient();
+        });
+        const ta = div.querySelector('textarea');
+        ta.addEventListener('click', e=>e.stopPropagation());
+        ta.addEventListener('input', (e)=>{ item.detail = e.target.value; saveClient(); });
+
+      } else if(item.type === 'regulatable'){
+        const warn = item.regularidade === 'Irregular' ? '<span class="warn-icon">⚠️</span>' : '';
+        div.innerHTML = `<div class="item-row">
+            <span class="dot"></span>
+            <span class="txt">${warn}${item.text}
+              <div class="regularidade-row">
+                <select data-role="regularidade">
+                  <option ${item.regularidade==='Regular'?'selected':''}>Regular</option>
+                  <option ${item.regularidade==='Irregular'?'selected':''}>Irregular</option>
+                </select>
+              </div>
+            </span>
+            <span class="chevron">▸</span>
+          </div>
+          <div class="item-detail" style="display:${item.expanded?'block':'none'}">
+            <textarea placeholder="Observações...">${item.detail || ''}</textarea>
+          </div>`;
+        div.querySelector('.dot').addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const i = STATUS_CYCLE.indexOf(item.status);
+          item.status = STATUS_CYCLE[(i+1) % STATUS_CYCLE.length];
+          renderBoard(); saveClient();
+        });
+        div.querySelector('.item-row').addEventListener('click', (e)=>{
+          if(e.target.closest('.regularidade-row') || e.target.classList.contains('dot')) return;
+          item.expanded = !item.expanded; renderBoard(); saveClient();
+        });
+        div.querySelector('[data-role=regularidade]').addEventListener('click', e=>e.stopPropagation());
+        div.querySelector('[data-role=regularidade]').addEventListener('change', (e)=>{
+          item.regularidade = e.target.value;
+          item.status = item.regularidade === 'Regular' ? 'status-good' : 'status-pending';
+          renderBoard(); saveClient();
+        });
+        const ta = div.querySelector('textarea');
+        ta.addEventListener('click', e=>e.stopPropagation());
+        ta.addEventListener('input', (e)=>{ item.detail = e.target.value; saveClient(); });
+
+      } else if(item.type === 'list'){
+        div.innerHTML = `<div class="item-row"><span class="dot"></span><span class="txt">${item.text}</span><span class="chevron">▸</span></div>${renderListDetail(item)}`;
+        div.querySelector('.dot').addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const i = STATUS_CYCLE.indexOf(item.status);
+          item.status = STATUS_CYCLE[(i+1) % STATUS_CYCLE.length];
+          renderBoard(); saveClient();
+        });
+        div.querySelector('.item-row').addEventListener('click', (e)=>{
+          if(e.target.classList.contains('dot')) return;
+          item.expanded = !item.expanded; renderBoard(); saveClient();
+        });
+        div.querySelectorAll('.list-row input').forEach(inp=>{
+          inp.addEventListener('click', e=>e.stopPropagation());
+          inp.addEventListener('input', (e)=>{ item.items[Number(e.target.dataset.idx)] = e.target.value; saveClient(); });
+        });
+        div.querySelectorAll('.rm-btn').forEach(btn=>{
+          btn.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            item.items.splice(Number(btn.dataset.idx),1);
+            renderBoard(); saveClient();
+          });
+        });
+        const addRowBtn = div.querySelector('.add-list-row');
+        if(addRowBtn){
+          addRowBtn.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            item.items.push(''); item.expanded = true;
+            renderBoard(); saveClient();
+          });
+        }
+
+      } else {
+        div.innerHTML = `<div class="item-row"><span class="dot"></span><span class="txt"><textarea rows="1">${item.text}</textarea></span></div>`;
+        div.querySelector('.dot').addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const i = STATUS_CYCLE.indexOf(item.status);
+          item.status = STATUS_CYCLE[(i+1) % STATUS_CYCLE.length];
+          renderBoard(); saveClient();
+        });
+        div.querySelector('textarea').addEventListener('input', (e)=>{ item.text = e.target.value; saveClient(); });
+      }
+
+      col.appendChild(div);
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-item';
+    addBtn.textContent = '+ adicionar item';
+    addBtn.addEventListener('click', ()=>{
+      state.board[colName].push({type:"expandable", text:"Novo item", status:"status-neutral", detail:"", expanded:false});
+      renderBoard(); saveClient();
+    });
+    col.appendChild(addBtn);
+    board.appendChild(col);
+  });
+}
+
+function getRendaPresumida(){
+  const incomeItem = state.board["Renda e relacionamento"].find(i => i.type === 'income');
+  return incomeItem ? (Number(incomeItem.valor) || 0) : 0;
+}
+
+function renderCriteria(){
+  document.getElementById('scoreInput').value = state.score;
+  document.getElementById('ratingInput').value = state.rating;
+  document.getElementById('restrInput').value = state.restricao;
+  document.getElementById('comprometimentoInput').value = formatBRL(state.comprometimentoAtual);
+
+  const scoreFlag = document.getElementById('scoreFlag');
+  if(state.score < 500){ scoreFlag.className = 'flag acao'; scoreFlag.textContent = 'Abaixo de 500 — entra na fila de ação'; }
+  else { scoreFlag.className = 'flag ok'; scoreFlag.textContent = 'Dentro do esperado'; }
+
+  const ratingFlag = document.getElementById('ratingFlag');
+  if(['C','D','E','F'].includes(state.rating)){ ratingFlag.className = 'flag acao'; ratingFlag.textContent = 'Abaixo de B — entra na fila de ação'; }
+  else { ratingFlag.className = 'flag ok'; ratingFlag.textContent = 'Dentro do esperado'; }
+
+  const restrFlag = document.getElementById('restrFlag');
+  if(state.restricao === 'sim'){ restrFlag.className = 'flag acao'; restrFlag.textContent = 'Restrição ativa — entra na fila de ação'; }
+  else { restrFlag.className = 'flag ok'; restrFlag.textContent = 'Sem restrições'; }
+
+  const renda = getRendaPresumida();
+  document.getElementById('rendaPresumidaOut').textContent = formatBRL(renda);
+  const comprometimentoMax = renda * 0.33;
+  const comprometimentoAtual = Number(state.comprometimentoAtual) || 0;
+  const percent = renda > 0 ? (comprometimentoAtual / renda * 100) : 0;
+  document.getElementById('comprometimentoPercentOut').textContent = percent.toFixed(1) + '% da renda presumida (máx. permitido: 33%)';
+  const limiteSugerido = Math.max(0, comprometimentoMax - comprometimentoAtual);
+  document.getElementById('limiteSugeridoOut').textContent = formatBRL(limiteSugerido);
+}
+
+function renderPlan(){
+  const list = document.getElementById('planList');
+  list.innerHTML = '';
+  state.plan.forEach((row) => {
+    const div = document.createElement('div');
+    div.className = 'plan-row' + (row.done ? ' done' : '');
+    div.innerHTML = `<input type="checkbox" ${row.done?'checked':''}><span class="lbl"><input type="text" value="${row.label}"></span>`;
+    div.querySelector('input[type=checkbox]').addEventListener('change', (e)=>{ row.done = e.target.checked; renderPlan(); saveClient(); });
+    div.querySelector('input[type=text]').addEventListener('input', (e)=>{ row.label = e.target.value; saveClient(); });
+    list.appendChild(div);
+  });
+}
+
+function renderResult(){
+  document.getElementById('ratingBeforeBadge').textContent = state.ratingBefore;
+  document.getElementById('ratingAfterBadge').textContent = state.ratingAfter;
+  document.getElementById('goalInput').value = state.goal;
+}
+
+function wireEyeButtons(){
+  document.querySelectorAll('.eye-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const input = document.getElementById(btn.dataset.target);
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.textContent = input.type === 'password' ? '👁' : '🙈';
+    });
+  });
+}
+
+function wireStaticFields(){
+  document.getElementById('clientName').value = state.clientName;
+  document.getElementById('clientDoc').value = state.clientDoc;
+  document.getElementById('serasaPass').value = state.serasaPass;
+  document.getElementById('govPass').value = state.govPass;
+  document.getElementById('startDate').value = state.startDate;
+  document.getElementById('endDate').value = state.endDate;
+
+  document.getElementById('clientName').oninput = e=>{ state.clientName = e.target.value; saveClient(); };
+  document.getElementById('clientDoc').oninput = e=>{ state.clientDoc = e.target.value; saveClient(); };
+  document.getElementById('serasaPass').oninput = e=>{ state.serasaPass = e.target.value; saveClient(); };
+  document.getElementById('govPass').oninput = e=>{ state.govPass = e.target.value; saveClient(); };
+  document.getElementById('startDate').oninput = e=>{ state.startDate = e.target.value; saveClient(); };
+  document.getElementById('endDate').oninput = e=>{ state.endDate = e.target.value; saveClient(); };
+
+  document.getElementById('scoreInput').oninput = e=>{ state.score = Number(e.target.value); renderCriteria(); saveClient(); };
+  document.getElementById('ratingInput').onchange = e=>{ state.rating = e.target.value; renderCriteria(); saveClient(); };
+  document.getElementById('restrInput').onchange = e=>{ state.restricao = e.target.value; renderCriteria(); saveClient(); };
+  document.getElementById('comprometimentoInput').oninput = e=>{ state.comprometimentoAtual = parseBRLInput(e.target); renderCriteria(); saveClient(); };
+
+  document.getElementById('addPlanBtn').onclick = ()=>{ state.plan.push({label:"Nova ação", done:false}); renderPlan(); saveClient(); };
+  document.getElementById('goalInput').oninput = e=>{ state.goal = e.target.value; saveClient(); };
+  document.getElementById('ratingBeforeBadge').onclick = ()=>{ cycleRating('ratingBefore'); };
+  document.getElementById('ratingAfterBadge').onclick = ()=>{ cycleRating('ratingAfter'); };
+
+  wireEyeButtons();
+}
+
+function cycleRating(key){
+  const order = ['F','E','D','C','B','A'];
+  const i = order.indexOf(state[key]);
+  state[key] = order[(i+1) % order.length];
+  renderResult(); saveClient();
+}
+
+document.getElementById('backBtn').addEventListener('click', showListView);
+document.getElementById('newClientBtn').addEventListener('click', createClient);
+document.getElementById('searchInput').addEventListener('input', renderClientGrid);
+
+async function init(){
+  clientIndex = await loadIndex();
+  showListView();
+}
+init();
+</script>
+</body>
+</html>
