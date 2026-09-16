@@ -14,6 +14,7 @@
     --status-info: #3E6FA6; --status-info-bg: #E5EDF6;
     --status-good: #3B8F6D; --status-good-bg: #E1F1E9;
     --status-neutral: #8B93A1; --status-neutral-bg: #EDEEF0;
+    --status-atraso: #C0392B; --status-atraso-bg: #FBE1DC;
   }
   *{ box-sizing: border-box; }
   body{ margin:0; background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.5; }
@@ -31,6 +32,26 @@
   header.brand .tagline{ font-size: 13px; color:#c4d1de; max-width: 280px; text-align:right; }
 
   /* ---------- List view ---------- */
+  .dashboard{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  @media (max-width: 720px){ .dashboard{ grid-template-columns: repeat(2, 1fr); } }
+  .stat-card{
+    background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 18px; cursor:pointer; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .stat-card:hover{ border-color: var(--gold); }
+  .stat-card.active{ border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
+  .stat-card .stat-value{ font-family:'Fraunces',serif; font-size: 30px; font-weight:700; color: var(--navy); line-height:1; }
+  .stat-card .stat-label{ font-size: 12px; color: var(--ink-soft); margin-top: 6px; text-transform: uppercase; letter-spacing:0.05em; }
+  .stat-card.stat-atraso .stat-value{ color: var(--status-atraso); }
+  .svc-badge{ display:inline-flex; align-items:center; gap:5px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight:500; }
+  .svc-badge::before{ content:""; width:7px; height:7px; border-radius:50%; }
+  .svc-badge.svc-andamento{ background: var(--status-info-bg); color:#1f4269; }
+  .svc-badge.svc-andamento::before{ background: var(--status-info); }
+  .svc-badge.svc-concluido{ background: var(--status-good-bg); color:#215538; }
+  .svc-badge.svc-concluido::before{ background: var(--status-good); }
+  .svc-badge.svc-atraso{ background: var(--status-atraso-bg); color:#7a2015; }
+  .svc-badge.svc-atraso::before{ background: var(--status-atraso); }
+  .client-card.card-atraso{ border-left: 3px solid var(--status-atraso); }
   .clients-toolbar{
     display:flex; gap:12px; align-items:center; margin-bottom: 18px; flex-wrap: wrap;
   }
@@ -275,6 +296,24 @@
 
   <!-- ===================== LIST VIEW ===================== -->
   <div id="listView" style="display:none;">
+    <div class="dashboard" id="dashboard">
+      <div class="stat-card" data-filter="all">
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">Usuários</div>
+      </div>
+      <div class="stat-card" data-filter="andamento">
+        <div class="stat-value" id="statAndamento">0</div>
+        <div class="stat-label">Em andamento</div>
+      </div>
+      <div class="stat-card" data-filter="concluido">
+        <div class="stat-value" id="statConcluido">0</div>
+        <div class="stat-label">Concluídos</div>
+      </div>
+      <div class="stat-card stat-atraso" data-filter="atraso">
+        <div class="stat-value" id="statAtraso">0</div>
+        <div class="stat-label">Em atraso</div>
+      </div>
+    </div>
     <div class="clients-toolbar">
       <input type="text" id="searchInput" placeholder="Buscar cliente por nome...">
       <button class="btn-primary" id="newClientBtn">+ Novo cliente</button>
@@ -451,6 +490,27 @@ function parseBRLInput(el){
   return num;
 }
 
+function businessDaysSince(startISO){
+  if(!startISO) return 0;
+  const start = new Date(startISO + 'T00:00:00');
+  const now = new Date();
+  if(isNaN(start.getTime()) || start >= now) return 0;
+  let count = 0;
+  const cur = new Date(start);
+  while(cur < now){
+    const day = cur.getDay();
+    if(day !== 0 && day !== 6) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
+function getServiceStatus(c){
+  if(c.endDate) return 'concluido';
+  if(!c.startDate) return 'andamento';
+  return businessDaysSince(c.startDate) > 30 ? 'atraso' : 'andamento';
+}
+
 function defaultBoard(){
   return {
     "Renda e relacionamento": [
@@ -504,11 +564,12 @@ let saveTimeout = null;
 async function loadIndex(){
   const { data, error } = await supabaseClient
     .from('clientes')
-    .select('id, nome, score, rating, updated_at')
+    .select('id, nome, score, rating, updated_at, startDate:data->>startDate, endDate:data->>endDate')
     .order('updated_at', { ascending: false });
   if(error){ console.error(error); return []; }
   return (data || []).map(row => ({
     id: row.id, nome: row.nome, score: row.score, rating: row.rating,
+    startDate: row.startDate || '', endDate: row.endDate || '',
     updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : 0
   }));
 }
@@ -593,14 +654,44 @@ async function deleteClient(id, ev){
   renderClientGrid();
 }
 
+let activeFilter = 'all';
+
+function renderDashboard(){
+  let andamento = 0, concluido = 0, atraso = 0;
+  clientIndex.forEach(c => {
+    const s = getServiceStatus(c);
+    if(s === 'concluido') concluido++;
+    else if(s === 'atraso') atraso++;
+    else andamento++;
+  });
+  document.getElementById('statTotal').textContent = clientIndex.length;
+  document.getElementById('statAndamento').textContent = andamento;
+  document.getElementById('statConcluido').textContent = concluido;
+  document.getElementById('statAtraso').textContent = atraso;
+  document.querySelectorAll('.stat-card').forEach(el => {
+    el.classList.toggle('active', el.dataset.filter === activeFilter);
+  });
+}
+
 function renderClientGrid(){
   const grid = document.getElementById('clientGrid');
   const empty = document.getElementById('emptyState');
   const q = (document.getElementById('searchInput').value || '').toLowerCase();
-  const filtered = clientIndex.filter(c => (c.nome||'').toLowerCase().includes(q));
+  const filtered = clientIndex
+    .filter(c => (c.nome||'').toLowerCase().includes(q))
+    .filter(c => activeFilter === 'all' || getServiceStatus(c) === activeFilter);
+
+  renderDashboard();
 
   grid.innerHTML = '';
   if(clientIndex.length === 0){
+    empty.textContent = 'Nenhum cliente cadastrado ainda. Clique em "+ Novo cliente" para começar.';
+    empty.style.display = 'block';
+    grid.style.display = 'none';
+    return;
+  }
+  if(filtered.length === 0){
+    empty.textContent = 'Nenhum cliente encontrado para esse filtro.';
     empty.style.display = 'block';
     grid.style.display = 'none';
     return;
@@ -611,7 +702,9 @@ function renderClientGrid(){
   filtered.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
   filtered.forEach(c => {
     const card = document.createElement('div');
-    card.className = 'client-card';
+    const svcStatus = getServiceStatus(c);
+    const svcLabel = svcStatus === 'concluido' ? 'Concluído' : svcStatus === 'atraso' ? 'Em atraso' : 'Em andamento';
+    card.className = 'client-card' + (svcStatus === 'atraso' ? ' card-atraso' : '');
     const badgeClass = ['A','B'].includes(c.rating) ? 'good' : 'pending';
     const dateStr = c.updatedAt ? new Date(c.updatedAt).toLocaleDateString('pt-BR') : '';
     card.innerHTML = `
@@ -619,6 +712,7 @@ function renderClientGrid(){
       <div class="cname">${c.nome || 'Sem nome'}</div>
       <div class="crow"><span>Score</span><strong>${c.score || 0}</strong></div>
       <div class="crow"><span>Rating</span><span class="mini-badge ${badgeClass}">${c.rating || '-'}</span></div>
+      <div class="crow"><span>Serviço</span><span class="svc-badge svc-${svcStatus}">${svcLabel}</span></div>
       <div class="updated">Atualizado em ${dateStr}</div>
     `;
     card.addEventListener('click', () => openClient(c.id));
@@ -1141,6 +1235,13 @@ function cycleRating(key){
 document.getElementById('backBtn').addEventListener('click', showListView);
 document.getElementById('newClientBtn').addEventListener('click', createClient);
 document.getElementById('searchInput').addEventListener('input', renderClientGrid);
+document.querySelectorAll('.stat-card').forEach(el => {
+  el.addEventListener('click', () => {
+    const f = el.dataset.filter;
+    activeFilter = (f === 'all') ? 'all' : (activeFilter === f ? 'all' : f);
+    renderClientGrid();
+  });
+});
 document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
   showLoginView();
