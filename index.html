@@ -175,6 +175,10 @@
   @media (max-width: 820px){ .venda-form{ grid-template-columns: repeat(2, 1fr); } }
   .venda-form .field{ flex:none; }
   .venda-form .form-actions{ grid-column: 1 / -1; display:flex; gap:10px; justify-content:flex-end; }
+  .venda-stage{ border-top: 1px dashed var(--line); padding-top: 14px; margin-top: 4px; }
+  .stage-title{ font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stage-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 820px){ .stage-grid{ grid-template-columns: repeat(2, 1fr); } }
   .venda-group{
     background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px;
     padding: 14px 18px; margin-bottom: 12px;
@@ -466,65 +470,65 @@
     </div>
 
     <div class="venda-form" id="vendaFormPanel" style="display:none;">
-      <div class="field"><label>Nome</label><input type="text" id="vfCliente"></div>
-      <div class="field field-wide" id="vfOrdensServicoField">
-        <label>Razão social (Ordem de Serviço)</label>
-        <div class="credit-rows" id="vfOrdensServicoRows"></div>
-        <button type="button" class="add-list-row" id="addOrdemServicoBtn">+ adicionar ordem de serviço</button>
-      </div>
-      <div class="field"><label>Data da contratação</label><input type="text" inputmode="numeric" id="vfData" placeholder="DD/MM/AAAA" maxlength="10"></div>
-      <div class="field" id="vfDataEnvioListaField" style="display:none;"><label>Data de envio da lista</label><input type="text" inputmode="numeric" id="vfDataEnvioLista" placeholder="DD/MM/AAAA" maxlength="10"></div>
-      <div class="field" id="vfDataConclusaoField" style="display:none;"><label>Data de conclusão</label><input type="text" inputmode="numeric" id="vfDataConclusao" placeholder="DD/MM/AAAA" maxlength="10"></div>
+      <div class="field"><label>Nome do cliente</label><input type="text" id="vfCliente"></div>
+      <div class="field"><label>CPF do cliente</label><input type="text" id="vfCpfCliente" placeholder="000.000.000-00"></div>
+      <div class="field"><label>Número de WhatsApp</label><input type="text" id="vfWhatsapp" placeholder="(00) 00000-0000"></div>
       <div class="field">
-        <label>Etiqueta</label>
+        <label>Tipo de serviço</label>
         <select id="vfServico">
-          <option value="Limpa nome">Limpa Nome</option>
-          <option value="Acompanhamento / Rating">Consultoria / Rating</option>
-          <option value="Consulta Simples">Consultas</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Origem</label>
-        <select id="vfOrigem">
           <option value="">Selecione...</option>
-          <option value="Indicações">Indicações</option>
-          <option value="Parceiro">Parceiro</option>
-          <option value="Redes sociais">Redes sociais</option>
-          <option value="Ads">Ads</option>
-          <option value="NetWorking">NetWorking</option>
+          <option value="consultas">Consultas</option>
+          <option value="consultoria_rating">Consultoria / Rating</option>
+          <option value="limpa_nome">Limpa Nome</option>
         </select>
       </div>
-      <div class="field">
-        <label>Detalhe da origem</label>
-        <input type="text" id="vfOrigemDetalhe" placeholder="Ex: Instagram, indicação da Maria...">
-      </div>
-      <div class="field" id="vfParceiroField" style="display:none;">
-        <label>Parceiro</label>
-        <select id="vfParceiro"></select>
-      </div>
-      <div class="field">
-        <label>Execução</label>
-        <select id="vfExecucao">
-          <option>AGUARDANDO INICIO</option><option>Ñ ENVIADO</option><option>ENVIADO</option>
-          <option>ENTREGUE</option><option>A10 INICIADO</option><option>CONCLUIDO</option>
-        </select>
-      </div>
-      <div class="field"><label>CPF do contratante</label><input type="text" id="vfCpf"></div>
-      <div class="field"><label>Cidade/UF</label><input type="text" id="vfCidade"></div>
-      <div class="field"><label>Contato</label><input type="text" id="vfContato"></div>
-      <div class="field"><label>Fechado (R$)</label><input type="text" id="vfFechado" placeholder="R$ 0,00"></div>
-      <div class="field"><label>Recebido (R$)</label><input type="text" id="vfRecebido" placeholder="R$ 0,00"></div>
-      <div class="field"><label>Custo (R$)</label><input type="text" id="vfCusto" placeholder="R$ 0,00"></div>
-      <div class="field" id="vfNotaFiscalField" style="display:none;"><label>Nota Fiscal (R$)</label><input type="text" id="vfNotaFiscal" placeholder="R$ 0,00"></div>
-      <div class="field"><label>Remanescente (R$)</label><input type="text" id="vfRemanescente" placeholder="R$ 0,00" readonly></div>
-      <div class="field"><label>Quantidade</label><input type="number" id="vfQt" value="1" min="1"></div>
-      <div class="field protected">
-        <label>Senha Serasa</label>
-        <div class="protected-input-row">
-          <input type="password" id="vfSenhaSerasa">
-          <button type="button" class="eye-btn" data-target="vfSenhaSerasa">👁</button>
+
+      <div class="field-wide venda-stage" id="stageConsultas" style="display:none;">
+        <div class="stage-title">Dados da consulta</div>
+        <div class="stage-grid">
+          <div class="field">
+            <label>Tipo de consulta</label>
+            <select id="vfTipoConsulta">
+              <option value="Órgãos de proteção">Órgãos de proteção</option>
+              <option value="Consulta completa de Rating">Consulta completa de Rating</option>
+            </select>
+          </div>
+          <div class="field"><label>Valor pago pela consulta (R$)</label><input type="text" id="vfValorPago" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Valor de custo (R$)</label><input type="text" id="vfCustoConsulta" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Lucro (R$)</label><input type="text" id="vfLucroConsulta" placeholder="R$ 0,00" readonly></div>
         </div>
       </div>
+
+      <div class="field-wide venda-stage" id="stageConsultoria" style="display:none;">
+        <div class="stage-title">Dados complementares</div>
+        <div class="stage-grid">
+          <div class="field"><label>Data da contratação</label><input type="text" inputmode="numeric" id="vfDataContratacaoCR" placeholder="DD/MM/AAAA" maxlength="10"></div>
+          <div class="field"><label>Data de conclusão</label><input type="text" inputmode="numeric" id="vfDataConclusaoCR" placeholder="DD/MM/AAAA" maxlength="10"></div>
+          <div class="field"><label>Valor fechado (R$)</label><input type="text" id="vfFechadoCR" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Valor recebido (R$)</label><input type="text" id="vfRecebidoCR" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Valor remanescente (R$)</label><input type="text" id="vfRemanescenteCR" placeholder="R$ 0,00" readonly></div>
+          <div class="field"><label>Custo operacional (R$)</label><input type="text" id="vfCustoOperacionalCR" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Margem de lucro (R$)</label><input type="text" id="vfMargemCR" placeholder="R$ 0,00" readonly></div>
+        </div>
+      </div>
+
+      <div class="field-wide venda-stage" id="stageLimpaNome" style="display:none;">
+        <div class="stage-title">Dados da contratação</div>
+        <div class="stage-grid">
+          <div class="field"><label>Data da contratação</label><input type="text" inputmode="numeric" id="vfDataContratacaoLN" placeholder="DD/MM/AAAA" maxlength="10"></div>
+          <div class="field"><label>Envio da lista (data)</label><input type="text" inputmode="numeric" id="vfDataEnvioLN" placeholder="DD/MM/AAAA" maxlength="10"></div>
+          <div class="field"><label>Valor fechado (R$)</label><input type="text" id="vfFechadoLN" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Valor recebido (R$)</label><input type="text" id="vfRecebidoLN" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Valor remanescente (R$)</label><input type="text" id="vfRemanescenteLN" placeholder="R$ 0,00" readonly></div>
+          <div class="field"><label>Nota Fiscal (R$)</label><input type="text" id="vfNotaFiscalLN" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Taxa de Inclusão (R$)</label><input type="text" id="vfTaxaInclusaoLN" placeholder="R$ 0,00"></div>
+          <div class="field"><label>Margem de lucro (R$)</label><input type="text" id="vfMargemLN" placeholder="R$ 0,00" readonly></div>
+          <div class="field"><label>Razão social (Ordem de Serviço)</label><input type="text" id="vfRazaoSocialLN"></div>
+          <div class="field"><label>CPF ou CNPJ</label><input type="text" id="vfDocLN"></div>
+          <div class="field"><label>Quantidade de serviços</label><input type="number" id="vfQtLN" value="1" min="1"></div>
+        </div>
+      </div>
+
       <div class="form-actions">
         <button type="button" class="back-btn" id="cancelVendaBtn">Cancelar</button>
         <button type="button" class="btn-primary" id="saveVendaBtn">Salvar venda</button>
@@ -968,6 +972,11 @@ function formatBRLFieldOnBlur(e){
 }
 function remanescenteOf(v){
   return (Number(v.fechado)||0) - (Number(v.recebido)||0);
+}
+function lucroOf(v){
+  const tag = normalizeServicoTag(v.servico);
+  if(tag === 'Consulta Simples' || tag === 'Consulta completa') return Number(v.lucro)||0;
+  return Number(v.margem_lucro)||0;
 }
 
 function businessDaysSince(startISO){
@@ -1616,7 +1625,7 @@ function renderVendasDashboard(){
     fechado += Number(v.fechado)||0;
     recebido += Number(v.recebido)||0;
     remanescente += remanescenteOf(v);
-    lucro += Number(v.lucro)||0;
+    lucro += lucroOf(v);
     qt += Number(v.qt)||0;
     const st = v.execucao || 'Sem status';
     statusCounts[st] = (statusCounts[st]||0) + 1;
@@ -1659,6 +1668,8 @@ function vendaItemHtml(v){
   const servicoOpts = SERVICO_TAGS.map(t=>`<option value="${t}" ${t===currentTag?'selected':''}>${t}</option>`).join('');
   const prazo = getPrazoStatus(v);
   const isLimpaNome = currentTag === 'Limpa nome';
+  const isConsultas = currentTag === 'Consulta Simples' || currentTag === 'Consulta completa';
+  const isConsultoria = currentTag === 'Acompanhamento / Rating';
   const historicoHtml = (v.historico && v.historico.length)
     ? `<div class="venda-historico">Histórico: ${v.historico.map(h=>`${h.de} → ${h.para} (${formatDateBR((h.data||'').slice(0,10))})`).join(' · ')}</div>`
     : '';
@@ -1671,34 +1682,42 @@ function vendaItemHtml(v){
       <button type="button" class="del-venda-btn" title="Excluir">✕ excluir</button>
     </div>
     <div class="vfields">
-      <div class="vfield"><label>Cidade/UF</label><input type="text" data-field="cidade_uf" value="${v.cidade_uf||''}"></div>
-      <div class="vfield"><label>CPF do contratante</label><input type="text" data-field="cpf_cnpj" value="${v.cpf_cnpj||''}"></div>
-      <div class="vfield"><label>Contato</label><input type="text" data-field="contato" value="${v.contato||''}"></div>
-      <div class="vfield">
-        <label>Origem</label>
-        <select data-field="origem">
-          <option value="" ${!v.origem?'selected':''}>Selecione...</option>
-          ${['Indicações','Parceiro','Redes sociais','Ads','NetWorking'].map(o=>`<option value="${o}" ${v.origem===o?'selected':''}>${o}</option>`).join('')}
-        </select>
-      </div>
-      <div class="vfield"><label>Detalhe da origem</label><input type="text" data-field="informante" value="${v.informante||''}" placeholder="Ex: Instagram, indicação da Maria..."></div>
-      <div class="vfield" data-parceiro-field style="${v.origem==='Parceiro'?'':'display:none;'}">
-        <label>Parceiro</label>
-        <select data-field="parceiro_id" data-parceiro-select>
-          <option value="">Selecione...</option>
-          ${v.parceiro_id ? `<option value="${v.parceiro_id}" selected>${v.parceiro_nome||''}</option>` : ''}
-        </select>
-      </div>
-      <div class="vfield"><label>Data da contratação</label><input type="text" inputmode="numeric" data-field="data_entrada" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_entrada)}"></div>
-      ${isLimpaNome ? `<div class="vfield"><label>Data de envio da lista</label><input type="text" inputmode="numeric" data-field="data_envio_lista" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_envio_lista)}"></div>` : ''}
-      ${isLimpaNome ? `<div class="vfield"><label>Data de conclusão</label><input type="text" inputmode="numeric" data-field="data_conclusao" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_conclusao)}"></div>` : ''}
-      <div class="vfield"><label>Fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
-      <div class="vfield"><label>Recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
-      <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
-      ${isLimpaNome ? `<div class="vfield"><label>Nota Fiscal</label><input type="text" data-field="nota_fiscal" data-money="1" value="${formatBRL(v.nota_fiscal)}"></div>` : ''}
-      <div class="vfield"><label>Remanescente</label><input type="text" data-field="remanescente" data-money="1" value="${formatBRL(remanescenteOf(v))}" readonly></div>
-      <div class="vfield"><label>Lucro</label><input type="text" data-field="lucro" data-money="1" value="${formatBRL(v.lucro)}"></div>
-      <div class="vfield"><label>Quantidade</label><input type="number" data-field="qt" value="${v.qt||1}" min="1"></div>
+      <div class="vfield"><label>CPF do cliente</label><input type="text" data-field="cpf_cnpj" value="${v.cpf_cnpj||''}"></div>
+      <div class="vfield"><label>WhatsApp</label><input type="text" data-field="whatsapp" value="${v.whatsapp||''}"></div>
+      ${isConsultas ? `
+        <div class="vfield">
+          <label>Tipo de consulta</label>
+          <select data-field="tipo_consulta">
+            <option value="Órgãos de proteção" ${v.tipo_consulta==='Órgãos de proteção'?'selected':''}>Órgãos de proteção</option>
+            <option value="Consulta completa de Rating" ${v.tipo_consulta==='Consulta completa de Rating'?'selected':''}>Consulta completa de Rating</option>
+          </select>
+        </div>
+        <div class="vfield"><label>Valor pago</label><input type="text" data-field="valor_pago" data-money="1" value="${formatBRL(v.valor_pago)}"></div>
+        <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
+        <div class="vfield"><label>Lucro</label><input type="text" data-field="lucro" data-money="1" value="${formatBRL(v.lucro)}" readonly></div>
+      ` : ''}
+      ${isConsultoria ? `
+        <div class="vfield"><label>Data da contratação</label><input type="text" inputmode="numeric" data-field="data_entrada" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_entrada)}"></div>
+        <div class="vfield"><label>Data de conclusão</label><input type="text" inputmode="numeric" data-field="data_conclusao" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_conclusao)}"></div>
+        <div class="vfield"><label>Valor fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
+        <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
+        <div class="vfield"><label>Valor remanescente</label><input type="text" data-field="remanescente" data-money="1" value="${formatBRL(remanescenteOf(v))}" readonly></div>
+        <div class="vfield"><label>Custo operacional</label><input type="text" data-field="custo_operacional" data-money="1" value="${formatBRL(v.custo_operacional)}"></div>
+        <div class="vfield"><label>Margem de lucro</label><input type="text" data-field="margem_lucro" data-money="1" value="${formatBRL(v.margem_lucro)}" readonly></div>
+      ` : ''}
+      ${isLimpaNome ? `
+        <div class="vfield"><label>Data da contratação</label><input type="text" inputmode="numeric" data-field="data_entrada" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_entrada)}"></div>
+        <div class="vfield"><label>Envio da lista</label><input type="text" inputmode="numeric" data-field="data_envio_lista" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_envio_lista)}"></div>
+        <div class="vfield"><label>Valor fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
+        <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
+        <div class="vfield"><label>Valor remanescente</label><input type="text" data-field="remanescente" data-money="1" value="${formatBRL(remanescenteOf(v))}" readonly></div>
+        <div class="vfield"><label>Nota Fiscal</label><input type="text" data-field="nota_fiscal" data-money="1" value="${formatBRL(v.nota_fiscal)}"></div>
+        <div class="vfield"><label>Taxa de Inclusão</label><input type="text" data-field="taxa_inclusao" data-money="1" value="${formatBRL(v.taxa_inclusao)}"></div>
+        <div class="vfield"><label>Margem de lucro</label><input type="text" data-field="margem_lucro" data-money="1" value="${formatBRL(v.margem_lucro)}" readonly></div>
+        <div class="vfield"><label>Razão social (Ordem de Serviço)</label><input type="text" data-field="razao_social" value="${v.razao_social||''}"></div>
+        <div class="vfield"><label>CPF ou CNPJ</label><input type="text" data-field="doc_atendido" value="${v.doc_atendido||''}"></div>
+        <div class="vfield"><label>Quantidade de serviços</label><input type="number" data-field="qt" value="${v.qt||1}" min="1"></div>
+      ` : ''}
       <div class="vfield protected-field">
         <div style="flex:1;">
           <label>Senha Serasa</label>
@@ -1711,17 +1730,6 @@ function vendaItemHtml(v){
       <button type="button" class="btn-primary venda-update-btn">Atualizar informações</button>
       <span class="venda-update-status"></span>
     </div>
-    <div class="credit-section-label">Razão social (Ordem de Serviço)</div>
-    <div class="credit-rows" data-ordens-list>
-      ${(v.ordens_servico||[]).map((o,idx) => `
-        <div class="credit-row" data-idx="${idx}">
-          <input type="text" data-field="razao_social" placeholder="Razão social" value="${(o&&o.razao_social)||''}">
-          <input type="text" data-field="doc" placeholder="CPF ou CNPJ" value="${(o&&o.doc)||''}">
-          <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
-        </div>
-      `).join('')}
-    </div>
-    <button type="button" class="add-list-row add-ordem-servico">+ adicionar ordem de serviço</button>
     ${isLimpaNome ? `
     <div class="credit-section-label">Pagamentos recebidos</div>
     <div class="credit-rows" data-recebimentos-list>
@@ -1740,15 +1748,26 @@ function vendaItemHtml(v){
 }
 
 function recalcLucro(v, itemEl){
-  const recebido = Number(v.recebido)||0;
-  const custo = Number(v.custo)||0;
-  const notaFiscal = Number(v.nota_fiscal)||0;
-  v.lucro = recebido - custo - notaFiscal;
+  const tag = normalizeServicoTag(v.servico);
+  if(tag === 'Consulta Simples' || tag === 'Consulta completa'){
+    const valorPago = Number(v.valor_pago)||0;
+    const custo = Number(v.custo)||0;
+    v.lucro = valorPago - custo;
+    const lucroInput = itemEl.querySelector('[data-field="lucro"]');
+    if(lucroInput) lucroInput.value = formatBRL(v.lucro);
+    return;
+  }
   v.remanescente = remanescenteOf(v);
-  const lucroInput = itemEl.querySelector('[data-field="lucro"]');
-  if(lucroInput) lucroInput.value = formatBRL(v.lucro);
   const remInput = itemEl.querySelector('[data-field="remanescente"]');
   if(remInput) remInput.value = formatBRL(v.remanescente);
+  const recebido = Number(v.recebido)||0;
+  if(tag === 'Acompanhamento / Rating'){
+    v.margem_lucro = recebido - (Number(v.custo_operacional)||0);
+  } else if(tag === 'Limpa nome'){
+    v.margem_lucro = recebido - (Number(v.nota_fiscal)||0) - (Number(v.taxa_inclusao)||0);
+  }
+  const margemInput = itemEl.querySelector('[data-field="margem_lucro"]');
+  if(margemInput) margemInput.value = formatBRL(v.margem_lucro);
 }
 
 async function handleServicoChange(v, newTag){
@@ -1772,6 +1791,9 @@ async function promoteToRating(v){
   blank.clientName = v.cliente || '';
   blank.clientDoc = v.cpf_cnpj || '';
   blank.startDate = v.data_entrada || new Date().toISOString().slice(0,10);
+  if(v.valorNegociado != null) blank.valorNegociado = v.valorNegociado;
+  if(v.valorRecebido != null) blank.valorRecebido = v.valorRecebido;
+  if(v.custoOperacional != null) blank.custoOperacional = v.custoOperacional;
   const { error } = await supabaseClient.from('clientes').insert({
     id, nome: blank.clientName || 'Novo cliente', score: 0, rating: 'F', data: blank, updated_at: new Date().toISOString()
   });
@@ -1782,8 +1804,7 @@ async function promoteToRating(v){
 
 function wireVendaItem(itemEl, v){
   itemEl.querySelectorAll('[data-field]').forEach(input => {
-    if(input.closest('[data-recebimentos-list]') || input.closest('[data-ordens-list]')) return;
-    if(input.hasAttribute('data-parceiro-select')) return;
+    if(input.closest('[data-recebimentos-list]')) return;
     const field = input.dataset.field;
     if(field === 'servico') return;
     const evt = (input.tagName === 'SELECT') ? 'change' : 'input';
@@ -1796,7 +1817,7 @@ function wireVendaItem(itemEl, v){
       } else {
         v[field] = input.dataset.money ? parseBRLInput(e.target) : e.target.value;
       }
-      if(field === 'fechado' || field === 'recebido' || field === 'custo' || field === 'nota_fiscal') recalcLucro(v, itemEl);
+      if(['fechado','recebido','custo','valor_pago','custo_operacional','nota_fiscal','taxa_inclusao'].includes(field)) recalcLucro(v, itemEl);
       saveVenda(v);
       renderVendasDashboard();
       if(field === 'execucao' || (field === 'data_entrada' && input.dataset.date)) renderVendasGrid();
@@ -1843,7 +1864,7 @@ function wireVendaItem(itemEl, v){
         const entry = v.recebimentos[idx];
         v.recebido = (Number(v.recebido)||0) - (Number(entry.valor)||0);
         v.recebimentos.splice(idx,1);
-        v.lucro = (Number(v.recebido)||0) - (Number(v.custo)||0) - (Number(v.nota_fiscal)||0);
+        v.margem_lucro = (Number(v.recebido)||0) - (Number(v.nota_fiscal)||0) - (Number(v.taxa_inclusao)||0);
         v.remanescente = remanescenteOf(v);
         saveVenda(v);
         renderVendasDashboard();
@@ -1861,77 +1882,6 @@ function wireVendaItem(itemEl, v){
     }
   }
 
-  const origemSelect = itemEl.querySelector('[data-field="origem"]');
-  const parceiroField = itemEl.querySelector('[data-parceiro-field]');
-  const parceiroSelect = itemEl.querySelector('[data-parceiro-select]');
-  if(origemSelect && parceiroField && parceiroSelect){
-    origemSelect.addEventListener('change', async (e)=>{
-      const isParceiro = e.target.value === 'Parceiro';
-      parceiroField.style.display = isParceiro ? 'flex' : 'none';
-      if(isParceiro){
-        if(!parceirosIndex.length) parceirosIndex = await loadParceiros();
-        parceiroSelect.innerHTML = '<option value="">Selecione...</option>' +
-          parceirosIndex.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('') +
-          '<option value="__add_new__">+ Adicionar novo parceiro</option>';
-        parceiroSelect.value = v.parceiro_id || '';
-      }
-    });
-    parceiroSelect.addEventListener('change', async (e)=>{
-      if(e.target.value === '__add_new__'){
-        const nome = prompt('Nome do novo parceiro:');
-        if(nome && nome.trim()){
-          const p = await createParceiro(nome.trim());
-          if(p){
-            parceirosIndex.push(p);
-            parceirosIndex.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
-            parceiroSelect.innerHTML = '<option value="">Selecione...</option>' +
-              parceirosIndex.map(pp=>`<option value="${pp.id}">${pp.nome}</option>`).join('') +
-              '<option value="__add_new__">+ Adicionar novo parceiro</option>';
-            parceiroSelect.value = p.id;
-            v.parceiro_id = p.id; v.parceiro_nome = p.nome;
-            saveVenda(v);
-          }
-        } else {
-          e.target.value = v.parceiro_id || '';
-        }
-        return;
-      }
-      const chosen = parceirosIndex.find(p => p.id === e.target.value);
-      v.parceiro_id = chosen ? chosen.id : '';
-      v.parceiro_nome = chosen ? chosen.nome : '';
-      saveVenda(v);
-    });
-  }
-
-  const ordensList = itemEl.querySelector('[data-ordens-list]');
-  if(ordensList){
-    ordensList.querySelectorAll('.credit-row').forEach(row => {
-      const idx = Number(row.dataset.idx);
-      row.querySelectorAll('input').forEach(inp => {
-        inp.addEventListener('input', (e)=>{
-          const field = e.target.dataset.field;
-          v.ordens_servico[idx] = v.ordens_servico[idx] || { razao_social:'', doc:'' };
-          v.ordens_servico[idx][field] = e.target.value;
-          saveVenda(v);
-        });
-      });
-      row.querySelector('.rm-btn').addEventListener('click', ()=>{
-        if(v.ordens_servico.length <= 1) return;
-        v.ordens_servico.splice(idx,1);
-        saveVenda(v);
-        renderVendasGrid();
-      });
-    });
-    const addOrdemBtn = itemEl.querySelector('.add-ordem-servico');
-    if(addOrdemBtn){
-      addOrdemBtn.addEventListener('click', ()=>{
-        v.ordens_servico = v.ordens_servico || [];
-        v.ordens_servico.push({ razao_social:'', doc:'' });
-        saveVenda(v);
-        renderVendasGrid();
-      });
-    }
-  }
 
   const updateBtn = itemEl.querySelector('.venda-update-btn');
   const updateStatus = itemEl.querySelector('.venda-update-status');
@@ -1995,7 +1945,7 @@ function renderVendasGrid(){
       acc.fechado += Number(v.fechado)||0;
       acc.recebido += Number(v.recebido)||0;
       acc.remanescente += remanescenteOf(v);
-      acc.lucro += Number(v.lucro)||0;
+      acc.lucro += lucroOf(v);
       return acc;
     }, {fechado:0, recebido:0, remanescente:0, lucro:0});
 
@@ -2075,44 +2025,11 @@ async function deleteVenda(id){
   renderVendasGrid();
 }
 
-function updateNotaFiscalVisibility(){
-  const isLimpaNome = document.getElementById('vfServico').value === 'Limpa nome';
-  document.getElementById('vfNotaFiscalField').style.display = isLimpaNome ? 'flex' : 'none';
-  document.getElementById('vfDataEnvioListaField').style.display = isLimpaNome ? 'flex' : 'none';
-  document.getElementById('vfDataConclusaoField').style.display = isLimpaNome ? 'flex' : 'none';
-}
-
-let vfOrdensServico = [];
-
-function renderVfOrdensServico(){
-  const rows = document.getElementById('vfOrdensServicoRows');
-  rows.innerHTML = vfOrdensServico.map((o,idx) => `
-    <div class="credit-row" data-idx="${idx}">
-      <input type="text" data-idx="${idx}" data-field="razao_social" placeholder="Razão social" value="${o.razao_social||''}">
-      <input type="text" data-idx="${idx}" data-field="doc" placeholder="CPF ou CNPJ" value="${o.doc||''}">
-      <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
-    </div>
-  `).join('');
-  rows.querySelectorAll('input').forEach(inp => {
-    inp.addEventListener('input', (e)=>{
-      vfOrdensServico[Number(e.target.dataset.idx)][e.target.dataset.field] = e.target.value;
-    });
-  });
-  rows.querySelectorAll('.rm-btn').forEach(btn => {
-    btn.addEventListener('click', ()=>{
-      if(vfOrdensServico.length <= 1) return;
-      vfOrdensServico.splice(Number(btn.dataset.idx),1);
-      renderVfOrdensServico();
-    });
-  });
-}
-
-function populateParceiroSelect(selectedId){
-  const sel = document.getElementById('vfParceiro');
-  sel.innerHTML = '<option value="">Selecione...</option>' +
-    parceirosIndex.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('') +
-    '<option value="__add_new__">+ Adicionar novo parceiro</option>';
-  sel.value = selectedId || '';
+function updateServiceStageVisibility(){
+  const tipo = document.getElementById('vfServico').value;
+  document.getElementById('stageConsultas').style.display = tipo === 'consultas' ? 'block' : 'none';
+  document.getElementById('stageConsultoria').style.display = tipo === 'consultoria_rating' ? 'block' : 'none';
+  document.getElementById('stageLimpaNome').style.display = tipo === 'limpa_nome' ? 'block' : 'none';
 }
 
 function parseBRLValue(el){
@@ -2121,10 +2038,27 @@ function parseBRLValue(el){
   return isNaN(num) ? 0 : num;
 }
 
-function recalcVfRemanescente(){
-  const fechado = parseBRLValue(document.getElementById('vfFechado'));
-  const recebido = parseBRLValue(document.getElementById('vfRecebido'));
-  document.getElementById('vfRemanescente').value = formatBRL(fechado - recebido);
+function recalcConsultaLucro(){
+  const pago = parseBRLValue(document.getElementById('vfValorPago'));
+  const custo = parseBRLValue(document.getElementById('vfCustoConsulta'));
+  document.getElementById('vfLucroConsulta').value = formatBRL(pago - custo);
+}
+
+function recalcConsultoriaCalc(){
+  const fechado = parseBRLValue(document.getElementById('vfFechadoCR'));
+  const recebido = parseBRLValue(document.getElementById('vfRecebidoCR'));
+  const custoOp = parseBRLValue(document.getElementById('vfCustoOperacionalCR'));
+  document.getElementById('vfRemanescenteCR').value = formatBRL(fechado - recebido);
+  document.getElementById('vfMargemCR').value = formatBRL(recebido - custoOp);
+}
+
+function recalcLimpaNomeCalc(){
+  const fechado = parseBRLValue(document.getElementById('vfFechadoLN'));
+  const recebido = parseBRLValue(document.getElementById('vfRecebidoLN'));
+  const notaFiscal = parseBRLValue(document.getElementById('vfNotaFiscalLN'));
+  const taxaInclusao = parseBRLValue(document.getElementById('vfTaxaInclusaoLN'));
+  document.getElementById('vfRemanescenteLN').value = formatBRL(fechado - recebido);
+  document.getElementById('vfMargemLN').value = formatBRL(recebido - notaFiscal - taxaInclusao);
 }
 
 async function openVendaForm(prefill){
@@ -2134,28 +2068,37 @@ async function openVendaForm(prefill){
   }
   document.getElementById('vendaFormPanel').style.display = 'grid';
   document.getElementById('vfCliente').value = prefill.cliente || '';
-  document.getElementById('vfCpf').value = '';
-  document.getElementById('vfCidade').value = '';
-  document.getElementById('vfContato').value = '';
-  document.getElementById('vfOrigem').value = '';
-  document.getElementById('vfOrigemDetalhe').value = '';
-  document.getElementById('vfParceiroField').style.display = 'none';
-  document.getElementById('vfParceiro').innerHTML = '';
-  vfOrdensServico = [{ razao_social:'', doc:'' }];
-  renderVfOrdensServico();
-  document.getElementById('vfServico').value = salesMode === 'consultas' ? 'Consulta Simples' : 'Limpa nome';
-  document.getElementById('vfExecucao').value = 'AGUARDANDO INICIO';
-  document.getElementById('vfData').value = formatDateBR(new Date().toISOString().slice(0,10));
-  document.getElementById('vfFechado').value = formatBRL(0);
-  document.getElementById('vfRecebido').value = formatBRL(0);
-  document.getElementById('vfCusto').value = formatBRL(0);
-  document.getElementById('vfNotaFiscal').value = formatBRL(0);
-  document.getElementById('vfDataEnvioLista').value = '';
-  document.getElementById('vfDataConclusao').value = '';
-  document.getElementById('vfRemanescente').value = formatBRL(0);
-  document.getElementById('vfQt').value = 1;
-  document.getElementById('vfSenhaSerasa').value = '';
-  updateNotaFiscalVisibility();
+  document.getElementById('vfCpfCliente').value = '';
+  document.getElementById('vfWhatsapp').value = '';
+  document.getElementById('vfServico').value = '';
+  updateServiceStageVisibility();
+
+  document.getElementById('vfTipoConsulta').value = 'Órgãos de proteção';
+  document.getElementById('vfValorPago').value = formatBRL(0);
+  document.getElementById('vfCustoConsulta').value = formatBRL(0);
+  document.getElementById('vfLucroConsulta').value = formatBRL(0);
+
+  const hoje = formatDateBR(new Date().toISOString().slice(0,10));
+  document.getElementById('vfDataContratacaoCR').value = hoje;
+  document.getElementById('vfDataConclusaoCR').value = '';
+  document.getElementById('vfFechadoCR').value = formatBRL(0);
+  document.getElementById('vfRecebidoCR').value = formatBRL(0);
+  document.getElementById('vfRemanescenteCR').value = formatBRL(0);
+  document.getElementById('vfCustoOperacionalCR').value = formatBRL(0);
+  document.getElementById('vfMargemCR').value = formatBRL(0);
+
+  document.getElementById('vfDataContratacaoLN').value = hoje;
+  document.getElementById('vfDataEnvioLN').value = '';
+  document.getElementById('vfFechadoLN').value = formatBRL(0);
+  document.getElementById('vfRecebidoLN').value = formatBRL(0);
+  document.getElementById('vfRemanescenteLN').value = formatBRL(0);
+  document.getElementById('vfNotaFiscalLN').value = formatBRL(0);
+  document.getElementById('vfTaxaInclusaoLN').value = formatBRL(0);
+  document.getElementById('vfMargemLN').value = formatBRL(0);
+  document.getElementById('vfRazaoSocialLN').value = '';
+  document.getElementById('vfDocLN').value = '';
+  document.getElementById('vfQtLN').value = 1;
+
   document.getElementById('vendaFormPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
@@ -2166,56 +2109,96 @@ function closeVendaForm(){
 async function createVenda(){
   const cliente = document.getElementById('vfCliente').value.trim();
   if(!cliente){ alert('Informe o nome do cliente.'); return; }
-  const servico = document.getElementById('vfServico').value;
-  const fechado = parseBRLInput(document.getElementById('vfFechado'));
-  const recebido = parseBRLInput(document.getElementById('vfRecebido'));
-  const custo = parseBRLInput(document.getElementById('vfCusto'));
-  const notaFiscal = servico === 'Limpa nome' ? parseBRLInput(document.getElementById('vfNotaFiscal')) : 0;
-  const data_envio_lista = servico === 'Limpa nome' ? parseDateBRtoISO(document.getElementById('vfDataEnvioLista').value) : '';
-  const data_conclusao = servico === 'Limpa nome' ? parseDateBRtoISO(document.getElementById('vfDataConclusao').value) : '';
-  const ordens_servico = vfOrdensServico.filter(o => (o.razao_social && o.razao_social.trim()) || (o.doc && o.doc.trim()));
-  const origemValue = document.getElementById('vfOrigem').value;
-  const parceiroSel = document.getElementById('vfParceiro');
-  const parceiro = origemValue === 'Parceiro' && parceiroSel.value && parceiroSel.value !== '__add_new__'
-    ? parceirosIndex.find(p => p.id === parceiroSel.value)
-    : null;
-  const cpf_cnpj = document.getElementById('vfCpf').value;
-  const data_entrada = parseDateBRtoISO(document.getElementById('vfData').value);
+  const cpf_cliente = document.getElementById('vfCpfCliente').value.trim();
+  const cpfDigits = cpf_cliente.replace(/\D/g,'');
+  if(cpfDigits && cpfDigits.length !== 11 && cpfDigits.length !== 14){
+    alert('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.'); return;
+  }
+  const whatsapp = document.getElementById('vfWhatsapp').value.trim();
+  const whatsappDigits = whatsapp.replace(/\D/g,'');
+  if(whatsapp && whatsappDigits.length < 10){
+    alert('Informe um número de WhatsApp válido, com DDD.'); return;
+  }
+  const tipoServico = document.getElementById('vfServico').value;
+  if(!tipoServico){ alert('Selecione o tipo de serviço.'); return; }
+
+  let servico, data_entrada, extra;
+  if(tipoServico === 'consultas'){
+    const tipoConsulta = document.getElementById('vfTipoConsulta').value;
+    servico = tipoConsulta === 'Consulta completa de Rating' ? 'Consulta completa' : 'Consulta Simples';
+    const valorPago = parseBRLInput(document.getElementById('vfValorPago'));
+    const custoConsulta = parseBRLInput(document.getElementById('vfCustoConsulta'));
+    data_entrada = new Date().toISOString().slice(0,10);
+    extra = {
+      tipo_consulta: tipoConsulta,
+      valor_pago: valorPago,
+      custo: custoConsulta,
+      lucro: valorPago - custoConsulta,
+      fechado: valorPago,
+      recebido: valorPago,
+      qt: 1
+    };
+  } else if(tipoServico === 'consultoria_rating'){
+    servico = 'Acompanhamento / Rating';
+    data_entrada = parseDateBRtoISO(document.getElementById('vfDataContratacaoCR').value) || new Date().toISOString().slice(0,10);
+    const data_conclusao = parseDateBRtoISO(document.getElementById('vfDataConclusaoCR').value);
+    const fechado = parseBRLInput(document.getElementById('vfFechadoCR'));
+    const recebido = parseBRLInput(document.getElementById('vfRecebidoCR'));
+    const custoOperacional = parseBRLInput(document.getElementById('vfCustoOperacionalCR'));
+    extra = {
+      data_conclusao,
+      fechado,
+      recebido,
+      remanescente: fechado - recebido,
+      custo_operacional: custoOperacional,
+      margem_lucro: recebido - custoOperacional,
+      qt: 1
+    };
+  } else {
+    servico = 'Limpa nome';
+    data_entrada = parseDateBRtoISO(document.getElementById('vfDataContratacaoLN').value) || new Date().toISOString().slice(0,10);
+    const data_envio_lista = parseDateBRtoISO(document.getElementById('vfDataEnvioLN').value);
+    const fechado = parseBRLInput(document.getElementById('vfFechadoLN'));
+    const recebido = parseBRLInput(document.getElementById('vfRecebidoLN'));
+    const notaFiscal = parseBRLInput(document.getElementById('vfNotaFiscalLN'));
+    const taxaInclusao = parseBRLInput(document.getElementById('vfTaxaInclusaoLN'));
+    extra = {
+      data_envio_lista,
+      fechado,
+      recebido,
+      remanescente: fechado - recebido,
+      nota_fiscal: notaFiscal,
+      taxa_inclusao: taxaInclusao,
+      margem_lucro: recebido - notaFiscal - taxaInclusao,
+      razao_social: document.getElementById('vfRazaoSocialLN').value,
+      doc_atendido: document.getElementById('vfDocLN').value,
+      qt: Math.max(1, Math.round(Number(document.getElementById('vfQtLN').value)) || 1)
+    };
+  }
+
   const record = {
     id: 'v_' + Date.now(),
     cliente,
     servico,
-    execucao: document.getElementById('vfExecucao').value,
+    execucao: 'AGUARDANDO INICIO',
     data: {
-      cpf_cnpj,
-      cidade_uf: document.getElementById('vfCidade').value,
-      contato: document.getElementById('vfContato').value,
-      origem: origemValue,
-      informante: document.getElementById('vfOrigemDetalhe').value,
-      parceiro_id: parceiro ? parceiro.id : '',
-      parceiro_nome: parceiro ? parceiro.nome : '',
-      senha_serasa: document.getElementById('vfSenhaSerasa').value,
+      cpf_cnpj: cpf_cliente,
+      whatsapp,
       data_entrada,
-      data_envio_lista,
-      data_conclusao,
-      ordens_servico,
-      fechado,
-      recebido,
-      custo,
-      nota_fiscal: notaFiscal,
-      remanescente: fechado - recebido,
-      lucro: recebido - custo - notaFiscal,
-      qt: Number(document.getElementById('vfQt').value) || 1,
       historico: [],
-      recebimentos: []
+      recebimentos: [],
+      ...extra
     },
     updated_at: new Date().toISOString()
   };
   const { error } = await supabaseClient.from('vendas').insert(record);
   if(error){ console.error(error); alert('Não foi possível salvar a venda agora.'); return; }
   closeVendaForm();
-  if(servico === 'Acompanhamento / Rating'){
-    await promoteToRating({ cliente, cpf_cnpj, data_entrada });
+  if(tipoServico === 'consultoria_rating'){
+    await promoteToRating({
+      cliente, cpf_cnpj: cpf_cliente, data_entrada,
+      valorNegociado: extra.fechado, valorRecebido: extra.recebido, custoOperacional: extra.custo_operacional
+    });
     return;
   }
   vendasIndex = await loadVendas();
@@ -3354,40 +3337,18 @@ document.getElementById('logoutBtn6').addEventListener('click', async ()=>{
 document.getElementById('newVendaBtn').addEventListener('click', ()=>openVendaForm());
 document.getElementById('cancelVendaBtn').addEventListener('click', closeVendaForm);
 document.getElementById('saveVendaBtn').addEventListener('click', createVenda);
-document.getElementById('vfServico').addEventListener('change', ()=>{ updateNotaFiscalVisibility(); recalcVfRemanescente(); });
-['vfFechado','vfRecebido','vfCusto','vfNotaFiscal'].forEach(id=>{
-  document.getElementById(id).addEventListener('blur', (e)=>{ formatBRLFieldOnBlur(e); recalcVfRemanescente(); });
+document.getElementById('vfServico').addEventListener('change', updateServiceStageVisibility);
+['vfValorPago','vfCustoConsulta'].forEach(id=>{
+  document.getElementById(id).addEventListener('blur', (e)=>{ formatBRLFieldOnBlur(e); recalcConsultaLucro(); });
 });
-['vfData','vfDataEnvioLista','vfDataConclusao'].forEach(id=>{
+['vfFechadoCR','vfRecebidoCR','vfCustoOperacionalCR'].forEach(id=>{
+  document.getElementById(id).addEventListener('blur', (e)=>{ formatBRLFieldOnBlur(e); recalcConsultoriaCalc(); });
+});
+['vfFechadoLN','vfRecebidoLN','vfNotaFiscalLN','vfTaxaInclusaoLN'].forEach(id=>{
+  document.getElementById(id).addEventListener('blur', (e)=>{ formatBRLFieldOnBlur(e); recalcLimpaNomeCalc(); });
+});
+['vfDataContratacaoCR','vfDataConclusaoCR','vfDataContratacaoLN','vfDataEnvioLN'].forEach(id=>{
   document.getElementById(id).addEventListener('input', (e)=>{ maskDateInput(e.target); });
-});
-document.getElementById('vfOrigem').addEventListener('change', async (e)=>{
-  const isParceiro = e.target.value === 'Parceiro';
-  document.getElementById('vfParceiroField').style.display = isParceiro ? 'flex' : 'none';
-  if(isParceiro){
-    if(!parceirosIndex.length) parceirosIndex = await loadParceiros();
-    populateParceiroSelect('');
-  }
-});
-document.getElementById('vfParceiro').addEventListener('change', async (e)=>{
-  if(e.target.value !== '__add_new__') return;
-  const nome = prompt('Nome do novo parceiro:');
-  if(nome && nome.trim()){
-    const p = await createParceiro(nome.trim());
-    if(p){
-      parceirosIndex.push(p);
-      parceirosIndex.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
-      populateParceiroSelect(p.id);
-    } else {
-      e.target.value = '';
-    }
-  } else {
-    e.target.value = '';
-  }
-});
-document.getElementById('addOrdemServicoBtn').addEventListener('click', ()=>{
-  vfOrdensServico.push({ razao_social:'', doc:'' });
-  renderVfOrdensServico();
 });
 document.getElementById('vendasSearchInput').addEventListener('input', renderVendasGrid);
 document.getElementById('vendasPeriodFrom').addEventListener('change', (e)=>{
@@ -3420,10 +3381,6 @@ document.querySelectorAll('#vendasPrazoDashboard .stat-card').forEach(el => {
 document.getElementById('logoutBtn2').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
   showLoginView();
-});
-document.querySelector('[data-target="vfSenhaSerasa"]').addEventListener('click', ()=>{
-  const input = document.getElementById('vfSenhaSerasa');
-  input.type = input.type === 'password' ? 'text' : 'password';
 });
 
 function showLoginView(){
