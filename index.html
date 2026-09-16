@@ -591,9 +591,9 @@
           <button type="button" class="btn-select" data-value="NetWorking">NetWorking</button>
         </div>
       </div>
-      <div class="field" id="vfInformanteField" style="display:none;">
-        <label>Indicado por</label>
-        <select id="vfInformante"></select>
+      <div class="field">
+        <label>De onde veio / quem indicou</label>
+        <input type="text" id="vfOrigemDetalhe" placeholder="Ex: Instagram, indicação da Maria...">
       </div>
       <div class="field">
         <label>Serviço contratado</label>
@@ -616,6 +616,8 @@
       <div class="field" id="vfNotaFiscalField" style="display:none;"><label>Nota Fiscal (R$)</label><input type="text" id="vfNotaFiscal" placeholder="R$ 0,00"></div>
       <div class="field" id="vfDataEnvioListaField" style="display:none;"><label>Data de envio da lista</label><input type="date" id="vfDataEnvioLista"></div>
       <div class="field" id="vfDataConclusaoField" style="display:none;"><label>Data de conclusão</label><input type="date" id="vfDataConclusao"></div>
+      <div class="field" id="vfRazaoSocialField" style="display:none;"><label>Razão social (Ordem de Serviço)</label><input type="text" id="vfRazaoSocial"></div>
+      <div class="field" id="vfDocAtendidoField" style="display:none;"><label>CPF ou CNPJ (Ordem de Serviço)</label><input type="text" id="vfDocAtendido"></div>
       <div class="field"><label>Remanescente (R$)</label><input type="text" id="vfRemanescente" placeholder="R$ 0,00" readonly></div>
       <div class="field"><label>Quantidade</label><input type="number" id="vfQt" value="1" min="1"></div>
       <div class="field protected">
@@ -1640,9 +1642,12 @@ function vendaItemHtml(v){
           ${['Indicações','Redes sociais','Ads','NetWorking'].map(o=>`<button type="button" class="btn-select${v.origem===o?' selected':''}" data-value="${o}">${o}</button>`).join('')}
         </div>
       </div>
+      <div class="vfield"><label>De onde veio / quem indicou</label><input type="text" data-field="informante" value="${v.informante||''}" placeholder="Ex: Instagram, indicação da Maria..."></div>
       <div class="vfield"><label>Data da contratação</label><input type="date" data-field="data_entrada" value="${v.data_entrada||''}"></div>
       ${isLimpaNome ? `<div class="vfield"><label>Data de envio da lista</label><input type="date" data-field="data_envio_lista" value="${v.data_envio_lista||''}"></div>` : ''}
       ${isLimpaNome ? `<div class="vfield"><label>Data de conclusão</label><input type="date" data-field="data_conclusao" value="${v.data_conclusao||''}"></div>` : ''}
+      ${isLimpaNome ? `<div class="vfield"><label>Razão social (Ordem de Serviço)</label><input type="text" data-field="razao_social" value="${v.razao_social||''}"></div>` : ''}
+      ${isLimpaNome ? `<div class="vfield"><label>CPF ou CNPJ (Ordem de Serviço)</label><input type="text" data-field="doc_atendido" value="${v.doc_atendido||''}"></div>` : ''}
       <div class="vfield"><label>Fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
       <div class="vfield"><label>Recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
       <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
@@ -1955,36 +1960,8 @@ function updateNotaFiscalVisibility(){
   document.getElementById('vfNotaFiscalField').style.display = isLimpaNome ? 'flex' : 'none';
   document.getElementById('vfDataEnvioListaField').style.display = isLimpaNome ? 'flex' : 'none';
   document.getElementById('vfDataConclusaoField').style.display = isLimpaNome ? 'flex' : 'none';
-}
-
-const INDICADORES_KEY = 'a10:indicadores';
-
-function getIndicadoresList(){
-  let stored = [];
-  try { stored = JSON.parse(localStorage.getItem(INDICADORES_KEY) || '[]'); } catch(e){ stored = []; }
-  const fromVendas = (vendasIndex||[]).map(v=>v.informante).filter(Boolean);
-  const set = new Set([...stored, ...fromVendas]);
-  return Array.from(set).sort((a,b)=>a.localeCompare(b, 'pt-BR'));
-}
-
-function saveIndicador(nome){
-  nome = (nome||'').trim();
-  if(!nome) return;
-  let stored = [];
-  try { stored = JSON.parse(localStorage.getItem(INDICADORES_KEY) || '[]'); } catch(e){ stored = []; }
-  if(!stored.includes(nome)){
-    stored.push(nome);
-    try { localStorage.setItem(INDICADORES_KEY, JSON.stringify(stored)); } catch(e){}
-  }
-}
-
-function populateIndicadorSelect(selectedValue){
-  const sel = document.getElementById('vfInformante');
-  const opts = getIndicadoresList();
-  sel.innerHTML = '<option value="">Selecione...</option>' +
-    opts.map(n=>`<option value="${n}">${n}</option>`).join('') +
-    '<option value="__add_new__">+ Adicionar novo indicador</option>';
-  sel.value = selectedValue && opts.includes(selectedValue) ? selectedValue : '';
+  document.getElementById('vfRazaoSocialField').style.display = isLimpaNome ? 'flex' : 'none';
+  document.getElementById('vfDocAtendidoField').style.display = isLimpaNome ? 'flex' : 'none';
 }
 
 function parseBRLValue(el){
@@ -2007,8 +1984,9 @@ function openVendaForm(prefill){
   document.getElementById('vfCidade').value = '';
   document.getElementById('vfContato').value = '';
   document.querySelectorAll('#vfOrigemGroup .btn-select').forEach(b=>b.classList.remove('selected'));
-  document.getElementById('vfInformanteField').style.display = 'none';
-  populateIndicadorSelect('');
+  document.getElementById('vfOrigemDetalhe').value = '';
+  document.getElementById('vfRazaoSocial').value = '';
+  document.getElementById('vfDocAtendido').value = '';
   document.getElementById('vfServico').value = salesMode === 'limpa_nome' ? 'Limpa nome' : 'Consulta Simples';
   document.getElementById('vfExecucao').value = 'AGUARDANDO INICIO';
   document.getElementById('vfData').value = new Date().toISOString().slice(0,10);
@@ -2039,6 +2017,8 @@ async function createVenda(){
   const notaFiscal = servico === 'Limpa nome' ? parseBRLInput(document.getElementById('vfNotaFiscal')) : 0;
   const data_envio_lista = servico === 'Limpa nome' ? document.getElementById('vfDataEnvioLista').value : '';
   const data_conclusao = servico === 'Limpa nome' ? document.getElementById('vfDataConclusao').value : '';
+  const razao_social = servico === 'Limpa nome' ? document.getElementById('vfRazaoSocial').value : '';
+  const doc_atendido = servico === 'Limpa nome' ? document.getElementById('vfDocAtendido').value : '';
   const origem = document.querySelector('#vfOrigemGroup .btn-select.selected');
   const cpf_cnpj = document.getElementById('vfCpf').value;
   const data_entrada = document.getElementById('vfData').value;
@@ -2052,11 +2032,13 @@ async function createVenda(){
       cidade_uf: document.getElementById('vfCidade').value,
       contato: document.getElementById('vfContato').value,
       origem: origem ? origem.dataset.value : '',
-      informante: document.getElementById('vfInformante').value === '__add_new__' ? '' : document.getElementById('vfInformante').value,
+      informante: document.getElementById('vfOrigemDetalhe').value,
       senha_serasa: document.getElementById('vfSenhaSerasa').value,
       data_entrada,
       data_envio_lista,
       data_conclusao,
+      razao_social,
+      doc_atendido,
       fechado,
       recebido,
       custo,
@@ -3146,19 +3128,6 @@ document.getElementById('vfOrigemGroup').addEventListener('click', (e)=>{
   if(!btn) return;
   document.querySelectorAll('#vfOrigemGroup .btn-select').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
-  const isIndicacao = btn.dataset.value === 'Indicações';
-  document.getElementById('vfInformanteField').style.display = isIndicacao ? 'flex' : 'none';
-  if(isIndicacao) populateIndicadorSelect('');
-});
-document.getElementById('vfInformante').addEventListener('change', (e)=>{
-  if(e.target.value !== '__add_new__') return;
-  const nome = prompt('Nome de quem indicou:');
-  if(nome && nome.trim()){
-    saveIndicador(nome.trim());
-    populateIndicadorSelect(nome.trim());
-  } else {
-    e.target.value = '';
-  }
 });
 document.getElementById('vendasSearchInput').addEventListener('input', renderVendasGrid);
 document.getElementById('vendasPeriodFrom').addEventListener('change', (e)=>{
