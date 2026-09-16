@@ -99,6 +99,8 @@
 
   footer.note{ text-align:center; font-size: 11.5px; color: var(--ink-soft); margin-top: 24px; }
 
+  .field-error-highlight{ border-color: #b23 !important; box-shadow: 0 0 0 2px rgba(178,34,34,0.15); }
+
   .cliente-greeting-row{
     display:flex; align-items:center; justify-content:space-between; margin-bottom: 14px;
     font-size: 13.5px; color: var(--ink);
@@ -290,7 +292,7 @@
           <div class="field">
             <label>Empréstimos</label>
             <select id="emprestimos">
-              <option>Em dia</option>
+              <option>Em dias</option>
               <option>Em atraso</option>
               <option>Quitado</option>
             </select>
@@ -299,7 +301,7 @@
         <div class="field">
           <label>Financiamentos</label>
           <select id="financiamentos">
-            <option>Em dia</option>
+            <option>Em dias</option>
             <option>Em atraso</option>
             <option>Quitado</option>
           </select>
@@ -556,6 +558,18 @@ function isValidEmail(v){
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
+function failField(errEl, fieldId, msg){
+  errEl.textContent = msg;
+  document.querySelectorAll('.field-error-highlight').forEach(el => el.classList.remove('field-error-highlight'));
+  const field = document.getElementById(fieldId);
+  if(field){
+    field.scrollIntoView({behavior:'smooth', block:'center'});
+    field.focus({preventScroll:true});
+    field.classList.add('field-error-highlight');
+    field.addEventListener('input', ()=> field.classList.remove('field-error-highlight'), { once:true });
+  }
+}
+
 document.getElementById('submitBtn').addEventListener('click', async ()=>{
   const errEl = document.getElementById('formError');
   errEl.textContent = '';
@@ -568,12 +582,12 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   const cnpj = document.getElementById('cnpj').value.trim();
   const consentimento = document.getElementById('consentimento').checked;
 
-  if(!nome){ errEl.textContent = 'Informe seu nome completo.'; return; }
-  if((tipoDoc === 'cpf' || tipoDoc === 'ambos') && !cpf){ errEl.textContent = 'Informe seu CPF.'; return; }
-  if((tipoDoc === 'cnpj' || tipoDoc === 'ambos') && !cnpj){ errEl.textContent = 'Informe seu CNPJ.'; return; }
-  if(!contato){ errEl.textContent = 'Informe seu número de contato.'; return; }
-  if(!email || !isValidEmail(email)){ errEl.textContent = 'Informe um e-mail válido.'; return; }
-  if(!consentimento){ errEl.textContent = 'É necessário aceitar os termos para continuar.'; return; }
+  if(!nome){ failField(errEl, 'nome', 'Informe seu nome completo.'); return; }
+  if((tipoDoc === 'cpf' || tipoDoc === 'ambos') && !cpf){ failField(errEl, 'cpf', 'Informe seu CPF.'); return; }
+  if((tipoDoc === 'cnpj' || tipoDoc === 'ambos') && !cnpj){ failField(errEl, 'cnpj', 'Informe seu CNPJ.'); return; }
+  if(!contato){ failField(errEl, 'contato', 'Informe seu número de contato.'); return; }
+  if(!email || !isValidEmail(email)){ failField(errEl, 'email', 'Informe um e-mail válido.'); return; }
+  if(!consentimento){ failField(errEl, 'consentimento', 'É necessário aceitar os termos para continuar.'); return; }
 
   const bancos = Array.from(document.querySelectorAll('[data-banco]:checked')).map(el => el.dataset.banco).concat(extraBancos);
   const produtos = Array.from(document.querySelectorAll('[data-produto]:checked')).map(el => el.dataset.produto);
