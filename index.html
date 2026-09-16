@@ -1736,7 +1736,7 @@ async function promoteToRating(v){
 
 function wireVendaItem(itemEl, v){
   itemEl.querySelectorAll('[data-field]').forEach(input => {
-    if(input.closest('[data-recebimentos-list]')) return;
+    if(input.closest('[data-recebimentos-list]') || input.closest('[data-ordens-list]')) return;
     const field = input.dataset.field;
     if(field === 'servico') return;
     const evt = (input.tagName === 'SELECT') ? 'change' : 'input';
@@ -1745,8 +1745,11 @@ function wireVendaItem(itemEl, v){
       if(field === 'fechado' || field === 'recebido' || field === 'custo' || field === 'nota_fiscal') recalcLucro(v, itemEl);
       saveVenda(v);
       renderVendasDashboard();
-      if(field === 'execucao' || field === 'data_entrada') renderVendasGrid();
+      if(field === 'execucao') renderVendasGrid();
     });
+    if(field === 'data_entrada' && input.type === 'date'){
+      input.addEventListener('change', ()=>{ renderVendasGrid(); });
+    }
   });
   const servicoSelect = itemEl.querySelector('[data-field="servico"]');
   if(servicoSelect){
