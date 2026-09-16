@@ -945,6 +945,9 @@ function parseBRLInput(el){
 function formatBRLFieldOnBlur(e){
   e.target.value = formatBRL(parseBRLValue(e.target));
 }
+function remanescenteOf(v){
+  return (Number(v.fechado)||0) - (Number(v.recebido)||0);
+}
 
 function businessDaysSince(startISO){
   if(!startISO) return 0;
@@ -1577,7 +1580,7 @@ function renderVendasDashboard(){
   getVendasModePeriodItems().forEach(v => {
     fechado += Number(v.fechado)||0;
     recebido += Number(v.recebido)||0;
-    remanescente += Number(v.remanescente)||0;
+    remanescente += remanescenteOf(v);
     lucro += Number(v.lucro)||0;
     qt += Number(v.qt)||0;
     const st = v.execucao || 'Sem status';
@@ -1649,7 +1652,7 @@ function vendaItemHtml(v){
       <div class="vfield"><label>Recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
       <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
       ${isLimpaNome ? `<div class="vfield"><label>Nota Fiscal</label><input type="text" data-field="nota_fiscal" data-money="1" value="${formatBRL(v.nota_fiscal)}"></div>` : ''}
-      <div class="vfield"><label>Remanescente</label><input type="text" data-field="remanescente" data-money="1" value="${formatBRL(v.remanescente)}" readonly></div>
+      <div class="vfield"><label>Remanescente</label><input type="text" data-field="remanescente" data-money="1" value="${formatBRL(remanescenteOf(v))}" readonly></div>
       <div class="vfield"><label>Lucro</label><input type="text" data-field="lucro" data-money="1" value="${formatBRL(v.lucro)}"></div>
       <div class="vfield"><label>Quantidade</label><input type="number" data-field="qt" value="${v.qt||1}" min="1"></div>
       <div class="vfield protected-field">
@@ -1691,12 +1694,11 @@ function vendaItemHtml(v){
 }
 
 function recalcLucro(v, itemEl){
-  const fechado = Number(v.fechado)||0;
   const recebido = Number(v.recebido)||0;
   const custo = Number(v.custo)||0;
   const notaFiscal = Number(v.nota_fiscal)||0;
   v.lucro = recebido - custo - notaFiscal;
-  v.remanescente = fechado - recebido - custo - notaFiscal;
+  v.remanescente = remanescenteOf(v);
   const lucroInput = itemEl.querySelector('[data-field="lucro"]');
   if(lucroInput) lucroInput.value = formatBRL(v.lucro);
   const remInput = itemEl.querySelector('[data-field="remanescente"]');
@@ -1788,7 +1790,7 @@ function wireVendaItem(itemEl, v){
         v.recebido = (Number(v.recebido)||0) - (Number(entry.valor)||0);
         v.recebimentos.splice(idx,1);
         v.lucro = (Number(v.recebido)||0) - (Number(v.custo)||0) - (Number(v.nota_fiscal)||0);
-        v.remanescente = (Number(v.fechado)||0) - (Number(v.recebido)||0) - (Number(v.custo)||0) - (Number(v.nota_fiscal)||0);
+        v.remanescente = remanescenteOf(v);
         saveVenda(v);
         renderVendasDashboard();
         renderVendasGrid();
@@ -1890,7 +1892,7 @@ function renderVendasGrid(){
     const totals = items.reduce((acc,v)=>{
       acc.fechado += Number(v.fechado)||0;
       acc.recebido += Number(v.recebido)||0;
-      acc.remanescente += Number(v.remanescente)||0;
+      acc.remanescente += remanescenteOf(v);
       acc.lucro += Number(v.lucro)||0;
       return acc;
     }, {fechado:0, recebido:0, remanescente:0, lucro:0});
@@ -2039,9 +2041,7 @@ function parseBRLValue(el){
 function recalcVfRemanescente(){
   const fechado = parseBRLValue(document.getElementById('vfFechado'));
   const recebido = parseBRLValue(document.getElementById('vfRecebido'));
-  const custo = parseBRLValue(document.getElementById('vfCusto'));
-  const notaFiscal = document.getElementById('vfServico').value === 'Limpa nome' ? parseBRLValue(document.getElementById('vfNotaFiscal')) : 0;
-  document.getElementById('vfRemanescente').value = formatBRL(fechado - recebido - custo - notaFiscal);
+  document.getElementById('vfRemanescente').value = formatBRL(fechado - recebido);
 }
 
 function openVendaForm(prefill){
@@ -2112,7 +2112,7 @@ async function createVenda(){
       recebido,
       custo,
       nota_fiscal: notaFiscal,
-      remanescente: fechado - recebido - custo - notaFiscal,
+      remanescente: fechado - recebido,
       lucro: recebido - custo - notaFiscal,
       qt: Number(document.getElementById('vfQt').value) || 1,
       historico: [],
