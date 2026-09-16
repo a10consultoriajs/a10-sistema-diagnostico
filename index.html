@@ -187,14 +187,30 @@
 
   <header class="brand">
     <div class="mark"><span class="a10">A10.</span><span class="name">CONSULTORIA</span></div>
-    <div class="tagline">Diagnóstico e acompanhamento de reputação financeira</div>
+    <div class="tagline" id="headerTagline">Diagnóstico e acompanhamento de reputação financeira</div>
   </header>
 
+  <!-- ===================== LOGIN VIEW ===================== -->
+  <div id="loginView" style="display:none; max-width:360px; margin:60px auto; background:var(--paper-panel); border:1px solid var(--line); border-radius:12px; padding:28px;">
+    <h2 style="margin-top:0; font-size:18px;">Entrar no sistema</h2>
+    <div class="field" style="margin-bottom:14px;">
+      <label>E-mail</label>
+      <input type="email" id="loginEmail" placeholder="seu@email.com">
+    </div>
+    <div class="field" style="margin-bottom:14px;">
+      <label>Senha</label>
+      <input type="password" id="loginPassword" placeholder="••••••••">
+    </div>
+    <button class="btn-primary" id="loginBtn" style="width:100%;">Entrar</button>
+    <div id="loginError" style="color:#b23; font-size:12.5px; margin-top:10px; min-height:14px;"></div>
+  </div>
+
   <!-- ===================== LIST VIEW ===================== -->
-  <div id="listView">
+  <div id="listView" style="display:none;">
     <div class="clients-toolbar">
       <input type="text" id="searchInput" placeholder="Buscar cliente por nome...">
       <button class="btn-primary" id="newClientBtn">+ Novo cliente</button>
+      <button class="back-btn" id="logoutBtn" style="margin-bottom:0;">Sair</button>
     </div>
     <div class="client-grid" id="clientGrid"></div>
     <div class="empty-state" id="emptyState" style="display:none;">Nenhum cliente cadastrado ainda. Clique em "+ Novo cliente" para começar.</div>
@@ -322,10 +338,18 @@
     <div class="save-status" id="saveStatus">&nbsp;</div>
   </div>
 
-  <footer class="note">Sistema A10 Consultoria — cada cliente é salvo individualmente neste navegador.</footer>
+  <footer class="note">Sistema A10 Consultoria — dados salvos com segurança no banco de dados da consultoria.</footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ---------- Conexão com o Supabase ---------- */
+const SUPABASE_URL = 'https://zcihwlfmmoodyoiiblmy.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_9MwjPlyox46FIUF4KLTTTA_-tmjae26';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { storage: window.sessionStorage, persistSession: true, autoRefreshToken: true }
+});
+
 const STATUS_CYCLE = ['status-info','status-pending','status-good','status-neutral'];
 const RENDA_OPCOES = ['Autônomo','Empresário','CLT','Servidor público','Aposentado'];
 const INDEX_KEY = 'a10:clientes:index';
@@ -387,48 +411,53 @@ let currentClientId = null;
 let saveTimeout = null;
 
 async function loadIndex(){
-  try{
-    const res = await window.storage.get(INDEX_KEY, false);
-    if(res && res.value) return JSON.parse(res.value);
-  }catch(e){}
-  return [];
-}
-async function saveIndex(){
-  try{ await window.storage.set(INDEX_KEY, JSON.stringify(clientIndex), false); }catch(e){}
+  const { data, error } = await supabaseClient
+    .from('clientes')
+    .select('id, nome, score, rating, updated_at')
+    .order('updated_at', { ascending: false });
+  if(error){ console.error(error); return []; }
+  return (data || []).map(row => ({
+    id: row.id, nome: row.nome, score: row.score, rating: row.rating,
+    updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : 0
+  }));
 }
 
 async function loadClient(id){
-  try{
-    const res = await window.storage.get('a10:cliente:'+id, false);
-    if(res && res.value) return JSON.parse(res.value);
-  }catch(e){}
-  return newClientState();
+  const { data, error } = await supabaseClient
+    .from('clientes')
+    .select('data')
+    .eq('id', id)
+    .single();
+  if(error || !data){ console.error(error); return newClientState(); }
+  return data.data;
 }
 
 async function saveClient(){
   const statusEl = document.getElementById('saveStatus');
   try{
-    await window.storage.set('a10:cliente:'+currentClientId, JSON.stringify(state), false);
-    const entry = clientIndex.find(c => c.id === currentClientId);
-    if(entry){
-      entry.nome = state.clientName || 'Sem nome';
-      entry.score = state.score;
-      entry.rating = state.rating;
-      entry.updatedAt = Date.now();
-    }
-    await saveIndex();
+    const { error } = await supabaseClient.from('clientes').upsert({
+      id: currentClientId,
+      nome: state.clientName || 'Sem nome',
+      score: state.score,
+      rating: state.rating,
+      data: state,
+      updated_at: new Date().toISOString()
+    });
+    if(error) throw error;
     if(statusEl){
       statusEl.textContent = 'Salvo ✓';
       clearTimeout(saveTimeout);
       saveTimeout = setTimeout(()=>{ statusEl.textContent = '\u00A0'; }, 1500);
     }
   }catch(e){
+    console.error(e);
     if(statusEl) statusEl.textContent = 'Não foi possível salvar agora';
   }
 }
 
 /* ---------- View switching ---------- */
-function showListView(){
+async function showListView(){
+  clientIndex = await loadIndex();
   document.getElementById('listView').style.display = 'block';
   document.getElementById('clientView').style.display = 'none';
   renderClientGrid();
@@ -446,16 +475,19 @@ async function openClient(id){
 }
 async function createClient(){
   const id = 'c_' + Date.now();
-  clientIndex.unshift({id, nome:'Novo cliente', score:0, rating:'F', updatedAt: Date.now()});
-  await saveIndex();
+  const blank = newClientState();
+  const { error } = await supabaseClient.from('clientes').insert({
+    id, nome: 'Novo cliente', score: 0, rating: 'F', data: blank, updated_at: new Date().toISOString()
+  });
+  if(error){ console.error(error); alert('Não foi possível criar o cliente agora.'); return; }
   await openClient(id);
 }
 async function deleteClient(id, ev){
   if(ev) ev.stopPropagation();
   if(!confirm('Excluir este cliente e todos os dados dele? Essa ação não pode ser desfeita.')) return;
-  try{ await window.storage.delete('a10:cliente:'+id, false); }catch(e){}
-  clientIndex = clientIndex.filter(c => c.id !== id);
-  await saveIndex();
+  const { error } = await supabaseClient.from('clientes').delete().eq('id', id);
+  if(error){ console.error(error); alert('Não foi possível excluir agora.'); return; }
+  clientIndex = await loadIndex();
   renderClientGrid();
 }
 
@@ -752,10 +784,41 @@ function cycleRating(key){
 document.getElementById('backBtn').addEventListener('click', showListView);
 document.getElementById('newClientBtn').addEventListener('click', createClient);
 document.getElementById('searchInput').addEventListener('input', renderClientGrid);
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  await supabaseClient.auth.signOut();
+  showLoginView();
+});
+
+function showLoginView(){
+  document.getElementById('loginView').style.display = 'block';
+  document.getElementById('listView').style.display = 'none';
+  document.getElementById('clientView').style.display = 'none';
+}
+
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginPassword').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') doLogin(); });
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error){
+    errEl.textContent = 'E-mail ou senha incorretos.';
+    return;
+  }
+  document.getElementById('loginView').style.display = 'none';
+  await showListView();
+}
 
 async function init(){
-  clientIndex = await loadIndex();
-  showListView();
+  const { data } = await supabaseClient.auth.getSession();
+  if(data && data.session){
+    await showListView();
+  } else {
+    showLoginView();
+  }
 }
 init();
 </script>
