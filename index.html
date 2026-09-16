@@ -609,13 +609,13 @@
           <option>ENTREGUE</option><option>A10 INICIADO</option><option>CONCLUIDO</option>
         </select>
       </div>
-      <div class="field"><label>Data da contratação</label><input type="date" id="vfData"></div>
+      <div class="field"><label>Data da contratação</label><input type="text" inputmode="numeric" id="vfData" placeholder="DD/MM/AAAA" maxlength="10"></div>
       <div class="field"><label>Fechado (R$)</label><input type="text" id="vfFechado" placeholder="R$ 0,00"></div>
       <div class="field"><label>Recebido (R$)</label><input type="text" id="vfRecebido" placeholder="R$ 0,00"></div>
       <div class="field"><label>Custo (R$)</label><input type="text" id="vfCusto" placeholder="R$ 0,00"></div>
       <div class="field" id="vfNotaFiscalField" style="display:none;"><label>Nota Fiscal (R$)</label><input type="text" id="vfNotaFiscal" placeholder="R$ 0,00"></div>
-      <div class="field" id="vfDataEnvioListaField" style="display:none;"><label>Data de envio da lista</label><input type="date" id="vfDataEnvioLista"></div>
-      <div class="field" id="vfDataConclusaoField" style="display:none;"><label>Data de conclusão</label><input type="date" id="vfDataConclusao"></div>
+      <div class="field" id="vfDataEnvioListaField" style="display:none;"><label>Data de envio da lista</label><input type="text" inputmode="numeric" id="vfDataEnvioLista" placeholder="DD/MM/AAAA" maxlength="10"></div>
+      <div class="field" id="vfDataConclusaoField" style="display:none;"><label>Data de conclusão</label><input type="text" inputmode="numeric" id="vfDataConclusao" placeholder="DD/MM/AAAA" maxlength="10"></div>
       <div class="field" id="vfRazaoSocialField" style="display:none;"><label>Razão social (Ordem de Serviço)</label><input type="text" id="vfRazaoSocial"></div>
       <div class="field" id="vfDocAtendidoField" style="display:none;"><label>CPF ou CNPJ (Ordem de Serviço)</label><input type="text" id="vfDocAtendido"></div>
       <div class="field"><label>Remanescente (R$)</label><input type="text" id="vfRemanescente" placeholder="R$ 0,00" readonly></div>
@@ -1516,9 +1516,22 @@ function moneyBRL(n){ return (Number(n)||0).toLocaleString('pt-BR', {style:'curr
 
 function formatDateBR(iso){
   if(!iso) return '';
-  const d = new Date(iso + 'T00:00:00');
-  if(isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('pt-BR');
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if(!m) return '';
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+function parseDateBRtoISO(br){
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((br||'').trim());
+  if(!m) return '';
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
+function maskDateInput(el){
+  const digits = el.value.replace(/\D/g,'').slice(0,8);
+  if(digits.length > 4) el.value = digits.slice(0,2) + '/' + digits.slice(2,4) + '/' + digits.slice(4);
+  else if(digits.length > 2) el.value = digits.slice(0,2) + '/' + digits.slice(2);
+  else el.value = digits;
 }
 
 function getPrazoStatus(v){
@@ -1643,9 +1656,9 @@ function vendaItemHtml(v){
         </div>
       </div>
       <div class="vfield"><label>De onde veio / quem indicou</label><input type="text" data-field="informante" value="${v.informante||''}" placeholder="Ex: Instagram, indicação da Maria..."></div>
-      <div class="vfield"><label>Data da contratação</label><input type="date" data-field="data_entrada" value="${v.data_entrada||''}"></div>
-      ${isLimpaNome ? `<div class="vfield"><label>Data de envio da lista</label><input type="date" data-field="data_envio_lista" value="${v.data_envio_lista||''}"></div>` : ''}
-      ${isLimpaNome ? `<div class="vfield"><label>Data de conclusão</label><input type="date" data-field="data_conclusao" value="${v.data_conclusao||''}"></div>` : ''}
+      <div class="vfield"><label>Data da contratação</label><input type="text" inputmode="numeric" data-field="data_entrada" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_entrada)}"></div>
+      ${isLimpaNome ? `<div class="vfield"><label>Data de envio da lista</label><input type="text" inputmode="numeric" data-field="data_envio_lista" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_envio_lista)}"></div>` : ''}
+      ${isLimpaNome ? `<div class="vfield"><label>Data de conclusão</label><input type="text" inputmode="numeric" data-field="data_conclusao" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_conclusao)}"></div>` : ''}
       ${isLimpaNome ? `<div class="vfield"><label>Razão social (Ordem de Serviço)</label><input type="text" data-field="razao_social" value="${v.razao_social||''}"></div>` : ''}
       ${isLimpaNome ? `<div class="vfield"><label>CPF ou CNPJ (Ordem de Serviço)</label><input type="text" data-field="doc_atendido" value="${v.doc_atendido||''}"></div>` : ''}
       <div class="vfield"><label>Fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
@@ -1732,15 +1745,19 @@ function wireVendaItem(itemEl, v){
     if(field === 'servico') return;
     const evt = (input.tagName === 'SELECT') ? 'change' : 'input';
     input.addEventListener(evt, (e)=>{
-      v[field] = input.dataset.money ? parseBRLInput(e.target) : e.target.value;
+      if(input.dataset.date){
+        maskDateInput(e.target);
+        const iso = parseDateBRtoISO(e.target.value);
+        if(!iso) return;
+        v[field] = iso;
+      } else {
+        v[field] = input.dataset.money ? parseBRLInput(e.target) : e.target.value;
+      }
       if(field === 'fechado' || field === 'recebido' || field === 'custo' || field === 'nota_fiscal') recalcLucro(v, itemEl);
       saveVenda(v);
       renderVendasDashboard();
-      if(field === 'execucao') renderVendasGrid();
+      if(field === 'execucao' || (field === 'data_entrada' && input.dataset.date)) renderVendasGrid();
     });
-    if(field === 'data_entrada' && input.type === 'date'){
-      input.addEventListener('blur', ()=>{ renderVendasGrid(); });
-    }
   });
   const servicoSelect = itemEl.querySelector('[data-field="servico"]');
   if(servicoSelect){
@@ -1989,7 +2006,7 @@ function openVendaForm(prefill){
   document.getElementById('vfDocAtendido').value = '';
   document.getElementById('vfServico').value = salesMode === 'limpa_nome' ? 'Limpa nome' : 'Consulta Simples';
   document.getElementById('vfExecucao').value = 'AGUARDANDO INICIO';
-  document.getElementById('vfData').value = new Date().toISOString().slice(0,10);
+  document.getElementById('vfData').value = formatDateBR(new Date().toISOString().slice(0,10));
   document.getElementById('vfFechado').value = formatBRL(0);
   document.getElementById('vfRecebido').value = formatBRL(0);
   document.getElementById('vfCusto').value = formatBRL(0);
@@ -2015,13 +2032,13 @@ async function createVenda(){
   const recebido = parseBRLInput(document.getElementById('vfRecebido'));
   const custo = parseBRLInput(document.getElementById('vfCusto'));
   const notaFiscal = servico === 'Limpa nome' ? parseBRLInput(document.getElementById('vfNotaFiscal')) : 0;
-  const data_envio_lista = servico === 'Limpa nome' ? document.getElementById('vfDataEnvioLista').value : '';
-  const data_conclusao = servico === 'Limpa nome' ? document.getElementById('vfDataConclusao').value : '';
+  const data_envio_lista = servico === 'Limpa nome' ? parseDateBRtoISO(document.getElementById('vfDataEnvioLista').value) : '';
+  const data_conclusao = servico === 'Limpa nome' ? parseDateBRtoISO(document.getElementById('vfDataConclusao').value) : '';
   const razao_social = servico === 'Limpa nome' ? document.getElementById('vfRazaoSocial').value : '';
   const doc_atendido = servico === 'Limpa nome' ? document.getElementById('vfDocAtendido').value : '';
   const origem = document.querySelector('#vfOrigemGroup .btn-select.selected');
   const cpf_cnpj = document.getElementById('vfCpf').value;
-  const data_entrada = document.getElementById('vfData').value;
+  const data_entrada = parseDateBRtoISO(document.getElementById('vfData').value);
   const record = {
     id: 'v_' + Date.now(),
     cliente,
@@ -3122,6 +3139,9 @@ document.getElementById('saveVendaBtn').addEventListener('click', createVenda);
 document.getElementById('vfServico').addEventListener('change', ()=>{ updateNotaFiscalVisibility(); recalcVfRemanescente(); });
 ['vfFechado','vfRecebido','vfCusto','vfNotaFiscal'].forEach(id=>{
   document.getElementById(id).addEventListener('blur', (e)=>{ formatBRLFieldOnBlur(e); recalcVfRemanescente(); });
+});
+['vfData','vfDataEnvioLista','vfDataConclusao'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', (e)=>{ maskDateInput(e.target); });
 });
 document.getElementById('vfOrigemGroup').addEventListener('click', (e)=>{
   const btn = e.target.closest('.btn-select');
