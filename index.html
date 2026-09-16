@@ -593,8 +593,9 @@
       <div class="field"><label>Recebido (R$)</label><input type="text" id="vfRecebido" placeholder="R$ 0,00"></div>
       <div class="field"><label>Custo (R$)</label><input type="text" id="vfCusto" placeholder="R$ 0,00"></div>
       <div class="field" id="vfNotaFiscalField" style="display:none;"><label>Nota Fiscal (R$)</label><input type="text" id="vfNotaFiscal" placeholder="R$ 0,00"></div>
-      <div class="field" id="vfListaField" style="display:none;"><label>Lista</label><input type="text" id="vfLista" placeholder="Ex: Lista 15/05"></div>
-      <div class="field" id="vfListaDataField" style="display:none;"><label>Data de envio da lista</label><input type="date" id="vfListaData"></div>
+      <div class="field" id="vfDataPagamentoField" style="display:none;"><label>Data de pagamento</label><input type="date" id="vfDataPagamento"></div>
+      <div class="field" id="vfDataEnvioListaField" style="display:none;"><label>Data de envio da lista</label><input type="date" id="vfDataEnvioLista"></div>
+      <div class="field" id="vfDataConclusaoField" style="display:none;"><label>Data de conclusão</label><input type="date" id="vfDataConclusao"></div>
       <div class="field"><label>Falta (R$)</label><input type="text" id="vfFalta" placeholder="R$ 0,00"></div>
       <div class="field"><label>Quantidade</label><input type="number" id="vfQt" value="1" min="1"></div>
       <div class="field protected">
@@ -1610,8 +1611,9 @@ function vendaItemHtml(v){
       <div class="vfield"><label>Origem</label><input type="text" data-field="origem" value="${v.origem||''}"></div>
       <div class="vfield"><label>Data entrada</label><input type="date" data-field="data_entrada" value="${v.data_entrada||''}"></div>
       <div class="vfield"><label>Início</label><input type="date" data-field="inicio" value="${v.inicio||''}"></div>
-      ${isLimpaNome ? `<div class="vfield"><label>Lista</label><input type="text" data-field="lista" placeholder="Ex: Lista 15/05" value="${v.lista||''}"></div>` : ''}
-      ${isLimpaNome ? `<div class="vfield"><label>Data de envio da lista</label><input type="date" data-field="lista_data" value="${v.lista_data||''}"></div>` : ''}
+      ${isLimpaNome ? `<div class="vfield"><label>Data de pagamento</label><input type="date" data-field="data_pagamento" value="${v.data_pagamento||''}"></div>` : ''}
+      ${isLimpaNome ? `<div class="vfield"><label>Data de envio da lista</label><input type="date" data-field="data_envio_lista" value="${v.data_envio_lista||''}"></div>` : ''}
+      ${isLimpaNome ? `<div class="vfield"><label>Data de conclusão</label><input type="date" data-field="data_conclusao" value="${v.data_conclusao||''}"></div>` : ''}
       <div class="vfield"><label>Fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
       <div class="vfield"><label>Recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
       <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
@@ -1882,8 +1884,9 @@ async function deleteVenda(id){
 function updateNotaFiscalVisibility(){
   const isLimpaNome = document.getElementById('vfServico').value === 'Limpa nome';
   document.getElementById('vfNotaFiscalField').style.display = isLimpaNome ? 'flex' : 'none';
-  document.getElementById('vfListaField').style.display = isLimpaNome ? 'flex' : 'none';
-  document.getElementById('vfListaDataField').style.display = isLimpaNome ? 'flex' : 'none';
+  document.getElementById('vfDataPagamentoField').style.display = isLimpaNome ? 'flex' : 'none';
+  document.getElementById('vfDataEnvioListaField').style.display = isLimpaNome ? 'flex' : 'none';
+  document.getElementById('vfDataConclusaoField').style.display = isLimpaNome ? 'flex' : 'none';
 }
 
 function openVendaForm(prefill){
@@ -1903,8 +1906,9 @@ function openVendaForm(prefill){
   document.getElementById('vfRecebido').value = formatBRL(0);
   document.getElementById('vfCusto').value = formatBRL(0);
   document.getElementById('vfNotaFiscal').value = formatBRL(0);
-  document.getElementById('vfLista').value = '';
-  document.getElementById('vfListaData').value = '';
+  document.getElementById('vfDataPagamento').value = '';
+  document.getElementById('vfDataEnvioLista').value = '';
+  document.getElementById('vfDataConclusao').value = '';
   document.getElementById('vfFalta').value = formatBRL(0);
   document.getElementById('vfQt').value = 1;
   document.getElementById('vfSenhaSerasa').value = '';
@@ -1923,8 +1927,9 @@ async function createVenda(){
   const recebido = parseBRLInput(document.getElementById('vfRecebido'));
   const custo = parseBRLInput(document.getElementById('vfCusto'));
   const notaFiscal = servico === 'Limpa nome' ? parseBRLInput(document.getElementById('vfNotaFiscal')) : 0;
-  const lista = servico === 'Limpa nome' ? document.getElementById('vfLista').value.trim() : '';
-  const lista_data = servico === 'Limpa nome' ? document.getElementById('vfListaData').value : '';
+  const data_pagamento = servico === 'Limpa nome' ? document.getElementById('vfDataPagamento').value : '';
+  const data_envio_lista = servico === 'Limpa nome' ? document.getElementById('vfDataEnvioLista').value : '';
+  const data_conclusao = servico === 'Limpa nome' ? document.getElementById('vfDataConclusao').value : '';
   const cpf_cnpj = document.getElementById('vfCpf').value;
   const data_entrada = document.getElementById('vfData').value;
   const record = {
@@ -1941,8 +1946,9 @@ async function createVenda(){
       senha_serasa: document.getElementById('vfSenhaSerasa').value,
       data_entrada,
       inicio: document.getElementById('vfInicio').value,
-      lista,
-      lista_data,
+      data_pagamento,
+      data_envio_lista,
+      data_conclusao,
       fechado: parseBRLInput(document.getElementById('vfFechado')),
       recebido,
       custo,
