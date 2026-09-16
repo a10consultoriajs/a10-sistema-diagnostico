@@ -418,6 +418,7 @@
     <button type="button" class="view-tab" id="tabLimpaNome" data-view="limpa_nome">🧾 Limpa Nome</button>
     <button type="button" class="view-tab" id="tabConsultas" data-view="consultas">🔍 Consultas realizadas</button>
     <button type="button" class="view-tab" id="tabIdeias" data-view="ideias">💡 Ateliê de Ideias</button>
+    <button type="button" class="view-tab" id="tabCadastros" data-view="cadastros">📋 Cadastros recebidos</button>
   </div>
 
   <!-- ===================== LOGIN VIEW ===================== -->
@@ -713,6 +714,21 @@
   </div>
 
   <div id="ideiaToast" class="ideia-toast" style="display:none;"></div>
+
+  <!-- ===================== CADASTROS RECEBIDOS ===================== -->
+  <div id="cadastrosView" style="display:none;">
+    <div class="dashboard" id="cadastrosDashboard">
+      <div class="stat-card" style="cursor:default;"><div class="stat-value" id="cadTotalNovos">0</div><div class="stat-label">Novos</div></div>
+      <div class="stat-card" style="cursor:default;"><div class="stat-value" id="cadTotalAnalise">0</div><div class="stat-label">Em análise</div></div>
+      <div class="stat-card" style="cursor:default;"><div class="stat-value" id="cadTotalConcluidos">0</div><div class="stat-label">Concluídos</div></div>
+    </div>
+    <div class="clients-toolbar">
+      <input type="text" id="cadastrosSearchInput" placeholder="Buscar por nome...">
+      <button class="back-btn" id="logoutBtn5" style="margin-bottom:0;">Sair</button>
+    </div>
+    <div id="cadastrosGrid"></div>
+    <div class="empty-state" id="cadastrosEmptyState" style="display:none;">Nenhum cadastro recebido ainda. Envie o link do formulário para seus clientes.</div>
+  </div>
 
   <!-- ===================== CLIENT VIEW ===================== -->
   <div id="clientView" style="display:none;">
@@ -1028,6 +1044,7 @@ function deactivateAllTabs(){
   document.getElementById('tabLimpaNome').classList.remove('active');
   document.getElementById('tabConsultas').classList.remove('active');
   document.getElementById('tabIdeias').classList.remove('active');
+  document.getElementById('tabCadastros').classList.remove('active');
 }
 function hideAllViews(){
   document.getElementById('overviewView').style.display = 'none';
@@ -1035,6 +1052,7 @@ function hideAllViews(){
   document.getElementById('clientView').style.display = 'none';
   document.getElementById('salesView').style.display = 'none';
   document.getElementById('ideiasView').style.display = 'none';
+  document.getElementById('cadastrosView').style.display = 'none';
 }
 
 async function showListView(){
@@ -2141,6 +2159,176 @@ async function createIdeia(){
   renderIdeias();
 }
 
+/* ==================== CADASTROS RECEBIDOS (formulário público) ==================== */
+let cadastrosIndex = [];
+let cadastrosExpanded = new Set();
+
+async function loadCadastros(){
+  const { data, error } = await supabaseClient.from('cadastros_clientes').select('*').order('criado_em', { ascending:false });
+  if(error){ console.error(error); return []; }
+  return data || [];
+}
+
+async function showCadastrosView(){
+  deactivateAllTabs();
+  document.getElementById('tabCadastros').classList.add('active');
+  document.getElementById('viewTabs').style.display = 'flex';
+  hideAllViews();
+  document.getElementById('cadastrosView').style.display = 'block';
+  cadastrosIndex = await loadCadastros();
+  renderCadastrosGrid();
+}
+
+function renderCadastrosDashboard(){
+  document.getElementById('cadTotalNovos').textContent = cadastrosIndex.filter(c=>c.status==='novo').length;
+  document.getElementById('cadTotalAnalise').textContent = cadastrosIndex.filter(c=>c.status==='em_analise').length;
+  document.getElementById('cadTotalConcluidos').textContent = cadastrosIndex.filter(c=>c.status==='concluido').length;
+}
+
+function cadastroDetailHtml(c){
+  const bancos = (c.bancos||[]).join(', ') || '—';
+  const produtos = (c.produtos_bancarios||[]).join(', ') || '—';
+  return `
+    <div class="vfields">
+      <div class="vfield"><label>CPF</label><input type="text" value="${c.cpf||'—'}" disabled></div>
+      <div class="vfield"><label>CNPJ</label><input type="text" value="${c.cnpj||'—'}" disabled></div>
+      <div class="vfield"><label>Contato</label><input type="text" value="${c.contato||''}" disabled></div>
+      <div class="vfield"><label>E-mail</label><input type="text" value="${c.email||''}" disabled></div>
+      <div class="vfield"><label>Profissão</label><input type="text" value="${c.profissao||''}" disabled></div>
+      <div class="vfield"><label>Valor declarado</label><input type="text" value="${moneyBRL(c.valor_declarado)}" disabled></div>
+      <div class="vfield"><label>Telefonia</label><input type="text" value="${c.telefonia||''}" disabled></div>
+      <div class="vfield"><label>Empréstimos</label><input type="text" value="${c.emprestimos||''}" disabled></div>
+      <div class="vfield"><label>Financiamentos</label><input type="text" value="${c.financiamentos||''}" disabled></div>
+      <div class="vfield"><label>Crediário</label><input type="text" value="${c.crediario ? ('Sim'+(c.crediario_detalhe?' — '+c.crediario_detalhe:'')) : 'Não'}" disabled></div>
+      <div class="vfield"><label>Boletos</label><input type="text" value="${c.boletos ? ('Sim'+(c.boletos_detalhe?' — '+c.boletos_detalhe:'')) : 'Não'}" disabled></div>
+    </div>
+    <div class="credit-section-label">Bancos com movimentação</div>
+    <div style="font-size:13px; padding: 4px 0 10px;">${bancos}</div>
+    <div class="credit-section-label">Produtos bancários</div>
+    <div style="font-size:13px; padding: 4px 0 10px;">${produtos}</div>
+    <div class="credit-section-label">Credenciais</div>
+    <div class="vfields" style="margin-top:6px;">
+      <div class="vfield">
+        <label>Senha Serasa</label>
+        <div style="display:flex; gap:6px;">
+          <input type="text" data-senha-display="serasa" value="${c.senha_serasa_enc ? '••••••••' : '(vazio)'}" disabled style="flex:1;">
+          ${c.senha_serasa_enc ? `<button type="button" class="eye-btn reveal-senha-btn" data-campo="serasa">👁</button>` : ''}
+        </div>
+      </div>
+      <div class="vfield">
+        <label>Senha BACEN</label>
+        <div style="display:flex; gap:6px;">
+          <input type="text" data-senha-display="bacen" value="${c.senha_bacen_enc ? '••••••••' : '(vazio)'}" disabled style="flex:1;">
+          ${c.senha_bacen_enc ? `<button type="button" class="eye-btn reveal-senha-btn" data-campo="bacen">👁</button>` : ''}
+        </div>
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:14px; justify-content:flex-start; gap:10px; flex-wrap:wrap;">
+      <select class="status-select">
+        <option value="novo" ${c.status==='novo'?'selected':''}>Novo</option>
+        <option value="em_analise" ${c.status==='em_analise'?'selected':''}>Em análise</option>
+        <option value="concluido" ${c.status==='concluido'?'selected':''}>Concluído</option>
+      </select>
+      <button type="button" class="back-btn apagar-credenciais-btn">Apagar credenciais</button>
+      <button type="button" class="back-btn del-cadastro-btn">Excluir cadastro</button>
+    </div>
+  `;
+}
+
+function wireCadastroCard(body, c){
+  body.querySelectorAll('.reveal-senha-btn').forEach(btn => {
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const campo = btn.dataset.campo;
+      const { data, error } = await supabaseClient.rpc('revelar_senha_cadastro', { p_id: c.id, p_campo: campo });
+      if(error){ console.error(error); alert('Não foi possível revelar a senha agora.'); return; }
+      const input = body.querySelector(`[data-senha-display="${campo}"]`);
+      if(input) input.value = data || '(vazio)';
+    });
+  });
+  const statusSel = body.querySelector('.status-select');
+  if(statusSel){
+    statusSel.addEventListener('click', e=>e.stopPropagation());
+    statusSel.addEventListener('change', async (e)=>{
+      c.status = e.target.value;
+      const { error } = await supabaseClient.from('cadastros_clientes').update({ status: c.status }).eq('id', c.id);
+      if(error) console.error(error);
+      renderCadastrosGrid();
+    });
+  }
+  const apagarBtn = body.querySelector('.apagar-credenciais-btn');
+  if(apagarBtn){
+    apagarBtn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      if(!confirm('Apagar as credenciais (Serasa/BACEN) deste cadastro? Essa ação não pode ser desfeita.')) return;
+      const { error } = await supabaseClient.rpc('apagar_credenciais_cadastro', { p_id: c.id });
+      if(error){ console.error(error); alert('Não foi possível apagar agora.'); return; }
+      cadastrosIndex = await loadCadastros();
+      renderCadastrosGrid();
+    });
+  }
+  const delBtn = body.querySelector('.del-cadastro-btn');
+  if(delBtn){
+    delBtn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      if(!confirm('Excluir este cadastro definitivamente?')) return;
+      const { error } = await supabaseClient.from('cadastros_clientes').delete().eq('id', c.id);
+      if(error){ console.error(error); alert('Não foi possível excluir agora.'); return; }
+      cadastrosIndex = cadastrosIndex.filter(x => x.id !== c.id);
+      renderCadastrosGrid();
+    });
+  }
+}
+
+function renderCadastrosGrid(){
+  renderCadastrosDashboard();
+  const grid = document.getElementById('cadastrosGrid');
+  const empty = document.getElementById('cadastrosEmptyState');
+  const q = (document.getElementById('cadastrosSearchInput').value || '').toLowerCase();
+  const filtered = cadastrosIndex.filter(c => (c.nome||'').toLowerCase().includes(q));
+  grid.innerHTML = '';
+  if(cadastrosIndex.length === 0){
+    empty.textContent = 'Nenhum cadastro recebido ainda. Envie o link do formulário para seus clientes.';
+    empty.style.display = 'block';
+    return;
+  }
+  if(filtered.length === 0){
+    empty.textContent = 'Nenhum cadastro encontrado para essa busca.';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  filtered.forEach(c => {
+    const isOpen = cadastrosExpanded.has(c.id);
+    const wrap = document.createElement('div');
+    wrap.className = 'venda-group' + (isOpen ? ' open' : '');
+    const statusLabel = c.status === 'novo' ? 'Novo' : c.status === 'em_analise' ? 'Em análise' : 'Concluído';
+    const statusBadge = c.status === 'novo' ? 'svc-atraso' : c.status === 'em_analise' ? 'svc-andamento' : 'svc-concluido';
+    wrap.innerHTML = `
+      <div class="venda-group-head">
+        <div>
+          <div class="vg-name">${c.nome || 'Sem nome'}</div>
+          <div class="vg-sub">${c.contato || ''} · Recebido em ${formatDateBR((c.criado_em||'').slice(0,10))}</div>
+        </div>
+        <div class="venda-group-totals">
+          <span class="svc-badge ${statusBadge}">${statusLabel}</span>
+        </div>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="venda-group-body"></div>
+    `;
+    const body = wrap.querySelector('.venda-group-body');
+    body.innerHTML = cadastroDetailHtml(c);
+    wireCadastroCard(body, c);
+    wrap.querySelector('.venda-group-head').addEventListener('click', ()=>{
+      if(cadastrosExpanded.has(c.id)) cadastrosExpanded.delete(c.id); else cadastrosExpanded.add(c.id);
+      renderCadastrosGrid();
+    });
+    grid.appendChild(wrap);
+  });
+}
+
 /* ---------- Board rendering (same behavior as before, now per-client) ---------- */
 function renderIncomeItem(item){
   const opts = RENDA_OPCOES.map(o => `<option ${o===item.fonte?'selected':''}>${o}</option>`).join('');
@@ -2788,6 +2976,12 @@ document.getElementById('cancelIdeiaBtn').addEventListener('click', closeIdeiaMo
 document.getElementById('saveIdeiaBtn').addEventListener('click', createIdeia);
 document.getElementById('ideiaModalOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'ideiaModalOverlay') closeIdeiaModal(); });
 document.getElementById('logoutBtn4').addEventListener('click', async ()=>{
+  await supabaseClient.auth.signOut();
+  showLoginView();
+});
+document.getElementById('tabCadastros').addEventListener('click', showCadastrosView);
+document.getElementById('cadastrosSearchInput').addEventListener('input', renderCadastrosGrid);
+document.getElementById('logoutBtn5').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
   showLoginView();
 });

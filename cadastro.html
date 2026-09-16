@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastro para Diagnóstico Financeiro — A10 Consultoria</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root{
+    --navy: #0B2A4A; --navy-deep: #071b30; --gold: #C9A227; --gold-soft: #E6C766;
+    --paper: #F6F4EE; --paper-panel: #FFFFFF; --ink: #16202B; --ink-soft: #57626F; --line: #E1DCCF;
+    --good: #3B8F6D; --good-bg: #E1F1E9;
+  }
+  *{ box-sizing: border-box; }
+  body{ margin:0; background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.5; }
+  h1,h2,h3{ font-family: 'Fraunces', serif; font-weight: 600; letter-spacing: -0.01em; }
+  .app{ max-width: 720px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  header.brand{
+    background: linear-gradient(120deg, var(--navy-deep), var(--navy) 70%);
+    border-radius: 14px; padding: 26px 28px; color: #fff; margin-bottom: 18px;
+  }
+  header.brand .mark{ display:flex; align-items:baseline; gap:10px; margin-bottom: 10px; }
+  header.brand .mark .a10{ font-family:'Fraunces',serif; font-size: 26px; font-weight:700; color: var(--gold-soft); }
+  header.brand .mark .name{ font-size: 13px; letter-spacing: 0.06em; color: #d9e2ec; }
+  header.brand h1{ margin: 0 0 8px; font-size: 22px; color:#fff; }
+  header.brand .subtitle{ font-size: 13.5px; color:#c4d1de; font-style: italic; max-width: 520px; }
+
+  .confidential-note{
+    background: linear-gradient(160deg, #fff8e8, #fdf1d3); border: 1px solid var(--gold-soft);
+    border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #6b551a; margin-bottom: 22px;
+  }
+
+  section.form-section{
+    background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 22px; margin-bottom: 18px;
+  }
+  section.form-section h2{ font-size: 17px; margin: 0 0 4px; }
+  section.form-section .section-intro{ font-size: 13px; color: var(--ink-soft); margin-bottom: 16px; }
+
+  .field{ display:flex; flex-direction:column; gap:5px; margin-bottom: 14px; }
+  .field label{ font-size: 12px; font-weight: 500; color: var(--ink); }
+  .field .hint{ font-size: 11px; color: var(--ink-soft); }
+  .field input[type=text], .field input[type=email], .field input[type=password], .field input[type=tel], .field select, .field textarea{
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+    font-family: inherit; font-size: 14px; background: var(--paper); color: var(--ink); width: 100%;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline: none; border-color: var(--navy); }
+  .row-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px){ .row-2{ grid-template-columns: 1fr; } }
+
+  .pill-toggle{ display:flex; gap:8px; flex-wrap: wrap; }
+  .pill-btn{
+    border: 1px solid var(--line); background: var(--paper); border-radius: 20px; padding: 8px 16px;
+    font-size: 13px; font-family: inherit; color: var(--ink-soft); cursor:pointer;
+  }
+  .pill-btn.active{ background: var(--navy); border-color: var(--navy); color:#fff; }
+
+  .checkbox-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+  @media (max-width: 560px){ .checkbox-grid{ grid-template-columns: 1fr; } }
+  .checkbox-row{ display:flex; align-items:center; gap: 8px; font-size: 13.5px; }
+  .checkbox-row input{ width:16px; height:16px; accent-color: var(--navy); flex-shrink:0; }
+  .add-bank-row{ display:flex; gap:8px; margin-top: 10px; }
+  .add-bank-row input{ flex:1; }
+  .add-bank-btn{
+    border: 1px dashed var(--line); background:none; border-radius: 8px; padding: 8px 12px;
+    font-size: 12.5px; color: var(--ink-soft); cursor:pointer; white-space: nowrap;
+  }
+  .extra-bank-tag{
+    display:inline-flex; align-items:center; gap:6px; background: var(--paper); border:1px solid var(--line);
+    border-radius: 20px; padding: 5px 10px; font-size: 12.5px; margin: 4px 6px 0 0;
+  }
+  .extra-bank-tag button{ border:none; background:none; color: var(--ink-soft); cursor:pointer; font-size: 12px; padding:0; }
+
+  .conditional-field{ margin-top: 8px; padding-left: 4px; border-left: 2px solid var(--line); padding-left: 12px; }
+
+  .password-row{ display:flex; gap:8px; }
+  .password-row input{ flex:1; }
+  .eye-btn{ border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 0 12px; cursor: pointer; font-size: 14px; flex-shrink:0; }
+
+  .consent-row{ display:flex; align-items:flex-start; gap: 10px; margin: 20px 0; font-size: 13px; color: var(--ink); }
+  .consent-row input{ width:17px; height:17px; accent-color: var(--navy); margin-top: 2px; flex-shrink:0; }
+
+  .btn-primary{
+    background: var(--navy); color:#fff; border:none; border-radius: 9px; padding: 13px 22px;
+    font-size: 14.5px; font-weight:500; cursor:pointer; width: 100%;
+  }
+  .btn-primary:hover{ background: var(--navy-deep); }
+  .btn-primary:disabled{ opacity: 0.55; cursor: not-allowed; }
+
+  .form-error{ color:#b23; font-size: 12.5px; margin-top: 10px; min-height: 14px; }
+
+  .success-box{
+    background: var(--good-bg); border: 1px solid var(--good); border-radius: 12px;
+    padding: 28px 24px; text-align:center; color:#1d4a35;
+  }
+  .success-box .big{ font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+
+  footer.note{ text-align:center; font-size: 11.5px; color: var(--ink-soft); margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="brand">
+    <div class="mark"><span class="a10">A10</span><span class="name">CONSULTORIA</span></div>
+    <h1>Cadastro para Diagnóstico Financeiro</h1>
+    <div class="subtitle">Preencha com atenção. Essas informações são a base do seu diagnóstico e são tratadas com total sigilo.</div>
+  </header>
+
+  <div class="confidential-note">🔒 Seus dados são confidenciais e utilizados exclusivamente para a elaboração do seu diagnóstico financeiro pela A10 Consultoria.</div>
+
+  <div id="formWrap">
+    <form id="cadastroForm">
+
+      <section class="form-section">
+        <h2>1. Dados Pessoais</h2>
+        <div class="section-intro">Vamos começar com o básico.</div>
+
+        <div class="field">
+          <label>Nome completo</label>
+          <input type="text" id="nome" placeholder="Digite seu nome completo" required>
+        </div>
+
+        <div class="field">
+          <label>Documento</label>
+          <div class="pill-toggle" id="tipoDocToggle">
+            <button type="button" class="pill-btn active" data-val="cpf">Pessoa Física (CPF)</button>
+            <button type="button" class="pill-btn" data-val="cnpj">Pessoa Jurídica (CNPJ)</button>
+            <button type="button" class="pill-btn" data-val="ambos">Ambos</button>
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="field" id="cpfField">
+            <label>CPF</label>
+            <input type="text" id="cpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+          </div>
+          <div class="field" id="cnpjField" style="display:none;">
+            <label>CNPJ</label>
+            <input type="text" id="cnpj" placeholder="00.000.000/0000-00" inputmode="numeric" maxlength="18">
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="field">
+            <label>Número de contato (WhatsApp)</label>
+            <input type="tel" id="contato" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15" required>
+          </div>
+          <div class="field">
+            <label>E-mail principal</label>
+            <input type="email" id="email" placeholder="seuemail@exemplo.com" required>
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>2. Renda e Relacionamento Bancário</h2>
+        <div class="section-intro">Agora, nos conte um pouco sobre sua situação profissional e bancária.</div>
+
+        <div class="row-2">
+          <div class="field">
+            <label>Profissão</label>
+            <select id="profissao">
+              <option>Empresário</option>
+              <option>Autônomo</option>
+              <option>CLT</option>
+              <option>Servidor Público</option>
+              <option>Aposentado</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Valor/salário declarado</label>
+            <input type="text" id="valorDeclarado" placeholder="R$ 0,00" inputmode="numeric">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Bancos com movimentação</label>
+          <div class="checkbox-grid" id="bancosGrid"></div>
+          <div class="add-bank-row">
+            <input type="text" id="novoBancoInput" placeholder="Nome do banco">
+            <button type="button" class="add-bank-btn" id="addBancoBtn">+ Adicionar outro banco</button>
+          </div>
+          <div id="extraBancosList"></div>
+        </div>
+
+        <div class="field">
+          <label>Produtos bancários utilizados</label>
+          <div class="checkbox-grid" id="produtosGrid"></div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>3. Débitos Mensais Vinculados</h2>
+        <div class="section-intro">Esses dados ajudam a entender seu relacionamento com o crédito e priorizar as ações certas.</div>
+
+        <div class="field">
+          <label>Crediário</label>
+          <div class="pill-toggle" id="crediarioToggle">
+            <button type="button" class="pill-btn" data-val="sim">Sim</button>
+            <button type="button" class="pill-btn active" data-val="nao">Não</button>
+          </div>
+          <div class="conditional-field" id="crediarioDetalheWrap" style="display:none;">
+            <input type="text" id="crediarioDetalhe" placeholder="Especifique">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Boletos</label>
+          <div class="pill-toggle" id="boletosToggle">
+            <button type="button" class="pill-btn" data-val="sim">Sim</button>
+            <button type="button" class="pill-btn active" data-val="nao">Não</button>
+          </div>
+          <div class="conditional-field" id="boletosDetalheWrap" style="display:none;">
+            <input type="text" id="boletosDetalhe" placeholder="Especifique">
+          </div>
+        </div>
+
+        <div class="row-2">
+          <div class="field">
+            <label>Operadora de telefonia</label>
+            <select id="telefonia">
+              <option>Pré-pago</option>
+              <option>Pós-pago</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Empréstimos</label>
+            <select id="emprestimos">
+              <option>Em dia</option>
+              <option>Em atraso</option>
+              <option>Quitado</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Financiamentos</label>
+          <select id="financiamentos">
+            <option>Em dia</option>
+            <option>Em atraso</option>
+            <option>Quitado</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h2>4. Acesso para Diagnóstico</h2>
+        <div class="section-intro">🔒 As credenciais abaixo são utilizadas exclusivamente para consulta durante o diagnóstico e tratadas com sigilo absoluto, conforme a LGPD.</div>
+
+        <div class="field">
+          <label>Senha de acesso — Serasa</label>
+          <div class="password-row">
+            <input type="password" id="senhaSerasa">
+            <button type="button" class="eye-btn" data-target="senhaSerasa">👁</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Senha de acesso — BACEN (Registrato)</label>
+          <div class="password-row">
+            <input type="password" id="senhaBacen">
+            <button type="button" class="eye-btn" data-target="senhaBacen">👁</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="consent-row">
+        <input type="checkbox" id="consentimento">
+        <label for="consentimento">Declaro que as informações acima são verdadeiras e autorizo a A10 Consultoria a utilizá-las exclusivamente para fins de diagnóstico financeiro, conforme a Lei Geral de Proteção de Dados (LGPD).</label>
+      </div>
+
+      <button type="button" class="btn-primary" id="submitBtn">Enviar meus dados</button>
+      <div class="form-error" id="formError"></div>
+    </form>
+  </div>
+
+  <div id="successWrap" style="display:none;">
+    <div class="success-box">
+      <div class="big">✅ Cadastro recebido com sucesso!</div>
+      <div>Em breve entraremos em contato pelo WhatsApp para darmos continuidade ao seu diagnóstico.</div>
+    </div>
+  </div>
+
+  <footer class="note">A10 Consultoria — dados salvos com segurança no banco de dados da consultoria.</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://zcihwlfmmoodyoiiblmy.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_9MwjPlyox46FIUF4KLTTTA_-tmjae26';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const BANCOS_PADRAO = [
+  'Caixa Econômica Federal','Banco do Brasil','Itaú Unibanco','Bradesco','Santander Brasil',
+  'BTG Pactual','Banco Pan','Banco Safra','Sicoob','Sicredi','Nubank','Banco Inter','C6 Bank',
+  'PicPay','Mercado Pago'
+];
+const PRODUTOS_PADRAO = ['Seguros','Carta de crédito','Cartões','Investimentos'];
+
+let extraBancos = [];
+
+function renderChecklist(containerId, items, prefix){
+  document.getElementById(containerId).innerHTML = items.map((item, idx) => `
+    <label class="checkbox-row"><input type="checkbox" data-${prefix}="${item}"> ${item}</label>
+  `).join('');
+}
+renderChecklist('bancosGrid', BANCOS_PADRAO, 'banco');
+renderChecklist('produtosGrid', PRODUTOS_PADRAO, 'produto');
+
+document.getElementById('addBancoBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('novoBancoInput');
+  const val = input.value.trim();
+  if(!val) return;
+  extraBancos.push(val);
+  input.value = '';
+  renderExtraBancos();
+});
+function renderExtraBancos(){
+  document.getElementById('extraBancosList').innerHTML = extraBancos.map((b, idx) => `
+    <span class="extra-bank-tag">${b} <button type="button" data-idx="${idx}">✕</button></span>
+  `).join('');
+  document.querySelectorAll('#extraBancosList button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      extraBancos.splice(Number(btn.dataset.idx),1);
+      renderExtraBancos();
+    });
+  });
+}
+
+function wirePillToggle(containerId, onChange){
+  const buttons = document.querySelectorAll(`#${containerId} .pill-btn`);
+  buttons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      buttons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      onChange(btn.dataset.val);
+    });
+  });
+}
+
+wirePillToggle('tipoDocToggle', (val)=>{
+  document.getElementById('cpfField').style.display = (val === 'cpf' || val === 'ambos') ? 'flex' : 'none';
+  document.getElementById('cnpjField').style.display = (val === 'cnpj' || val === 'ambos') ? 'flex' : 'none';
+});
+wirePillToggle('crediarioToggle', (val)=>{
+  document.getElementById('crediarioDetalheWrap').style.display = val === 'sim' ? 'block' : 'none';
+});
+wirePillToggle('boletosToggle', (val)=>{
+  document.getElementById('boletosDetalheWrap').style.display = val === 'sim' ? 'block' : 'none';
+});
+
+function getPillValue(containerId){
+  const active = document.querySelector(`#${containerId} .pill-btn.active`);
+  return active ? active.dataset.val : '';
+}
+
+document.querySelectorAll('.eye-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const input = document.getElementById(btn.dataset.target);
+    input.type = input.type === 'password' ? 'text' : 'password';
+  });
+});
+
+function maskCPF(v){
+  return v.replace(/\D/g,'').slice(0,11)
+    .replace(/(\d{3})(\d)/,'$1.$2')
+    .replace(/(\d{3})(\d)/,'$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+}
+function maskCNPJ(v){
+  return v.replace(/\D/g,'').slice(0,14)
+    .replace(/(\d{2})(\d)/,'$1.$2')
+    .replace(/(\d{3})(\d)/,'$1.$2')
+    .replace(/(\d{3})(\d)/,'$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+}
+function maskPhone(v){
+  v = v.replace(/\D/g,'').slice(0,11);
+  if(v.length > 10) return v.replace(/(\d{2})(\d)/,'($1) $2').replace(/(\d{5})(\d{1,4})$/,'$1-$2');
+  return v.replace(/(\d{2})(\d)/,'($1) $2').replace(/(\d{4})(\d{1,4})$/,'$1-$2');
+}
+function formatBRL(value){ return (Number(value)||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
+function parseBRLInput(el){
+  const digits = el.value.replace(/\D/g,'');
+  const num = digits ? parseInt(digits,10)/100 : 0;
+  el.value = formatBRL(num);
+  return num;
+}
+
+document.getElementById('cpf').addEventListener('input', (e)=>{ e.target.value = maskCPF(e.target.value); });
+document.getElementById('cnpj').addEventListener('input', (e)=>{ e.target.value = maskCNPJ(e.target.value); });
+document.getElementById('contato').addEventListener('input', (e)=>{ e.target.value = maskPhone(e.target.value); });
+document.getElementById('valorDeclarado').addEventListener('input', (e)=>{ parseBRLInput(e.target); });
+document.getElementById('valorDeclarado').value = formatBRL(0);
+
+function isValidEmail(v){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+document.getElementById('submitBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('formError');
+  errEl.textContent = '';
+
+  const nome = document.getElementById('nome').value.trim();
+  const contato = document.getElementById('contato').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const tipoDoc = getPillValue('tipoDocToggle');
+  const cpf = document.getElementById('cpf').value.trim();
+  const cnpj = document.getElementById('cnpj').value.trim();
+  const consentimento = document.getElementById('consentimento').checked;
+
+  if(!nome){ errEl.textContent = 'Informe seu nome completo.'; return; }
+  if((tipoDoc === 'cpf' || tipoDoc === 'ambos') && !cpf){ errEl.textContent = 'Informe seu CPF.'; return; }
+  if((tipoDoc === 'cnpj' || tipoDoc === 'ambos') && !cnpj){ errEl.textContent = 'Informe seu CNPJ.'; return; }
+  if(!contato){ errEl.textContent = 'Informe seu número de contato.'; return; }
+  if(!email || !isValidEmail(email)){ errEl.textContent = 'Informe um e-mail válido.'; return; }
+  if(!consentimento){ errEl.textContent = 'É necessário aceitar os termos para continuar.'; return; }
+
+  const bancos = Array.from(document.querySelectorAll('[data-banco]:checked')).map(el => el.dataset.banco).concat(extraBancos);
+  const produtos = Array.from(document.querySelectorAll('[data-produto]:checked')).map(el => el.dataset.produto);
+
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Enviando...';
+
+  const { error } = await supabaseClient.rpc('submit_cadastro', {
+    p_nome: nome,
+    p_tipo_documento: tipoDoc,
+    p_cpf: cpf || null,
+    p_cnpj: cnpj || null,
+    p_contato: contato,
+    p_email: email,
+    p_profissao: document.getElementById('profissao').value,
+    p_valor_declarado: parseBRLInput(document.getElementById('valorDeclarado')),
+    p_bancos: bancos,
+    p_produtos_bancarios: produtos,
+    p_crediario: getPillValue('crediarioToggle') === 'sim',
+    p_crediario_detalhe: document.getElementById('crediarioDetalhe').value.trim() || null,
+    p_boletos: getPillValue('boletosToggle') === 'sim',
+    p_boletos_detalhe: document.getElementById('boletosDetalhe').value.trim() || null,
+    p_telefonia: document.getElementById('telefonia').value,
+    p_emprestimos: document.getElementById('emprestimos').value,
+    p_financiamentos: document.getElementById('financiamentos').value,
+    p_senha_serasa: document.getElementById('senhaSerasa').value || null,
+    p_senha_bacen: document.getElementById('senhaBacen').value || null,
+    p_consentimento: consentimento
+  });
+
+  if(error){
+    console.error(error);
+    errEl.textContent = 'Não foi possível enviar agora. Tente novamente em instantes.';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Enviar meus dados';
+    return;
+  }
+
+  document.getElementById('formWrap').style.display = 'none';
+  document.getElementById('successWrap').style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+</script>
+</body>
+</html>
