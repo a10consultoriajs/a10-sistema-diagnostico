@@ -40,7 +40,8 @@
   }
   .stat-card:hover{ border-color: var(--gold); }
   .stat-card.active{ border-color: var(--navy); box-shadow: 0 0 0 1px var(--navy); }
-  .stat-card .stat-value{ font-family:'Fraunces',serif; font-size: 30px; font-weight:700; color: var(--navy); line-height:1; }
+  .stat-card .stat-value{ font-family:'Fraunces',serif; font-size: 30px; font-weight:700; color: var(--navy); line-height:1.15; overflow-wrap: break-word; word-break: break-word; }
+  @media (max-width: 480px){ .stat-card .stat-value{ font-size: 22px; } .stat-card{ padding: 14px 12px; } }
   .stat-card .stat-label{ font-size: 12px; color: var(--ink-soft); margin-top: 6px; text-transform: uppercase; letter-spacing:0.05em; }
   .stat-card.stat-atraso .stat-value{ color: var(--status-atraso); }
   .stat-card.stat-info .stat-value{ color: var(--status-info); }
@@ -62,6 +63,9 @@
     padding: 9px 16px; font-size: 13.5px; font-weight:500; color: var(--ink-soft); cursor:pointer;
   }
   .view-tab.active{ background: var(--navy); color:#fff; border-color: var(--navy); }
+
+  .overview-charts-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+  @media (max-width: 720px){ .overview-charts-grid{ grid-template-columns: 1fr; } }
 
   /* ---------- Vendas ---------- */
   .period-filter-row{ display:flex; gap:14px; align-items:flex-end; margin-bottom: 16px; flex-wrap:wrap; }
@@ -362,23 +366,46 @@
 
   <!-- ===================== OVERVIEW (VISÃO GERAL) ===================== -->
   <div id="overviewView" style="display:none;">
+    <div class="clients-toolbar">
+      <input type="text" id="overviewSearchInput" placeholder="Buscar cliente por nome ou CPF...">
+      <button class="back-btn" id="logoutBtn3" style="margin-bottom:0;">Sair</button>
+    </div>
+    <div id="overviewSearchResults" style="display:none; margin-bottom:18px;">
+      <div class="plan-list" id="overviewSearchList"></div>
+    </div>
+
+    <div class="period-filter-row">
+      <div class="field"><label>De</label><input type="date" id="overviewPeriodFrom"></div>
+      <div class="field"><label>Até</label><input type="date" id="overviewPeriodTo"></div>
+      <button type="button" class="back-btn" id="overviewClearPeriodBtn">Limpar período</button>
+    </div>
+
     <div class="dashboard" id="overviewDashboard">
       <div class="stat-card" data-ov="qt"><div class="stat-value" id="ovQt">0</div><div class="stat-label">Serviços realizados</div></div>
       <div class="stat-card" data-ov="recebido"><div class="stat-value" id="ovRecebido">R$ 0</div><div class="stat-label">Valores recebidos</div></div>
       <div class="stat-card" data-ov="custo"><div class="stat-value" id="ovCusto">R$ 0</div><div class="stat-label">Custos pagos</div></div>
       <div class="stat-card" data-ov="lucro"><div class="stat-value" id="ovLucro">R$ 0</div><div class="stat-label">Lucro total</div></div>
     </div>
-    <div id="overviewDrilldown" style="display:none;">
+
+    <div class="overview-charts-grid">
+      <div class="criteria-card">
+        <label>Recebido por categoria</label>
+        <div class="history-chart" id="overviewChartRecebido"></div>
+      </div>
+      <div class="criteria-card">
+        <label>Lucro por categoria</label>
+        <div class="history-chart" id="overviewChartLucro"></div>
+      </div>
+    </div>
+
+    <div id="overviewDrilldown" style="display:none; margin-top:18px;">
       <div class="section-head">
         <h2 id="overviewDrilldownTitle" style="font-size:16px;">Detalhes</h2>
         <button type="button" class="back-btn" id="overviewCloseDrilldown" style="margin-bottom:0;">Fechar</button>
       </div>
       <div class="plan-list" id="overviewDrilldownList"></div>
     </div>
-    <div class="clients-toolbar" style="margin-top:16px;">
-      <div class="hint">Clique em qualquer indicador acima para ver os clientes que compõem o número.</div>
-      <button class="back-btn" id="logoutBtn3" style="margin-bottom:0; margin-left:auto;">Sair</button>
-    </div>
+    <div class="hint" style="margin-top:14px;">Clique em qualquer indicador acima para ver os clientes que compõem o número.</div>
   </div>
 
   <!-- ===================== LIST VIEW ===================== -->
@@ -745,13 +772,14 @@ let saveTimeout = null;
 async function loadIndex(){
   const { data, error } = await supabaseClient
     .from('clientes')
-    .select('id, nome, score, rating, updated_at, startDate:data->>startDate, endDate:data->>endDate, valorNegociado:data->>valorNegociado')
+    .select('id, nome, score, rating, updated_at, startDate:data->>startDate, endDate:data->>endDate, valorNegociado:data->>valorNegociado, clientDoc:data->>clientDoc')
     .order('updated_at', { ascending: false });
   if(error){ console.error(error); return []; }
   return (data || []).map(row => ({
     id: row.id, nome: row.nome, score: row.score, rating: row.rating,
     startDate: row.startDate || '', endDate: row.endDate || '',
     valorNegociado: Number(row.valorNegociado)||0,
+    clientDoc: row.clientDoc || '',
     updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : 0
   }));
 }
@@ -798,13 +826,6 @@ async function saveClient(){
 }
 
 /* ---------- View switching ---------- */
-let totalClientesGeral = 0;
-async function loadVendasClientNames(){
-  const { data, error } = await supabaseClient.from('vendas').select('cliente');
-  if(error){ console.error(error); return []; }
-  return (data||[]).map(r=>r.cliente);
-}
-
 function deactivateAllTabs(){
   document.getElementById('tabOverview').classList.remove('active');
   document.getElementById('tabClientes').classList.remove('active');
@@ -823,50 +844,144 @@ async function showListView(){
   document.getElementById('tabClientes').classList.add('active');
   document.getElementById('viewTabs').style.display = 'flex';
   clientIndex = await loadIndex();
-  const vendaNames = await loadVendasClientNames();
-  const unionSet = new Set([
-    ...clientIndex.map(c=>(c.nome||'').trim().toUpperCase()).filter(Boolean),
-    ...vendaNames.map(n=>(n||'').trim().toUpperCase()).filter(Boolean)
-  ]);
-  totalClientesGeral = unionSet.size;
   hideAllViews();
   document.getElementById('listView').style.display = 'block';
   renderClientGrid();
 }
 
+let overviewPeriodFrom = '';
+let overviewPeriodTo = '';
+let overviewActiveKind = null;
+
 function overviewNonPromotedVendas(){
-  return vendasIndex.filter(v => normalizeServicoTag(v.servico) !== 'Acompanhamento / Rating');
+  return vendasIndex
+    .filter(v => normalizeServicoTag(v.servico) !== 'Acompanhamento / Rating')
+    .filter(v => inPeriod(v.data_entrada, overviewPeriodFrom, overviewPeriodTo));
+}
+
+function overviewClientItems(){
+  return clientIndex.filter(c => inPeriod(c.startDate, overviewPeriodFrom, overviewPeriodTo));
+}
+
+function overviewCategoryTotals(){
+  const vItems = overviewNonPromotedVendas();
+  const cItems = overviewClientItems();
+  const totals = {
+    'Acompanhamento/Rating': { recebido:0, custo:0, lucro:0, qt:0 },
+    'Limpa Nome': { recebido:0, custo:0, lucro:0, qt:0 },
+    'Consultas': { recebido:0, custo:0, lucro:0, qt:0 }
+  };
+  cItems.forEach(c => {
+    const v = Number(c.valorNegociado)||0;
+    totals['Acompanhamento/Rating'].recebido += v;
+    totals['Acompanhamento/Rating'].lucro += v;
+    totals['Acompanhamento/Rating'].qt += 1;
+  });
+  vItems.forEach(v => {
+    const tag = normalizeServicoTag(v.servico);
+    const key = tag === 'Limpa nome' ? 'Limpa Nome' : 'Consultas';
+    totals[key].recebido += Number(v.recebido)||0;
+    totals[key].custo += Number(v.custo)||0;
+    totals[key].lucro += Number(v.lucro)||0;
+    totals[key].qt += Number(v.qt)||0;
+  });
+  return totals;
+}
+
+function renderOverviewChart(elId, totals, field, barClass){
+  const shortLabels = { 'Acompanhamento/Rating': 'Acomp./Rating', 'Limpa Nome': 'Limpa Nome', 'Consultas': 'Consultas' };
+  const cats = Object.keys(totals);
+  const maxV = Math.max(...cats.map(k=>totals[k][field]), 1);
+  const el = document.getElementById(elId);
+  el.innerHTML = cats.map(k => {
+    const h = Math.max(4, Math.round((totals[k][field]/maxV)*100));
+    return `
+      <div class="history-bar-col">
+        <div class="history-bar-value">${moneyBRL(totals[k][field])}</div>
+        <div class="history-bar${barClass ? (' '+barClass) : ''}" style="height:${h}%;"></div>
+        <div class="history-bar-date">${shortLabels[k] || k}</div>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderOverview(){
-  const vItems = overviewNonPromotedVendas();
-  const qt = clientIndex.length + vItems.reduce((s,v)=> s + (Number(v.qt)||0), 0);
-  const recebido = vItems.reduce((s,v)=> s + (Number(v.recebido)||0), 0) + clientIndex.reduce((s,c)=> s + (Number(c.valorNegociado)||0), 0);
-  const custo = vItems.reduce((s,v)=> s + (Number(v.custo)||0), 0);
-  const lucro = vItems.reduce((s,v)=> s + (Number(v.lucro)||0), 0) + clientIndex.reduce((s,c)=> s + (Number(c.valorNegociado)||0), 0);
+  const totals = overviewCategoryTotals();
+  const cats = Object.values(totals);
+  const qt = cats.reduce((s,t)=>s+t.qt,0);
+  const recebido = cats.reduce((s,t)=>s+t.recebido,0);
+  const custo = cats.reduce((s,t)=>s+t.custo,0);
+  const lucro = cats.reduce((s,t)=>s+t.lucro,0);
   document.getElementById('ovQt').textContent = qt;
   document.getElementById('ovRecebido').textContent = moneyBRL(recebido);
   document.getElementById('ovCusto').textContent = moneyBRL(custo);
   document.getElementById('ovLucro').textContent = moneyBRL(lucro);
+  renderOverviewChart('overviewChartRecebido', totals, 'recebido');
+  renderOverviewChart('overviewChartLucro', totals, 'lucro', 'current');
+  if(overviewActiveKind) renderOverviewDrilldown(overviewActiveKind);
 }
 
 function overviewEntriesFor(kind){
   const vItems = overviewNonPromotedVendas();
+  const cItems = overviewClientItems();
   const entries = [];
   if(kind === 'qt'){
-    clientIndex.forEach(c => entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: 1, clienteId: c.id, tipo:'cliente' }));
+    cItems.forEach(c => entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: 1, clienteId: c.id, tipo:'cliente' }));
     vItems.forEach(v => entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.qt)||0, vendaId: v.id, tipo:'venda' }));
   } else if(kind === 'recebido'){
-    clientIndex.forEach(c => { if(Number(c.valorNegociado)>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: Number(c.valorNegociado), clienteId: c.id, tipo:'cliente' }); });
+    cItems.forEach(c => { if(Number(c.valorNegociado)>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: Number(c.valorNegociado), clienteId: c.id, tipo:'cliente' }); });
     vItems.forEach(v => { if(Number(v.recebido)>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.recebido), vendaId: v.id, tipo:'venda' }); });
   } else if(kind === 'custo'){
     vItems.forEach(v => { if(Number(v.custo)>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.custo), vendaId: v.id, tipo:'venda' }); });
   } else if(kind === 'lucro'){
-    clientIndex.forEach(c => { if(Number(c.valorNegociado)>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: Number(c.valorNegociado), clienteId: c.id, tipo:'cliente' }); });
+    cItems.forEach(c => { if(Number(c.valorNegociado)>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: Number(c.valorNegociado), clienteId: c.id, tipo:'cliente' }); });
     vItems.forEach(v => { if(Number(v.lucro)) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.lucro), vendaId: v.id, tipo:'venda' }); });
   }
   entries.sort((a,b)=> b.valor - a.valor);
   return entries;
+}
+
+function overviewSearch(query){
+  const q = query.trim().toLowerCase();
+  const resultsWrap = document.getElementById('overviewSearchResults');
+  const listEl = document.getElementById('overviewSearchList');
+  if(!q){ resultsWrap.style.display = 'none'; listEl.innerHTML = ''; return; }
+  const results = [];
+  clientIndex.forEach(c => {
+    const nome = (c.nome||'').toLowerCase();
+    const doc = (c.clientDoc||'').toLowerCase();
+    if(nome.includes(q) || doc.includes(q)){
+      const status = getServiceStatus(c);
+      const situacao = status==='concluido' ? 'Concluído' : status==='atraso' ? 'Em atraso' : 'Em andamento';
+      results.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', situacao, badge: 'svc-'+status, tipo:'cliente', clienteId: c.id });
+    }
+  });
+  vendasIndex.forEach(v => {
+    const nome = (v.cliente||'').toLowerCase();
+    const doc = (v.cpf_cnpj||'').toLowerCase();
+    if(nome.includes(q) || doc.includes(q)){
+      const prazo = getPrazoStatus(v);
+      results.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), situacao: prazoLabel(prazo), badge: prazoBadgeClass(prazo), tipo:'venda', vendaId: v.id });
+    }
+  });
+  if(results.length === 0){
+    listEl.innerHTML = '<div class="history-empty">Nenhum cliente encontrado.</div>';
+  } else {
+    listEl.innerHTML = results.map((r,i) => `
+      <div class="plan-row" data-idx="${i}" style="cursor:pointer;">
+        <span class="lbl">${r.nome || 'Sem nome'} <span style="color:var(--ink-soft); font-size:11.5px;">· ${r.categoria}</span></span>
+        <span class="svc-badge ${r.badge}">${r.situacao}</span>
+      </div>
+    `).join('');
+    listEl.querySelectorAll('.plan-row').forEach((row, i) => {
+      row.addEventListener('click', () => {
+        const r = results[i];
+        if(r.tipo === 'cliente') openClient(r.clienteId);
+        else openVendaFromOverview(vendasIndex.find(v=>v.id===r.vendaId));
+      });
+    });
+  }
+  resultsWrap.style.display = 'block';
 }
 
 async function openVendaFromOverview(v){
@@ -881,6 +996,7 @@ async function openVendaFromOverview(v){
 }
 
 function renderOverviewDrilldown(kind){
+  overviewActiveKind = kind;
   const titles = { qt: 'Quantidade de serviços', recebido: 'Valores recebidos', custo: 'Custos pagos', lucro: 'Lucro total' };
   document.getElementById('overviewDrilldownTitle').textContent = titles[kind] || 'Detalhes';
   const entries = overviewEntriesFor(kind);
@@ -912,6 +1028,9 @@ async function showOverview(){
   hideAllViews();
   document.getElementById('overviewView').style.display = 'block';
   document.getElementById('overviewDrilldown').style.display = 'none';
+  document.getElementById('overviewSearchResults').style.display = 'none';
+  document.getElementById('overviewSearchInput').value = '';
+  overviewActiveKind = null;
   document.querySelectorAll('#overviewDashboard .stat-card').forEach(x=>x.classList.remove('active'));
   clientIndex = await loadIndex();
   vendasIndex = await loadVendas();
@@ -1001,7 +1120,7 @@ function renderDashboard(){
     else if(s === 'atraso') atraso++;
     else andamento++;
   });
-  document.getElementById('statTotal').textContent = totalClientesGeral;
+  document.getElementById('statTotal').textContent = clientIndex.length;
   document.getElementById('statAndamento').textContent = andamento;
   document.getElementById('statConcluido').textContent = concluido;
   document.getElementById('statAtraso').textContent = atraso;
@@ -2108,6 +2227,22 @@ document.querySelectorAll('#overviewDashboard .stat-card').forEach(el => {
 document.getElementById('overviewCloseDrilldown').addEventListener('click', ()=>{
   document.getElementById('overviewDrilldown').style.display = 'none';
   document.querySelectorAll('#overviewDashboard .stat-card').forEach(x=>x.classList.remove('active'));
+  overviewActiveKind = null;
+});
+document.getElementById('overviewSearchInput').addEventListener('input', (e)=>{
+  overviewSearch(e.target.value);
+});
+document.getElementById('overviewPeriodFrom').addEventListener('change', (e)=>{
+  overviewPeriodFrom = e.target.value; renderOverview();
+});
+document.getElementById('overviewPeriodTo').addEventListener('change', (e)=>{
+  overviewPeriodTo = e.target.value; renderOverview();
+});
+document.getElementById('overviewClearPeriodBtn').addEventListener('click', ()=>{
+  overviewPeriodFrom = ''; overviewPeriodTo = '';
+  document.getElementById('overviewPeriodFrom').value = '';
+  document.getElementById('overviewPeriodTo').value = '';
+  renderOverview();
 });
 document.getElementById('logoutBtn3').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
