@@ -438,6 +438,7 @@
       <button type="button" class="view-tab" id="tabConsultas" data-view="consultas">Consultas realizadas</button>
       <button type="button" class="view-tab" id="tabIdeias" data-view="ideias">Ateliê de Ideias</button>
       <button type="button" class="view-tab" id="tabCadastros" data-view="cadastros">Cadastros recebidos</button>
+      <button type="button" class="view-tab" id="tabParceiros" data-view="parceiros">Parceiros</button>
     </div>
   </header>
 
@@ -460,8 +461,76 @@
   <div id="overviewView" style="display:none;">
     <div class="clients-toolbar">
       <input type="text" id="overviewSearchInput" placeholder="Buscar cliente por nome ou CPF...">
+      <button class="btn-primary" id="newVendaBtn">+ Novo registro</button>
       <button class="back-btn" id="logoutBtn3" style="margin-bottom:0;">Sair</button>
     </div>
+
+    <div class="venda-form" id="vendaFormPanel" style="display:none;">
+      <div class="field"><label>Nome</label><input type="text" id="vfCliente"></div>
+      <div class="field field-wide" id="vfOrdensServicoField">
+        <label>Razão social (Ordem de Serviço)</label>
+        <div class="credit-rows" id="vfOrdensServicoRows"></div>
+        <button type="button" class="add-list-row" id="addOrdemServicoBtn">+ adicionar ordem de serviço</button>
+      </div>
+      <div class="field"><label>Data da contratação</label><input type="text" inputmode="numeric" id="vfData" placeholder="DD/MM/AAAA" maxlength="10"></div>
+      <div class="field" id="vfDataEnvioListaField" style="display:none;"><label>Data de envio da lista</label><input type="text" inputmode="numeric" id="vfDataEnvioLista" placeholder="DD/MM/AAAA" maxlength="10"></div>
+      <div class="field" id="vfDataConclusaoField" style="display:none;"><label>Data de conclusão</label><input type="text" inputmode="numeric" id="vfDataConclusao" placeholder="DD/MM/AAAA" maxlength="10"></div>
+      <div class="field">
+        <label>Etiqueta</label>
+        <select id="vfServico">
+          <option value="Limpa nome">Limpa Nome</option>
+          <option value="Acompanhamento / Rating">Consultoria / Rating</option>
+          <option value="Consulta Simples">Consultas</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Origem</label>
+        <select id="vfOrigem">
+          <option value="">Selecione...</option>
+          <option value="Indicações">Indicações</option>
+          <option value="Parceiro">Parceiro</option>
+          <option value="Redes sociais">Redes sociais</option>
+          <option value="Ads">Ads</option>
+          <option value="NetWorking">NetWorking</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Detalhe da origem</label>
+        <input type="text" id="vfOrigemDetalhe" placeholder="Ex: Instagram, indicação da Maria...">
+      </div>
+      <div class="field" id="vfParceiroField" style="display:none;">
+        <label>Parceiro</label>
+        <select id="vfParceiro"></select>
+      </div>
+      <div class="field">
+        <label>Execução</label>
+        <select id="vfExecucao">
+          <option>AGUARDANDO INICIO</option><option>Ñ ENVIADO</option><option>ENVIADO</option>
+          <option>ENTREGUE</option><option>A10 INICIADO</option><option>CONCLUIDO</option>
+        </select>
+      </div>
+      <div class="field"><label>CPF do contratante</label><input type="text" id="vfCpf"></div>
+      <div class="field"><label>Cidade/UF</label><input type="text" id="vfCidade"></div>
+      <div class="field"><label>Contato</label><input type="text" id="vfContato"></div>
+      <div class="field"><label>Fechado (R$)</label><input type="text" id="vfFechado" placeholder="R$ 0,00"></div>
+      <div class="field"><label>Recebido (R$)</label><input type="text" id="vfRecebido" placeholder="R$ 0,00"></div>
+      <div class="field"><label>Custo (R$)</label><input type="text" id="vfCusto" placeholder="R$ 0,00"></div>
+      <div class="field" id="vfNotaFiscalField" style="display:none;"><label>Nota Fiscal (R$)</label><input type="text" id="vfNotaFiscal" placeholder="R$ 0,00"></div>
+      <div class="field"><label>Remanescente (R$)</label><input type="text" id="vfRemanescente" placeholder="R$ 0,00" readonly></div>
+      <div class="field"><label>Quantidade</label><input type="number" id="vfQt" value="1" min="1"></div>
+      <div class="field protected">
+        <label>Senha Serasa</label>
+        <div class="protected-input-row">
+          <input type="password" id="vfSenhaSerasa">
+          <button type="button" class="eye-btn" data-target="vfSenhaSerasa">👁</button>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="back-btn" id="cancelVendaBtn">Cancelar</button>
+        <button type="button" class="btn-primary" id="saveVendaBtn">Salvar venda</button>
+      </div>
+    </div>
+
     <div id="overviewSearchResults" style="display:none; margin-bottom:18px;">
       <div class="plan-list" id="overviewSearchList"></div>
     </div>
@@ -573,64 +642,7 @@
 
     <div class="clients-toolbar">
       <input type="text" id="vendasSearchInput" placeholder="Buscar por cliente...">
-      <button class="btn-primary" id="newVendaBtn">+ Nova venda</button>
       <button class="back-btn" id="logoutBtn2" style="margin-bottom:0;">Sair</button>
-    </div>
-
-    <div class="venda-form" id="vendaFormPanel" style="display:none;">
-      <div class="field"><label>Cliente (contratante)</label><input type="text" id="vfCliente"></div>
-      <div class="field"><label>CPF do contratante</label><input type="text" id="vfCpf"></div>
-      <div class="field"><label>Cidade/UF</label><input type="text" id="vfCidade"></div>
-      <div class="field"><label>Contato</label><input type="text" id="vfContato"></div>
-      <div class="field">
-        <label>Origem</label>
-        <div class="btn-select-group" id="vfOrigemGroup">
-          <button type="button" class="btn-select" data-value="Indicações">Indicações</button>
-          <button type="button" class="btn-select" data-value="Redes sociais">Redes sociais</button>
-          <button type="button" class="btn-select" data-value="Ads">Ads</button>
-          <button type="button" class="btn-select" data-value="NetWorking">NetWorking</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>De onde veio / quem indicou</label>
-        <input type="text" id="vfOrigemDetalhe" placeholder="Ex: Instagram, indicação da Maria...">
-      </div>
-      <div class="field">
-        <label>Serviço contratado</label>
-        <select id="vfServico">
-          <option>Consulta Simples</option><option>Consulta completa</option>
-          <option>Limpa nome</option><option>Acompanhamento / Rating</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Execução</label>
-        <select id="vfExecucao">
-          <option>AGUARDANDO INICIO</option><option>Ñ ENVIADO</option><option>ENVIADO</option>
-          <option>ENTREGUE</option><option>A10 INICIADO</option><option>CONCLUIDO</option>
-        </select>
-      </div>
-      <div class="field"><label>Data da contratação</label><input type="text" inputmode="numeric" id="vfData" placeholder="DD/MM/AAAA" maxlength="10"></div>
-      <div class="field"><label>Fechado (R$)</label><input type="text" id="vfFechado" placeholder="R$ 0,00"></div>
-      <div class="field"><label>Recebido (R$)</label><input type="text" id="vfRecebido" placeholder="R$ 0,00"></div>
-      <div class="field"><label>Custo (R$)</label><input type="text" id="vfCusto" placeholder="R$ 0,00"></div>
-      <div class="field" id="vfNotaFiscalField" style="display:none;"><label>Nota Fiscal (R$)</label><input type="text" id="vfNotaFiscal" placeholder="R$ 0,00"></div>
-      <div class="field" id="vfDataEnvioListaField" style="display:none;"><label>Data de envio da lista</label><input type="text" inputmode="numeric" id="vfDataEnvioLista" placeholder="DD/MM/AAAA" maxlength="10"></div>
-      <div class="field" id="vfDataConclusaoField" style="display:none;"><label>Data de conclusão</label><input type="text" inputmode="numeric" id="vfDataConclusao" placeholder="DD/MM/AAAA" maxlength="10"></div>
-      <div class="field" id="vfRazaoSocialField" style="display:none;"><label>Razão social (Ordem de Serviço)</label><input type="text" id="vfRazaoSocial"></div>
-      <div class="field" id="vfDocAtendidoField" style="display:none;"><label>CPF ou CNPJ (Ordem de Serviço)</label><input type="text" id="vfDocAtendido"></div>
-      <div class="field"><label>Remanescente (R$)</label><input type="text" id="vfRemanescente" placeholder="R$ 0,00" readonly></div>
-      <div class="field"><label>Quantidade</label><input type="number" id="vfQt" value="1" min="1"></div>
-      <div class="field protected">
-        <label>Senha Serasa</label>
-        <div class="protected-input-row">
-          <input type="password" id="vfSenhaSerasa">
-          <button type="button" class="eye-btn" data-target="vfSenhaSerasa">👁</button>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="back-btn" id="cancelVendaBtn">Cancelar</button>
-        <button type="button" class="btn-primary" id="saveVendaBtn">Salvar venda</button>
-      </div>
     </div>
 
     <div id="vendasGrid"></div>
@@ -762,6 +774,18 @@
     </div>
     <div id="cadastrosGrid"></div>
     <div class="empty-state" id="cadastrosEmptyState" style="display:none;">Nenhum cadastro recebido ainda. Envie o link do formulário para seus clientes.</div>
+  </div>
+
+  <!-- ===================== PARCEIROS VIEW ===================== -->
+  <div id="parceirosView" style="display:none;">
+    <h1>Parceiros</h1>
+    <div class="clients-toolbar">
+      <input type="text" id="novoParceiroInput" placeholder="Nome do novo parceiro...">
+      <button class="btn-primary" id="addParceiroBtn">+ Adicionar parceiro</button>
+      <button class="back-btn" id="logoutBtn6" style="margin-bottom:0;">Sair</button>
+    </div>
+    <div class="plan-list" id="parceirosList"></div>
+    <div class="empty-state" id="parceirosEmptyState" style="display:none;">Nenhum parceiro cadastrado ainda.</div>
   </div>
 
   <!-- ===================== CLIENT VIEW ===================== -->
@@ -1085,6 +1109,7 @@ function deactivateAllTabs(){
   document.getElementById('tabConsultas').classList.remove('active');
   document.getElementById('tabIdeias').classList.remove('active');
   document.getElementById('tabCadastros').classList.remove('active');
+  document.getElementById('tabParceiros').classList.remove('active');
 }
 function hideAllViews(){
   document.getElementById('overviewView').style.display = 'none';
@@ -1093,6 +1118,7 @@ function hideAllViews(){
   document.getElementById('salesView').style.display = 'none';
   document.getElementById('ideiasView').style.display = 'none';
   document.getElementById('cadastrosView').style.display = 'none';
+  document.getElementById('parceirosView').style.display = 'none';
 }
 
 async function showListView(){
@@ -1574,7 +1600,6 @@ async function showSalesView(mode){
   hideAllViews();
   document.getElementById('salesView').style.display = 'block';
   document.getElementById('salesViewTitle').textContent = mode === 'limpa_nome' ? 'Limpa Nome' : 'Consultas realizadas';
-  document.getElementById('newVendaBtn').textContent = mode === 'limpa_nome' ? '+ Novo registro de Limpa Nome' : '+ Nova consulta';
   vendasExpanded = new Set();
   document.getElementById('vendasHistoryPanel').style.display = 'none';
   document.getElementById('vendasHistoryToggle').textContent = 'Ver histórico mensal';
@@ -1649,18 +1674,24 @@ function vendaItemHtml(v){
       <div class="vfield"><label>Cidade/UF</label><input type="text" data-field="cidade_uf" value="${v.cidade_uf||''}"></div>
       <div class="vfield"><label>CPF do contratante</label><input type="text" data-field="cpf_cnpj" value="${v.cpf_cnpj||''}"></div>
       <div class="vfield"><label>Contato</label><input type="text" data-field="contato" value="${v.contato||''}"></div>
-      <div class="vfield vfield-wide">
+      <div class="vfield">
         <label>Origem</label>
-        <div class="btn-select-group" data-field-group="origem">
-          ${['Indicações','Redes sociais','Ads','NetWorking'].map(o=>`<button type="button" class="btn-select${v.origem===o?' selected':''}" data-value="${o}">${o}</button>`).join('')}
-        </div>
+        <select data-field="origem">
+          <option value="" ${!v.origem?'selected':''}>Selecione...</option>
+          ${['Indicações','Parceiro','Redes sociais','Ads','NetWorking'].map(o=>`<option value="${o}" ${v.origem===o?'selected':''}>${o}</option>`).join('')}
+        </select>
       </div>
-      <div class="vfield"><label>De onde veio / quem indicou</label><input type="text" data-field="informante" value="${v.informante||''}" placeholder="Ex: Instagram, indicação da Maria..."></div>
+      <div class="vfield"><label>Detalhe da origem</label><input type="text" data-field="informante" value="${v.informante||''}" placeholder="Ex: Instagram, indicação da Maria..."></div>
+      <div class="vfield" data-parceiro-field style="${v.origem==='Parceiro'?'':'display:none;'}">
+        <label>Parceiro</label>
+        <select data-field="parceiro_id" data-parceiro-select>
+          <option value="">Selecione...</option>
+          ${v.parceiro_id ? `<option value="${v.parceiro_id}" selected>${v.parceiro_nome||''}</option>` : ''}
+        </select>
+      </div>
       <div class="vfield"><label>Data da contratação</label><input type="text" inputmode="numeric" data-field="data_entrada" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_entrada)}"></div>
       ${isLimpaNome ? `<div class="vfield"><label>Data de envio da lista</label><input type="text" inputmode="numeric" data-field="data_envio_lista" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_envio_lista)}"></div>` : ''}
       ${isLimpaNome ? `<div class="vfield"><label>Data de conclusão</label><input type="text" inputmode="numeric" data-field="data_conclusao" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_conclusao)}"></div>` : ''}
-      ${isLimpaNome ? `<div class="vfield"><label>Razão social (Ordem de Serviço)</label><input type="text" data-field="razao_social" value="${v.razao_social||''}"></div>` : ''}
-      ${isLimpaNome ? `<div class="vfield"><label>CPF ou CNPJ (Ordem de Serviço)</label><input type="text" data-field="doc_atendido" value="${v.doc_atendido||''}"></div>` : ''}
       <div class="vfield"><label>Fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
       <div class="vfield"><label>Recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
       <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
@@ -1680,6 +1711,17 @@ function vendaItemHtml(v){
       <button type="button" class="btn-primary venda-update-btn">Atualizar informações</button>
       <span class="venda-update-status"></span>
     </div>
+    <div class="credit-section-label">Razão social (Ordem de Serviço)</div>
+    <div class="credit-rows" data-ordens-list>
+      ${(v.ordens_servico||[]).map((o,idx) => `
+        <div class="credit-row" data-idx="${idx}">
+          <input type="text" data-field="razao_social" placeholder="Razão social" value="${(o&&o.razao_social)||''}">
+          <input type="text" data-field="doc" placeholder="CPF ou CNPJ" value="${(o&&o.doc)||''}">
+          <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
+        </div>
+      `).join('')}
+    </div>
+    <button type="button" class="add-list-row add-ordem-servico">+ adicionar ordem de serviço</button>
     ${isLimpaNome ? `
     <div class="credit-section-label">Pagamentos recebidos</div>
     <div class="credit-rows" data-recebimentos-list>
@@ -1740,7 +1782,8 @@ async function promoteToRating(v){
 
 function wireVendaItem(itemEl, v){
   itemEl.querySelectorAll('[data-field]').forEach(input => {
-    if(input.closest('[data-recebimentos-list]')) return;
+    if(input.closest('[data-recebimentos-list]') || input.closest('[data-ordens-list]')) return;
+    if(input.hasAttribute('data-parceiro-select')) return;
     const field = input.dataset.field;
     if(field === 'servico') return;
     const evt = (input.tagName === 'SELECT') ? 'change' : 'input';
@@ -1818,16 +1861,76 @@ function wireVendaItem(itemEl, v){
     }
   }
 
-  const origemGroup = itemEl.querySelector('[data-field-group="origem"]');
-  if(origemGroup){
-    origemGroup.addEventListener('click', (e)=>{
-      const btn = e.target.closest('.btn-select');
-      if(!btn) return;
-      origemGroup.querySelectorAll('.btn-select').forEach(b=>b.classList.remove('selected'));
-      btn.classList.add('selected');
-      v.origem = btn.dataset.value;
+  const origemSelect = itemEl.querySelector('[data-field="origem"]');
+  const parceiroField = itemEl.querySelector('[data-parceiro-field]');
+  const parceiroSelect = itemEl.querySelector('[data-parceiro-select]');
+  if(origemSelect && parceiroField && parceiroSelect){
+    origemSelect.addEventListener('change', async (e)=>{
+      const isParceiro = e.target.value === 'Parceiro';
+      parceiroField.style.display = isParceiro ? 'flex' : 'none';
+      if(isParceiro){
+        if(!parceirosIndex.length) parceirosIndex = await loadParceiros();
+        parceiroSelect.innerHTML = '<option value="">Selecione...</option>' +
+          parceirosIndex.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('') +
+          '<option value="__add_new__">+ Adicionar novo parceiro</option>';
+        parceiroSelect.value = v.parceiro_id || '';
+      }
+    });
+    parceiroSelect.addEventListener('change', async (e)=>{
+      if(e.target.value === '__add_new__'){
+        const nome = prompt('Nome do novo parceiro:');
+        if(nome && nome.trim()){
+          const p = await createParceiro(nome.trim());
+          if(p){
+            parceirosIndex.push(p);
+            parceirosIndex.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+            parceiroSelect.innerHTML = '<option value="">Selecione...</option>' +
+              parceirosIndex.map(pp=>`<option value="${pp.id}">${pp.nome}</option>`).join('') +
+              '<option value="__add_new__">+ Adicionar novo parceiro</option>';
+            parceiroSelect.value = p.id;
+            v.parceiro_id = p.id; v.parceiro_nome = p.nome;
+            saveVenda(v);
+          }
+        } else {
+          e.target.value = v.parceiro_id || '';
+        }
+        return;
+      }
+      const chosen = parceirosIndex.find(p => p.id === e.target.value);
+      v.parceiro_id = chosen ? chosen.id : '';
+      v.parceiro_nome = chosen ? chosen.nome : '';
       saveVenda(v);
     });
+  }
+
+  const ordensList = itemEl.querySelector('[data-ordens-list]');
+  if(ordensList){
+    ordensList.querySelectorAll('.credit-row').forEach(row => {
+      const idx = Number(row.dataset.idx);
+      row.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('input', (e)=>{
+          const field = e.target.dataset.field;
+          v.ordens_servico[idx] = v.ordens_servico[idx] || { razao_social:'', doc:'' };
+          v.ordens_servico[idx][field] = e.target.value;
+          saveVenda(v);
+        });
+      });
+      row.querySelector('.rm-btn').addEventListener('click', ()=>{
+        if(v.ordens_servico.length <= 1) return;
+        v.ordens_servico.splice(idx,1);
+        saveVenda(v);
+        renderVendasGrid();
+      });
+    });
+    const addOrdemBtn = itemEl.querySelector('.add-ordem-servico');
+    if(addOrdemBtn){
+      addOrdemBtn.addEventListener('click', ()=>{
+        v.ordens_servico = v.ordens_servico || [];
+        v.ordens_servico.push({ razao_social:'', doc:'' });
+        saveVenda(v);
+        renderVendasGrid();
+      });
+    }
   }
 
   const updateBtn = itemEl.querySelector('.venda-update-btn');
@@ -1977,8 +2080,39 @@ function updateNotaFiscalVisibility(){
   document.getElementById('vfNotaFiscalField').style.display = isLimpaNome ? 'flex' : 'none';
   document.getElementById('vfDataEnvioListaField').style.display = isLimpaNome ? 'flex' : 'none';
   document.getElementById('vfDataConclusaoField').style.display = isLimpaNome ? 'flex' : 'none';
-  document.getElementById('vfRazaoSocialField').style.display = isLimpaNome ? 'flex' : 'none';
-  document.getElementById('vfDocAtendidoField').style.display = isLimpaNome ? 'flex' : 'none';
+}
+
+let vfOrdensServico = [];
+
+function renderVfOrdensServico(){
+  const rows = document.getElementById('vfOrdensServicoRows');
+  rows.innerHTML = vfOrdensServico.map((o,idx) => `
+    <div class="credit-row" data-idx="${idx}">
+      <input type="text" data-idx="${idx}" data-field="razao_social" placeholder="Razão social" value="${o.razao_social||''}">
+      <input type="text" data-idx="${idx}" data-field="doc" placeholder="CPF ou CNPJ" value="${o.doc||''}">
+      <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
+    </div>
+  `).join('');
+  rows.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', (e)=>{
+      vfOrdensServico[Number(e.target.dataset.idx)][e.target.dataset.field] = e.target.value;
+    });
+  });
+  rows.querySelectorAll('.rm-btn').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      if(vfOrdensServico.length <= 1) return;
+      vfOrdensServico.splice(Number(btn.dataset.idx),1);
+      renderVfOrdensServico();
+    });
+  });
+}
+
+function populateParceiroSelect(selectedId){
+  const sel = document.getElementById('vfParceiro');
+  sel.innerHTML = '<option value="">Selecione...</option>' +
+    parceirosIndex.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('') +
+    '<option value="__add_new__">+ Adicionar novo parceiro</option>';
+  sel.value = selectedId || '';
 }
 
 function parseBRLValue(el){
@@ -1993,18 +2127,23 @@ function recalcVfRemanescente(){
   document.getElementById('vfRemanescente').value = formatBRL(fechado - recebido);
 }
 
-function openVendaForm(prefill){
+async function openVendaForm(prefill){
   prefill = prefill || {};
+  if(document.getElementById('overviewView').style.display === 'none'){
+    await showOverview();
+  }
   document.getElementById('vendaFormPanel').style.display = 'grid';
   document.getElementById('vfCliente').value = prefill.cliente || '';
   document.getElementById('vfCpf').value = '';
   document.getElementById('vfCidade').value = '';
   document.getElementById('vfContato').value = '';
-  document.querySelectorAll('#vfOrigemGroup .btn-select').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('vfOrigem').value = '';
   document.getElementById('vfOrigemDetalhe').value = '';
-  document.getElementById('vfRazaoSocial').value = '';
-  document.getElementById('vfDocAtendido').value = '';
-  document.getElementById('vfServico').value = salesMode === 'limpa_nome' ? 'Limpa nome' : 'Consulta Simples';
+  document.getElementById('vfParceiroField').style.display = 'none';
+  document.getElementById('vfParceiro').innerHTML = '';
+  vfOrdensServico = [{ razao_social:'', doc:'' }];
+  renderVfOrdensServico();
+  document.getElementById('vfServico').value = salesMode === 'consultas' ? 'Consulta Simples' : 'Limpa nome';
   document.getElementById('vfExecucao').value = 'AGUARDANDO INICIO';
   document.getElementById('vfData').value = formatDateBR(new Date().toISOString().slice(0,10));
   document.getElementById('vfFechado').value = formatBRL(0);
@@ -2034,9 +2173,12 @@ async function createVenda(){
   const notaFiscal = servico === 'Limpa nome' ? parseBRLInput(document.getElementById('vfNotaFiscal')) : 0;
   const data_envio_lista = servico === 'Limpa nome' ? parseDateBRtoISO(document.getElementById('vfDataEnvioLista').value) : '';
   const data_conclusao = servico === 'Limpa nome' ? parseDateBRtoISO(document.getElementById('vfDataConclusao').value) : '';
-  const razao_social = servico === 'Limpa nome' ? document.getElementById('vfRazaoSocial').value : '';
-  const doc_atendido = servico === 'Limpa nome' ? document.getElementById('vfDocAtendido').value : '';
-  const origem = document.querySelector('#vfOrigemGroup .btn-select.selected');
+  const ordens_servico = vfOrdensServico.filter(o => (o.razao_social && o.razao_social.trim()) || (o.doc && o.doc.trim()));
+  const origemValue = document.getElementById('vfOrigem').value;
+  const parceiroSel = document.getElementById('vfParceiro');
+  const parceiro = origemValue === 'Parceiro' && parceiroSel.value && parceiroSel.value !== '__add_new__'
+    ? parceirosIndex.find(p => p.id === parceiroSel.value)
+    : null;
   const cpf_cnpj = document.getElementById('vfCpf').value;
   const data_entrada = parseDateBRtoISO(document.getElementById('vfData').value);
   const record = {
@@ -2048,14 +2190,15 @@ async function createVenda(){
       cpf_cnpj,
       cidade_uf: document.getElementById('vfCidade').value,
       contato: document.getElementById('vfContato').value,
-      origem: origem ? origem.dataset.value : '',
+      origem: origemValue,
       informante: document.getElementById('vfOrigemDetalhe').value,
+      parceiro_id: parceiro ? parceiro.id : '',
+      parceiro_nome: parceiro ? parceiro.nome : '',
       senha_serasa: document.getElementById('vfSenhaSerasa').value,
       data_entrada,
       data_envio_lista,
       data_conclusao,
-      razao_social,
-      doc_atendido,
+      ordens_servico,
       fechado,
       recebido,
       custo,
@@ -2076,8 +2219,13 @@ async function createVenda(){
     return;
   }
   vendasIndex = await loadVendas();
-  renderVendasDashboard();
-  renderVendasGrid();
+  if(document.getElementById('salesView').style.display !== 'none'){
+    renderVendasDashboard();
+    renderVendasGrid();
+  } else {
+    clientIndex = await loadIndex();
+    renderOverview();
+  }
 }
 
 /* ==================== ATELIÊ DE IDEIAS ==================== */
@@ -2311,6 +2459,66 @@ async function showCadastrosView(){
   document.getElementById('cadastrosView').style.display = 'block';
   cadastrosIndex = await loadCadastros();
   renderCadastrosGrid();
+}
+
+/* ==================== PARCEIROS ==================== */
+let parceirosIndex = [];
+
+async function loadParceiros(){
+  const { data, error } = await supabaseClient
+    .from('parceiros')
+    .select('id, nome')
+    .order('nome', { ascending: true });
+  if(error){ console.error(error); return []; }
+  return data || [];
+}
+
+async function createParceiro(nome){
+  nome = (nome||'').trim();
+  if(!nome) return null;
+  const id = 'p_' + Date.now();
+  const { error } = await supabaseClient.from('parceiros').insert({ id, nome });
+  if(error){ console.error(error); alert('Não foi possível adicionar o parceiro agora.'); return null; }
+  return { id, nome };
+}
+
+async function deleteParceiro(id){
+  const { error } = await supabaseClient.from('parceiros').delete().eq('id', id);
+  if(error){ console.error(error); alert('Não foi possível excluir o parceiro agora.'); return; }
+  parceirosIndex = parceirosIndex.filter(p => p.id !== id);
+  renderParceirosList();
+}
+
+function renderParceirosList(){
+  const list = document.getElementById('parceirosList');
+  const empty = document.getElementById('parceirosEmptyState');
+  if(!parceirosIndex.length){
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = parceirosIndex.map(p => `
+    <div class="plan-row">
+      <span style="flex:1;">${p.nome}</span>
+      <button type="button" class="rm-btn" data-id="${p.id}">✕ excluir</button>
+    </div>
+  `).join('');
+  list.querySelectorAll('.rm-btn').forEach(btn => {
+    btn.addEventListener('click', ()=>{
+      if(confirm(`Excluir o parceiro "${btn.parentElement.querySelector('span').textContent}"?`)) deleteParceiro(btn.dataset.id);
+    });
+  });
+}
+
+async function showParceirosView(){
+  deactivateAllTabs();
+  document.getElementById('tabParceiros').classList.add('active');
+  document.getElementById('viewTabs').style.display = 'flex';
+  hideAllViews();
+  document.getElementById('parceirosView').style.display = 'block';
+  parceirosIndex = await loadParceiros();
+  renderParceirosList();
 }
 
 function renderCadastrosDashboard(){
@@ -3133,6 +3341,16 @@ document.getElementById('logoutBtn5').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
   showLoginView();
 });
+document.getElementById('tabParceiros').addEventListener('click', showParceirosView);
+document.getElementById('addParceiroBtn').addEventListener('click', async ()=>{
+  const input = document.getElementById('novoParceiroInput');
+  const p = await createParceiro(input.value);
+  if(p){ parceirosIndex.push(p); parceirosIndex.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR')); renderParceirosList(); input.value = ''; }
+});
+document.getElementById('logoutBtn6').addEventListener('click', async ()=>{
+  await supabaseClient.auth.signOut();
+  showLoginView();
+});
 document.getElementById('newVendaBtn').addEventListener('click', ()=>openVendaForm());
 document.getElementById('cancelVendaBtn').addEventListener('click', closeVendaForm);
 document.getElementById('saveVendaBtn').addEventListener('click', createVenda);
@@ -3143,11 +3361,33 @@ document.getElementById('vfServico').addEventListener('change', ()=>{ updateNota
 ['vfData','vfDataEnvioLista','vfDataConclusao'].forEach(id=>{
   document.getElementById(id).addEventListener('input', (e)=>{ maskDateInput(e.target); });
 });
-document.getElementById('vfOrigemGroup').addEventListener('click', (e)=>{
-  const btn = e.target.closest('.btn-select');
-  if(!btn) return;
-  document.querySelectorAll('#vfOrigemGroup .btn-select').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
+document.getElementById('vfOrigem').addEventListener('change', async (e)=>{
+  const isParceiro = e.target.value === 'Parceiro';
+  document.getElementById('vfParceiroField').style.display = isParceiro ? 'flex' : 'none';
+  if(isParceiro){
+    if(!parceirosIndex.length) parceirosIndex = await loadParceiros();
+    populateParceiroSelect('');
+  }
+});
+document.getElementById('vfParceiro').addEventListener('change', async (e)=>{
+  if(e.target.value !== '__add_new__') return;
+  const nome = prompt('Nome do novo parceiro:');
+  if(nome && nome.trim()){
+    const p = await createParceiro(nome.trim());
+    if(p){
+      parceirosIndex.push(p);
+      parceirosIndex.sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+      populateParceiroSelect(p.id);
+    } else {
+      e.target.value = '';
+    }
+  } else {
+    e.target.value = '';
+  }
+});
+document.getElementById('addOrdemServicoBtn').addEventListener('click', ()=>{
+  vfOrdensServico.push({ razao_social:'', doc:'' });
+  renderVfOrdensServico();
 });
 document.getElementById('vendasSearchInput').addEventListener('input', renderVendasGrid);
 document.getElementById('vendasPeriodFrom').addEventListener('change', (e)=>{
