@@ -43,6 +43,8 @@
   .stat-card .stat-value{ font-family:'Fraunces',serif; font-size: 30px; font-weight:700; color: var(--navy); line-height:1; }
   .stat-card .stat-label{ font-size: 12px; color: var(--ink-soft); margin-top: 6px; text-transform: uppercase; letter-spacing:0.05em; }
   .stat-card.stat-atraso .stat-value{ color: var(--status-atraso); }
+  .stat-card.stat-info .stat-value{ color: var(--status-info); }
+  .stat-card.stat-good .stat-value{ color: var(--status-good); }
   .svc-badge{ display:inline-flex; align-items:center; gap:5px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight:500; }
   .svc-badge::before{ content:""; width:7px; height:7px; border-radius:50%; }
   .svc-badge.svc-andamento{ background: var(--status-info-bg); color:#1f4269; }
@@ -86,6 +88,8 @@
   .venda-group-head{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; gap: 12px; flex-wrap:wrap; }
   .venda-group-head .vg-name{ font-family:'Fraunces',serif; font-size: 16px; font-weight:600; }
   .venda-group-head .vg-sub{ font-size: 12px; color: var(--ink-soft); }
+  .vg-date{ font-size: 11px; color: var(--ink-soft); }
+  .venda-historico{ margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--ink-soft); }
   .venda-group-totals{ display:flex; gap: 18px; font-size: 12.5px; flex-wrap:wrap; }
   .venda-group-totals span strong{ color: var(--navy); }
   .venda-group-body{ margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); display:none; }
@@ -333,8 +337,9 @@
   </header>
 
   <div class="view-tabs" id="viewTabs" style="display:none;">
-    <button type="button" class="view-tab active" id="tabClientes" data-view="clients">🗂 Diagnóstico</button>
-    <button type="button" class="view-tab" id="tabVendas" data-view="vendas">💰 Vendas</button>
+    <button type="button" class="view-tab active" id="tabClientes" data-view="clients">🗂 Acompanhamento / Rating</button>
+    <button type="button" class="view-tab" id="tabLimpaNome" data-view="limpa_nome">🧾 Limpa Nome</button>
+    <button type="button" class="view-tab" id="tabConsultas" data-view="consultas">🔍 Consultas realizadas</button>
   </div>
 
   <!-- ===================== LOGIN VIEW ===================== -->
@@ -357,7 +362,7 @@
     <div class="dashboard" id="dashboard">
       <div class="stat-card" data-filter="all">
         <div class="stat-value" id="statTotal">0</div>
-        <div class="stat-label">Usuários</div>
+        <div class="stat-label">Total de clientes</div>
       </div>
       <div class="stat-card" data-filter="andamento">
         <div class="stat-value" id="statAndamento">0</div>
@@ -383,6 +388,12 @@
 
   <!-- ===================== SALES (VENDAS) VIEW ===================== -->
   <div id="salesView" style="display:none;">
+    <h2 id="salesViewTitle" style="margin:0 0 14px;">Limpa Nome</h2>
+    <div class="dashboard" id="vendasPrazoDashboard">
+      <div class="stat-card stat-info" data-filter="no_prazo"><div class="stat-value" id="vdPrazoNoPrazo">0</div><div class="stat-label">Dentro do prazo</div></div>
+      <div class="stat-card stat-good" data-filter="entregue"><div class="stat-value" id="vdPrazoEntregue">0</div><div class="stat-label">Entregues</div></div>
+      <div class="stat-card stat-atraso" data-filter="atraso"><div class="stat-value" id="vdPrazoAtraso">0</div><div class="stat-label">Em atraso (+30 dias)</div></div>
+    </div>
     <div class="dashboard dashboard-vendas" id="vendasDashboard">
       <div class="stat-card"><div class="stat-value" id="vdTotalFechado">R$ 0</div><div class="stat-label">Total vendido</div></div>
       <div class="stat-card"><div class="stat-value" id="vdTotalRecebido">R$ 0</div><div class="stat-label">Recebido</div></div>
@@ -406,10 +417,10 @@
       <div class="field"><label>Origem</label><input type="text" id="vfOrigem"></div>
       <div class="field"><label>Indicado por</label><input type="text" id="vfInformante"></div>
       <div class="field">
-        <label>Serviço</label>
+        <label>Serviço contratado</label>
         <select id="vfServico">
-          <option>LIMPA NOME</option><option>Score</option><option>Rating</option>
-          <option>Consultoria</option><option>Diagnóstico</option><option>Outro</option>
+          <option>Consulta Simples</option><option>Consulta completa</option>
+          <option>Limpa nome</option><option>Acompanhamento / Rating</option>
         </select>
       </div>
       <div class="field">
@@ -424,6 +435,7 @@
       <div class="field"><label>Fechado (R$)</label><input type="text" id="vfFechado" placeholder="R$ 0,00"></div>
       <div class="field"><label>Recebido (R$)</label><input type="text" id="vfRecebido" placeholder="R$ 0,00"></div>
       <div class="field"><label>Custo (R$)</label><input type="text" id="vfCusto" placeholder="R$ 0,00"></div>
+      <div class="field" id="vfNotaFiscalField" style="display:none;"><label>Nota Fiscal (R$)</label><input type="text" id="vfNotaFiscal" placeholder="R$ 0,00"></div>
       <div class="field"><label>Falta (R$)</label><input type="text" id="vfFalta" placeholder="R$ 0,00"></div>
       <div class="field"><label>Quantidade</label><input type="number" id="vfQt" value="1" min="1"></div>
       <div class="field protected">
@@ -736,11 +748,25 @@ async function saveClient(){
 }
 
 /* ---------- View switching ---------- */
+let totalClientesGeral = 0;
+async function loadVendasClientNames(){
+  const { data, error } = await supabaseClient.from('vendas').select('cliente');
+  if(error){ console.error(error); return []; }
+  return (data||[]).map(r=>r.cliente);
+}
+
 async function showListView(){
   document.getElementById('tabClientes').classList.add('active');
-  document.getElementById('tabVendas').classList.remove('active');
+  document.getElementById('tabLimpaNome').classList.remove('active');
+  document.getElementById('tabConsultas').classList.remove('active');
   document.getElementById('viewTabs').style.display = 'flex';
   clientIndex = await loadIndex();
+  const vendaNames = await loadVendasClientNames();
+  const unionSet = new Set([
+    ...clientIndex.map(c=>(c.nome||'').trim().toUpperCase()).filter(Boolean),
+    ...vendaNames.map(n=>(n||'').trim().toUpperCase()).filter(Boolean)
+  ]);
+  totalClientesGeral = unionSet.size;
   document.getElementById('listView').style.display = 'block';
   document.getElementById('clientView').style.display = 'none';
   document.getElementById('salesView').style.display = 'none';
@@ -749,6 +775,9 @@ async function showListView(){
 async function openClient(id){
   currentClientId = id;
   state = await loadClient(id);
+  document.getElementById('tabClientes').classList.add('active');
+  document.getElementById('tabLimpaNome').classList.remove('active');
+  document.getElementById('tabConsultas').classList.remove('active');
   document.getElementById('listView').style.display = 'none';
   document.getElementById('salesView').style.display = 'none';
   document.getElementById('clientView').style.display = 'block';
@@ -790,7 +819,7 @@ function renderDashboard(){
     else if(s === 'atraso') atraso++;
     else andamento++;
   });
-  document.getElementById('statTotal').textContent = clientIndex.length;
+  document.getElementById('statTotal').textContent = totalClientesGeral;
   document.getElementById('statAndamento').textContent = andamento;
   document.getElementById('statConcluido').textContent = concluido;
   document.getElementById('statAtraso').textContent = atraso;
@@ -848,11 +877,54 @@ function renderClientGrid(){
 }
 
 /* ==================== VENDAS (sales/services module) ==================== */
+const SERVICO_TAGS = ['Consulta Simples','Consulta completa','Limpa nome','Acompanhamento / Rating'];
+function normalizeServicoTag(tag){
+  const t = (tag||'').trim().toLowerCase();
+  if(t === 'limpa nome') return 'Limpa nome';
+  if(t === 'acompanhamento / rating' || t === 'acompanhamento/rating' || t === 'acompanhamento e rating') return 'Acompanhamento / Rating';
+  if(t === 'consulta simples') return 'Consulta Simples';
+  if(t === 'consulta completa') return 'Consulta completa';
+  return 'Consulta completa';
+}
+function servicoMatchesMode(v, mode){
+  const tag = normalizeServicoTag(v.servico);
+  if(mode === 'limpa_nome') return tag === 'Limpa nome';
+  if(mode === 'consultas') return tag === 'Consulta Simples' || tag === 'Consulta completa';
+  return true;
+}
+
 let vendasIndex = [];
 let vendasStatusFilter = null;
+let vendasPrazoFilter = null;
 let vendasExpanded = new Set();
+let salesMode = 'limpa_nome';
 
 function moneyBRL(n){ return (Number(n)||0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
+
+function formatDateBR(iso){
+  if(!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  if(isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('pt-BR');
+}
+
+function getPrazoStatus(v){
+  const done = ['ENTREGUE','CONCLUIDO','CONCLUÍDO'].includes((v.execucao||'').toUpperCase());
+  if(done) return 'entregue';
+  if(!v.data_entrada) return 'no_prazo';
+  const start = new Date(v.data_entrada + 'T00:00:00');
+  if(isNaN(start.getTime())) return 'no_prazo';
+  const diffDays = Math.floor((new Date() - start) / 86400000);
+  return diffDays > 30 ? 'atraso' : 'no_prazo';
+}
+
+function prazoLabel(status){
+  return status === 'entregue' ? 'Entregue' : status === 'atraso' ? 'Em atraso' : 'Dentro do prazo';
+}
+
+function prazoBadgeClass(status){
+  return status === 'entregue' ? 'svc-concluido' : status === 'atraso' ? 'svc-atraso' : 'svc-andamento';
+}
 
 async function loadVendas(){
   const { data, error } = await supabaseClient
@@ -867,13 +939,18 @@ async function loadVendas(){
   }));
 }
 
-async function showSalesView(){
+async function showSalesView(mode){
+  salesMode = mode;
   document.getElementById('tabClientes').classList.remove('active');
-  document.getElementById('tabVendas').classList.add('active');
+  document.getElementById('tabLimpaNome').classList.toggle('active', mode === 'limpa_nome');
+  document.getElementById('tabConsultas').classList.toggle('active', mode === 'consultas');
   document.getElementById('viewTabs').style.display = 'flex';
   document.getElementById('listView').style.display = 'none';
   document.getElementById('clientView').style.display = 'none';
   document.getElementById('salesView').style.display = 'block';
+  document.getElementById('salesViewTitle').textContent = mode === 'limpa_nome' ? 'Limpa Nome' : 'Consultas realizadas';
+  document.getElementById('newVendaBtn').textContent = mode === 'limpa_nome' ? '+ Novo registro de Limpa Nome' : '+ Nova consulta';
+  vendasExpanded = new Set();
   vendasIndex = await loadVendas();
   renderVendasDashboard();
   renderVendasGrid();
@@ -882,7 +959,8 @@ async function showSalesView(){
 function renderVendasDashboard(){
   let fechado=0, recebido=0, falta=0, lucro=0, qt=0;
   const statusCounts = {};
-  vendasIndex.forEach(v => {
+  const prazoCounts = { no_prazo:0, entregue:0, atraso:0 };
+  vendasIndex.filter(v => servicoMatchesMode(v, salesMode)).forEach(v => {
     fechado += Number(v.fechado)||0;
     recebido += Number(v.recebido)||0;
     falta += Number(v.falta)||0;
@@ -890,12 +968,20 @@ function renderVendasDashboard(){
     qt += Number(v.qt)||0;
     const st = v.execucao || 'Sem status';
     statusCounts[st] = (statusCounts[st]||0) + 1;
+    prazoCounts[getPrazoStatus(v)]++;
   });
   document.getElementById('vdTotalFechado').textContent = moneyBRL(fechado);
   document.getElementById('vdTotalRecebido').textContent = moneyBRL(recebido);
   document.getElementById('vdTotalFalta').textContent = moneyBRL(falta);
   document.getElementById('vdTotalLucro').textContent = moneyBRL(lucro);
   document.getElementById('vdTotalQt').textContent = qt;
+
+  document.getElementById('vdPrazoNoPrazo').textContent = prazoCounts.no_prazo;
+  document.getElementById('vdPrazoEntregue').textContent = prazoCounts.entregue;
+  document.getElementById('vdPrazoAtraso').textContent = prazoCounts.atraso;
+  document.querySelectorAll('#vendasPrazoDashboard .stat-card').forEach(el => {
+    el.classList.toggle('active', el.dataset.filter === vendasPrazoFilter);
+  });
 
   const chipsEl = document.getElementById('vendasStatusChips');
   chipsEl.innerHTML = '';
@@ -916,11 +1002,20 @@ function renderVendasDashboard(){
 function vendaItemHtml(v){
   const execOptions = ['AGUARDANDO INICIO','Ñ ENVIADO','ENVIADO','ENTREGUE','A10 INICIADO','CONCLUIDO'];
   if(v.execucao && !execOptions.includes(v.execucao)) execOptions.push(v.execucao);
-  const opts = execOptions.map(o=>`<option value="${o}" ${o===v.execucao?'selected':''}>${o}</option>`).join('');
+  const execOpts = execOptions.map(o=>`<option value="${o}" ${o===v.execucao?'selected':''}>${o}</option>`).join('');
+  const currentTag = normalizeServicoTag(v.servico);
+  const servicoOpts = SERVICO_TAGS.map(t=>`<option value="${t}" ${t===currentTag?'selected':''}>${t}</option>`).join('');
+  const prazo = getPrazoStatus(v);
+  const isLimpaNome = currentTag === 'Limpa nome';
+  const historicoHtml = (v.historico && v.historico.length)
+    ? `<div class="venda-historico">Histórico: ${v.historico.map(h=>`${h.de} → ${h.para} (${formatDateBR((h.data||'').slice(0,10))})`).join(' · ')}</div>`
+    : '';
   return `
     <div class="venda-item-top">
-      <strong>${v.servico || 'Serviço'}</strong>
-      <select data-field="execucao">${opts}</select>
+      <select data-field="servico" class="servico-select">${servicoOpts}</select>
+      <span class="vg-date">Contratado em ${formatDateBR(v.data_entrada) || '—'}</span>
+      <span class="svc-badge ${prazoBadgeClass(prazo)}">${prazoLabel(prazo)}</span>
+      <select data-field="execucao">${execOpts}</select>
       <button type="button" class="del-venda-btn" title="Excluir">✕ excluir</button>
     </div>
     <div class="vfields">
@@ -933,6 +1028,7 @@ function vendaItemHtml(v){
       <div class="vfield"><label>Fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
       <div class="vfield"><label>Recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
       <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
+      ${isLimpaNome ? `<div class="vfield"><label>Nota Fiscal</label><input type="text" data-field="nota_fiscal" data-money="1" value="${formatBRL(v.nota_fiscal)}"></div>` : ''}
       <div class="vfield"><label>Falta</label><input type="text" data-field="falta" data-money="1" value="${formatBRL(v.falta)}"></div>
       <div class="vfield"><label>Lucro</label><input type="text" data-field="lucro" data-money="1" value="${formatBRL(v.lucro)}"></div>
       <div class="vfield"><label>Quantidade</label><input type="number" data-field="qt" value="${v.qt||1}" min="1"></div>
@@ -944,20 +1040,65 @@ function vendaItemHtml(v){
         <button type="button" class="eye-btn" data-venda-eye="1">👁</button>
       </div>
     </div>
+    ${historicoHtml}
   `;
+}
+
+function recalcLucro(v, itemEl){
+  const recebido = Number(v.recebido)||0;
+  const custo = Number(v.custo)||0;
+  const notaFiscal = Number(v.nota_fiscal)||0;
+  v.lucro = recebido - custo - notaFiscal;
+  const lucroInput = itemEl.querySelector('[data-field="lucro"]');
+  if(lucroInput) lucroInput.value = formatBRL(v.lucro);
+}
+
+async function handleServicoChange(v, newTag){
+  const oldTag = normalizeServicoTag(v.servico);
+  if(newTag === oldTag) return;
+  v.historico = v.historico || [];
+  v.historico.push({ de: oldTag, para: newTag, data: new Date().toISOString() });
+  v.servico = newTag;
+  await saveVenda(v);
+  if(newTag === 'Acompanhamento / Rating'){
+    await promoteToRating(v);
+    return;
+  }
+  renderVendasDashboard();
+  renderVendasGrid();
+}
+
+async function promoteToRating(v){
+  const id = 'c_' + Date.now();
+  const blank = newClientState();
+  blank.clientName = v.cliente || '';
+  blank.clientDoc = v.cpf_cnpj || '';
+  blank.startDate = v.data_entrada || new Date().toISOString().slice(0,10);
+  const { error } = await supabaseClient.from('clientes').insert({
+    id, nome: blank.clientName || 'Novo cliente', score: 0, rating: 'F', data: blank, updated_at: new Date().toISOString()
+  });
+  if(error){ console.error(error); alert('Não foi possível criar o cliente em Acompanhamento/Rating agora.'); return; }
+  alert(`${v.cliente || 'Cliente'} foi promovido para Acompanhamento / Rating. Abrindo o card de diagnóstico...`);
+  await openClient(id);
 }
 
 function wireVendaItem(itemEl, v){
   itemEl.querySelectorAll('[data-field]').forEach(input => {
     const field = input.dataset.field;
+    if(field === 'servico') return;
     const evt = (input.tagName === 'SELECT') ? 'change' : 'input';
     input.addEventListener(evt, (e)=>{
       v[field] = input.dataset.money ? parseBRLInput(e.target) : e.target.value;
+      if(field === 'recebido' || field === 'custo' || field === 'nota_fiscal') recalcLucro(v, itemEl);
       saveVenda(v);
       renderVendasDashboard();
-      if(field === 'execucao') renderVendasGrid();
+      if(field === 'execucao' || field === 'data_entrada') renderVendasGrid();
     });
   });
+  const servicoSelect = itemEl.querySelector('[data-field="servico"]');
+  if(servicoSelect){
+    servicoSelect.addEventListener('change', (e)=>{ handleServicoChange(v, e.target.value); });
+  }
   itemEl.querySelector('.del-venda-btn').addEventListener('click', (e)=>{
     e.stopPropagation();
     deleteVenda(v.id);
@@ -974,18 +1115,20 @@ function renderVendasGrid(){
   const empty = document.getElementById('vendasEmptyState');
   const q = (document.getElementById('vendasSearchInput').value || '').toLowerCase();
 
-  const filtered = vendasIndex
+  const modeItems = vendasIndex.filter(v => servicoMatchesMode(v, salesMode));
+  const filtered = modeItems
     .filter(v => (v.cliente||'').toLowerCase().includes(q))
-    .filter(v => !vendasStatusFilter || (v.execucao||'Sem status') === vendasStatusFilter);
+    .filter(v => !vendasStatusFilter || (v.execucao||'Sem status') === vendasStatusFilter)
+    .filter(v => !vendasPrazoFilter || getPrazoStatus(v) === vendasPrazoFilter);
 
   grid.innerHTML = '';
-  if(vendasIndex.length === 0){
-    empty.textContent = 'Nenhuma venda registrada ainda.';
+  if(modeItems.length === 0){
+    empty.textContent = 'Nenhum registro ainda nesta categoria.';
     empty.style.display = 'block';
     return;
   }
   if(filtered.length === 0){
-    empty.textContent = 'Nenhuma venda encontrada para esse filtro.';
+    empty.textContent = 'Nenhum registro encontrado para esse filtro.';
     empty.style.display = 'block';
     return;
   }
@@ -1015,6 +1158,10 @@ function renderVendasGrid(){
       return acc;
     }, {fechado:0, recebido:0, falta:0, lucro:0});
 
+    const prazoList = items.map(getPrazoStatus);
+    const groupPrazo = prazoList.includes('atraso') ? 'atraso' : (prazoList.includes('no_prazo') ? 'no_prazo' : 'entregue');
+    const latestDate = items.reduce((acc,v)=> (v.data_entrada && (!acc || v.data_entrada > acc)) ? v.data_entrada : acc, '');
+
     const isOpen = vendasExpanded.has(key);
     const wrap = document.createElement('div');
     wrap.className = 'venda-group' + (isOpen ? ' open' : '');
@@ -1022,9 +1169,10 @@ function renderVendasGrid(){
       <div class="venda-group-head">
         <div>
           <div class="vg-name">${displayName}</div>
-          <div class="vg-sub">${items.length} serviço${items.length>1?'s':''} · ${items[0].cidade_uf || ''}</div>
+          <div class="vg-sub">${items.length} serviço${items.length>1?'s':''} · ${items[0].cidade_uf || ''} · Contratado em ${formatDateBR(latestDate) || '—'}</div>
         </div>
         <div class="venda-group-totals">
+          <span class="svc-badge ${prazoBadgeClass(groupPrazo)}">${prazoLabel(groupPrazo)}</span>
           <span>Fechado <strong>${moneyBRL(totals.fechado)}</strong></span>
           <span>Recebido <strong>${moneyBRL(totals.recebido)}</strong></span>
           <span>A receber <strong>${moneyBRL(totals.falta)}</strong></span>
@@ -1086,6 +1234,11 @@ async function deleteVenda(id){
   renderVendasGrid();
 }
 
+function updateNotaFiscalVisibility(){
+  const isLimpaNome = document.getElementById('vfServico').value === 'Limpa nome';
+  document.getElementById('vfNotaFiscalField').style.display = isLimpaNome ? 'flex' : 'none';
+}
+
 function openVendaForm(prefill){
   prefill = prefill || {};
   document.getElementById('vendaFormPanel').style.display = 'grid';
@@ -1095,16 +1248,18 @@ function openVendaForm(prefill){
   document.getElementById('vfContato').value = '';
   document.getElementById('vfOrigem').value = '';
   document.getElementById('vfInformante').value = '';
-  document.getElementById('vfServico').value = 'LIMPA NOME';
+  document.getElementById('vfServico').value = salesMode === 'limpa_nome' ? 'Limpa nome' : 'Consulta Simples';
   document.getElementById('vfExecucao').value = 'AGUARDANDO INICIO';
   document.getElementById('vfData').value = new Date().toISOString().slice(0,10);
   document.getElementById('vfInicio').value = '';
   document.getElementById('vfFechado').value = formatBRL(0);
   document.getElementById('vfRecebido').value = formatBRL(0);
   document.getElementById('vfCusto').value = formatBRL(0);
+  document.getElementById('vfNotaFiscal').value = formatBRL(0);
   document.getElementById('vfFalta').value = formatBRL(0);
   document.getElementById('vfQt').value = 1;
   document.getElementById('vfSenhaSerasa').value = '';
+  updateNotaFiscalVisibility();
   document.getElementById('vendaFormPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
@@ -1115,34 +1270,44 @@ function closeVendaForm(){
 async function createVenda(){
   const cliente = document.getElementById('vfCliente').value.trim();
   if(!cliente){ alert('Informe o nome do cliente.'); return; }
+  const servico = document.getElementById('vfServico').value;
   const recebido = parseBRLInput(document.getElementById('vfRecebido'));
   const custo = parseBRLInput(document.getElementById('vfCusto'));
+  const notaFiscal = servico === 'Limpa nome' ? parseBRLInput(document.getElementById('vfNotaFiscal')) : 0;
+  const cpf_cnpj = document.getElementById('vfCpf').value;
+  const data_entrada = document.getElementById('vfData').value;
   const record = {
     id: 'v_' + Date.now(),
     cliente,
-    servico: document.getElementById('vfServico').value,
+    servico,
     execucao: document.getElementById('vfExecucao').value,
     data: {
-      cpf_cnpj: document.getElementById('vfCpf').value,
+      cpf_cnpj,
       cidade_uf: document.getElementById('vfCidade').value,
       contato: document.getElementById('vfContato').value,
       origem: document.getElementById('vfOrigem').value,
       informante: document.getElementById('vfInformante').value,
       senha_serasa: document.getElementById('vfSenhaSerasa').value,
-      data_entrada: document.getElementById('vfData').value,
+      data_entrada,
       inicio: document.getElementById('vfInicio').value,
       fechado: parseBRLInput(document.getElementById('vfFechado')),
       recebido,
       custo,
+      nota_fiscal: notaFiscal,
       falta: parseBRLInput(document.getElementById('vfFalta')),
-      lucro: recebido - custo,
-      qt: Number(document.getElementById('vfQt').value) || 1
+      lucro: recebido - custo - notaFiscal,
+      qt: Number(document.getElementById('vfQt').value) || 1,
+      historico: []
     },
     updated_at: new Date().toISOString()
   };
   const { error } = await supabaseClient.from('vendas').insert(record);
   if(error){ console.error(error); alert('Não foi possível salvar a venda agora.'); return; }
   closeVendaForm();
+  if(servico === 'Acompanhamento / Rating'){
+    await promoteToRating({ cliente, cpf_cnpj, data_entrada });
+    return;
+  }
   vendasIndex = await loadVendas();
   renderVendasDashboard();
   renderVendasGrid();
@@ -1675,11 +1840,21 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
 });
 
 document.getElementById('tabClientes').addEventListener('click', showListView);
-document.getElementById('tabVendas').addEventListener('click', showSalesView);
+document.getElementById('tabLimpaNome').addEventListener('click', ()=>showSalesView('limpa_nome'));
+document.getElementById('tabConsultas').addEventListener('click', ()=>showSalesView('consultas'));
 document.getElementById('newVendaBtn').addEventListener('click', ()=>openVendaForm());
 document.getElementById('cancelVendaBtn').addEventListener('click', closeVendaForm);
 document.getElementById('saveVendaBtn').addEventListener('click', createVenda);
+document.getElementById('vfServico').addEventListener('change', updateNotaFiscalVisibility);
 document.getElementById('vendasSearchInput').addEventListener('input', renderVendasGrid);
+document.querySelectorAll('#vendasPrazoDashboard .stat-card').forEach(el => {
+  el.addEventListener('click', () => {
+    const f = el.dataset.filter;
+    vendasPrazoFilter = (vendasPrazoFilter === f) ? null : f;
+    renderVendasDashboard();
+    renderVendasGrid();
+  });
+});
 document.getElementById('logoutBtn2').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
   showLoginView();
