@@ -376,6 +376,8 @@
   .credit-row input[data-field="doc"]{ flex: 1 1 140px; }
   .credit-row .rm-btn{ border:none; background:none; color: var(--ink-soft); cursor:pointer; font-size: 14px; padding: 2px 6px; }
   .credit-section-label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-top: 12px; display:block; }
+  .venda-update-row{ display:flex; align-items:center; gap:10px; margin-top: 14px; }
+  .venda-update-status{ font-size: 12px; color: var(--status-good); }
 
   .plan-list{ background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
   .plan-row{ display:flex; align-items:center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
@@ -1663,6 +1665,10 @@ function vendaItemHtml(v){
         <button type="button" class="eye-btn" data-venda-eye="1">👁</button>
       </div>
     </div>
+    <div class="venda-update-row">
+      <button type="button" class="btn-primary venda-update-btn">Atualizar informações</button>
+      <span class="venda-update-status"></span>
+    </div>
     ${isLimpaNome ? `
     <div class="credit-section-label">Ordem de serviço (nome e CPF/CNPJ atendidos)</div>
     <div class="credit-rows" data-ordens-list>
@@ -1748,7 +1754,7 @@ function wireVendaItem(itemEl, v){
       if(field === 'execucao') renderVendasGrid();
     });
     if(field === 'data_entrada' && input.type === 'date'){
-      input.addEventListener('change', ()=>{ renderVendasGrid(); });
+      input.addEventListener('blur', ()=>{ renderVendasGrid(); });
     }
   });
   const servicoSelect = itemEl.querySelector('[data-field="servico"]');
@@ -1849,6 +1855,23 @@ function wireVendaItem(itemEl, v){
         renderVendasGrid();
       });
     }
+  }
+
+  const updateBtn = itemEl.querySelector('.venda-update-btn');
+  const updateStatus = itemEl.querySelector('.venda-update-status');
+  if(updateBtn){
+    updateBtn.addEventListener('click', async ()=>{
+      updateBtn.disabled = true;
+      updateBtn.textContent = 'Salvando...';
+      await saveVenda(v);
+      renderVendasDashboard();
+      updateBtn.textContent = 'Atualizar informações';
+      updateBtn.disabled = false;
+      if(updateStatus){
+        updateStatus.textContent = 'Informações atualizadas ✓';
+        setTimeout(()=>{ updateStatus.textContent = ''; }, 2000);
+      }
+    });
   }
 }
 
