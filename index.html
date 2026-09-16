@@ -372,8 +372,6 @@
   .credit-row input[data-field="banco"]{ flex: 1 1 110px; }
   .credit-row select[data-field="tipo"]{ flex: 1 1 130px; }
   .credit-row input[data-field="valor"]{ flex: 0 0 110px; }
-  .credit-row input[data-field="razao_social"]{ flex: 1 1 180px; }
-  .credit-row input[data-field="doc"]{ flex: 1 1 140px; }
   .credit-row .rm-btn{ border:none; background:none; color: var(--ink-soft); cursor:pointer; font-size: 14px; padding: 2px 6px; }
   .credit-section-label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-top: 12px; display:block; }
   .venda-update-row{ display:flex; align-items:center; gap:10px; margin-top: 14px; }
@@ -626,11 +624,6 @@
           <input type="password" id="vfSenhaSerasa">
           <button type="button" class="eye-btn" data-target="vfSenhaSerasa">👁</button>
         </div>
-      </div>
-      <div class="field field-wide" id="vfOrdensServicoField" style="display:none;">
-        <label>Ordem de serviço (nome e CPF/CNPJ que serão atendidos)</label>
-        <div class="credit-rows" id="vfOrdensServicoRows"></div>
-        <button type="button" class="add-list-row" id="addOrdemServicoBtn">+ adicionar serviço</button>
       </div>
       <div class="form-actions">
         <button type="button" class="back-btn" id="cancelVendaBtn">Cancelar</button>
@@ -1670,19 +1663,6 @@ function vendaItemHtml(v){
       <span class="venda-update-status"></span>
     </div>
     ${isLimpaNome ? `
-    <div class="credit-section-label">Ordem de serviço (nome e CPF/CNPJ atendidos)</div>
-    <div class="credit-rows" data-ordens-list>
-      ${(v.ordens_servico||[]).map((o,idx) => `
-        <div class="credit-row" data-idx="${idx}">
-          <input type="text" data-field="razao_social" placeholder="Razão social" value="${(o&&o.razao_social)||''}">
-          <input type="text" data-field="doc" placeholder="CPF ou CNPJ" value="${(o&&o.doc)||''}">
-          <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
-        </div>
-      `).join('')}
-    </div>
-    <button type="button" class="add-list-row add-ordem-servico">+ adicionar serviço</button>
-    ` : ''}
-    ${isLimpaNome ? `
     <div class="credit-section-label">Pagamentos recebidos</div>
     <div class="credit-rows" data-recebimentos-list>
       ${(v.recebimentos||[]).map((r,idx) => `
@@ -1742,7 +1722,7 @@ async function promoteToRating(v){
 
 function wireVendaItem(itemEl, v){
   itemEl.querySelectorAll('[data-field]').forEach(input => {
-    if(input.closest('[data-recebimentos-list]') || input.closest('[data-ordens-list]')) return;
+    if(input.closest('[data-recebimentos-list]')) return;
     const field = input.dataset.field;
     if(field === 'servico') return;
     const evt = (input.tagName === 'SELECT') ? 'change' : 'input';
@@ -1826,35 +1806,6 @@ function wireVendaItem(itemEl, v){
       v.origem = btn.dataset.value;
       saveVenda(v);
     });
-  }
-
-  const ordensList = itemEl.querySelector('[data-ordens-list]');
-  if(ordensList){
-    ordensList.querySelectorAll('.credit-row').forEach(row => {
-      const idx = Number(row.dataset.idx);
-      row.querySelectorAll('input').forEach(inp => {
-        inp.addEventListener('input', (e)=>{
-          const field = e.target.dataset.field;
-          v.ordens_servico[idx] = v.ordens_servico[idx] || { razao_social:'', doc:'' };
-          v.ordens_servico[idx][field] = e.target.value;
-          saveVenda(v);
-        });
-      });
-      row.querySelector('.rm-btn').addEventListener('click', ()=>{
-        v.ordens_servico.splice(idx,1);
-        saveVenda(v);
-        renderVendasGrid();
-      });
-    });
-    const addOrdemBtn = itemEl.querySelector('.add-ordem-servico');
-    if(addOrdemBtn){
-      addOrdemBtn.addEventListener('click', ()=>{
-        v.ordens_servico = v.ordens_servico || [];
-        v.ordens_servico.push({ razao_social:'', doc:'' });
-        saveVenda(v);
-        renderVendasGrid();
-      });
-    }
   }
 
   const updateBtn = itemEl.querySelector('.venda-update-btn');
@@ -2004,7 +1955,6 @@ function updateNotaFiscalVisibility(){
   document.getElementById('vfNotaFiscalField').style.display = isLimpaNome ? 'flex' : 'none';
   document.getElementById('vfDataEnvioListaField').style.display = isLimpaNome ? 'flex' : 'none';
   document.getElementById('vfDataConclusaoField').style.display = isLimpaNome ? 'flex' : 'none';
-  document.getElementById('vfOrdensServicoField').style.display = isLimpaNome ? 'block' : 'none';
 }
 
 const INDICADORES_KEY = 'a10:indicadores';
@@ -2035,27 +1985,6 @@ function populateIndicadorSelect(selectedValue){
     opts.map(n=>`<option value="${n}">${n}</option>`).join('') +
     '<option value="__add_new__">+ Adicionar novo indicador</option>';
   sel.value = selectedValue && opts.includes(selectedValue) ? selectedValue : '';
-}
-
-let vfOrdensServico = [];
-
-function renderVfOrdensServico(){
-  const rows = document.getElementById('vfOrdensServicoRows');
-  rows.innerHTML = vfOrdensServico.map((o,idx) => `
-    <div class="credit-row" data-idx="${idx}">
-      <input type="text" data-idx="${idx}" data-field="razao_social" placeholder="Razão social" value="${o.razao_social||''}">
-      <input type="text" data-idx="${idx}" data-field="doc" placeholder="CPF ou CNPJ" value="${o.doc||''}">
-      <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
-    </div>
-  `).join('');
-  rows.querySelectorAll('input').forEach(inp => {
-    inp.addEventListener('input', (e)=>{
-      vfOrdensServico[Number(e.target.dataset.idx)][e.target.dataset.field] = e.target.value;
-    });
-  });
-  rows.querySelectorAll('.rm-btn').forEach(btn => {
-    btn.addEventListener('click', ()=>{ vfOrdensServico.splice(Number(btn.dataset.idx),1); renderVfOrdensServico(); });
-  });
 }
 
 function parseBRLValue(el){
@@ -2092,8 +2021,6 @@ function openVendaForm(prefill){
   document.getElementById('vfRemanescente').value = formatBRL(0);
   document.getElementById('vfQt').value = 1;
   document.getElementById('vfSenhaSerasa').value = '';
-  vfOrdensServico = [{ razao_social:'', doc:'' }];
-  renderVfOrdensServico();
   updateNotaFiscalVisibility();
   document.getElementById('vendaFormPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
@@ -2112,9 +2039,6 @@ async function createVenda(){
   const notaFiscal = servico === 'Limpa nome' ? parseBRLInput(document.getElementById('vfNotaFiscal')) : 0;
   const data_envio_lista = servico === 'Limpa nome' ? document.getElementById('vfDataEnvioLista').value : '';
   const data_conclusao = servico === 'Limpa nome' ? document.getElementById('vfDataConclusao').value : '';
-  const ordens_servico = servico === 'Limpa nome'
-    ? vfOrdensServico.filter(o => (o.razao_social && o.razao_social.trim()) || (o.doc && o.doc.trim()))
-    : [];
   const origem = document.querySelector('#vfOrigemGroup .btn-select.selected');
   const cpf_cnpj = document.getElementById('vfCpf').value;
   const data_entrada = document.getElementById('vfData').value;
@@ -2133,7 +2057,6 @@ async function createVenda(){
       data_entrada,
       data_envio_lista,
       data_conclusao,
-      ordens_servico,
       fechado,
       recebido,
       custo,
@@ -3236,10 +3159,6 @@ document.getElementById('vfInformante').addEventListener('change', (e)=>{
   } else {
     e.target.value = '';
   }
-});
-document.getElementById('addOrdemServicoBtn').addEventListener('click', ()=>{
-  vfOrdensServico.push({ razao_social:'', doc:'' });
-  renderVfOrdensServico();
 });
 document.getElementById('vendasSearchInput').addEventListener('input', renderVendasGrid);
 document.getElementById('vendasPeriodFrom').addEventListener('change', (e)=>{
