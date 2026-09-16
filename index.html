@@ -67,6 +67,76 @@
   .overview-charts-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
   @media (max-width: 720px){ .overview-charts-grid{ grid-template-columns: 1fr; } }
 
+  /* ---------- Ateliê de Ideias ---------- */
+  .ideias-header{ margin-bottom: 18px; }
+  .ideias-header h2{ margin: 0 0 4px; font-size: 22px; }
+  .ideias-subtitle{ font-size: 13px; color: var(--ink-soft); font-style: italic; margin-bottom: 10px; }
+  .ideias-metrics{ font-size: 13px; color: var(--navy); font-weight: 500; }
+  .ideias-tip{
+    background: linear-gradient(160deg, #fff8e8, #fdf1d3); border: 1px solid var(--gold-soft);
+    border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #6b551a; margin-bottom: 16px;
+  }
+  .clients-toolbar select{
+    border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; font-family: inherit;
+    font-size: 13.5px; background: var(--paper-panel); color: var(--ink);
+  }
+  .field textarea{
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-family: inherit;
+    font-size: 14px; background: var(--paper); color: var(--ink); width: 100%; resize: vertical;
+  }
+  .ideias-board{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; }
+  @media (max-width: 900px){ .ideias-board{ grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px){ .ideias-board{ grid-template-columns: 1fr; } }
+  .ideia-column{ background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .ideia-column-head{ display:flex; align-items:center; justify-content:space-between; }
+  .ideia-column-title{ font-family:'Fraunces',serif; font-size: 14.5px; font-weight:600; }
+  .ideia-column-count{
+    background: var(--paper); border: 1px solid var(--line); border-radius: 20px; min-width: 22px;
+    text-align:center; font-size: 11.5px; padding: 1px 7px; color: var(--ink-soft);
+  }
+  .ideia-column-sub{ font-size: 11px; color: var(--ink-soft); margin: 2px 0 12px; }
+  .ideia-column-body{ min-height: 70px; display:flex; flex-direction:column; gap: 10px; border-radius: 8px; transition: background 0.15s; }
+  .ideia-column-body.drag-over{ background: var(--paper); outline: 2px dashed var(--gold); outline-offset: 2px; }
+  .ideia-column-empty{ font-size: 12px; color: var(--ink-soft); text-align:center; padding: 14px 6px; }
+  .ideia-card{
+    background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+    cursor: grab; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ideia-card:active{ cursor: grabbing; }
+  .ideia-card.dragging{ opacity: 0.4; }
+  .ideia-card.favorito{ border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold-soft); }
+  .ideia-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px; }
+  .ideia-star{ border:none; background:none; cursor:pointer; font-size: 15px; padding: 0; color: var(--gold); }
+  .ideia-del{ border:none; background:none; cursor:pointer; font-size: 12px; padding: 0; color: var(--ink-soft); }
+  .ideia-del:hover{ color:#b23; }
+  .ideia-titulo{ font-weight: 600; font-size: 13.5px; margin-bottom: 4px; }
+  .ideia-desc{ font-size: 12.5px; color: var(--ink-soft); margin-bottom: 8px; white-space: pre-wrap; }
+  .ideia-meta{ display:flex; flex-wrap:wrap; gap: 5px; margin-bottom: 6px; }
+  .ideia-categoria-badge{
+    background: var(--status-info-bg); color:#1f4269; font-size: 10.5px; padding: 2px 8px; border-radius: 20px;
+  }
+  .ideia-tag{ background: var(--paper-panel); border: 1px solid var(--line); color: var(--ink-soft); font-size: 10.5px; padding: 2px 8px; border-radius: 20px; }
+  .ideia-date{ font-size: 10.5px; color: var(--ink-soft); }
+
+  .modal-overlay{
+    position: fixed; inset: 0; background: rgba(11,42,74,0.45); display:flex; align-items:center;
+    justify-content:center; z-index: 1000; padding: 20px;
+  }
+  .modal-box{
+    background: var(--paper-panel); border-radius: 14px; padding: 24px; max-width: 520px; width: 100%;
+    max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 16px; }
+  .modal-head h2{ margin:0; font-size: 18px; }
+  .modal-close{ border:none; background:none; font-size: 16px; cursor:pointer; color: var(--ink-soft); }
+  .modal-box .field{ margin-bottom: 14px; }
+
+  .ideia-toast{
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--navy-deep); color:#fff; padding: 12px 22px; border-radius: 10px;
+    font-size: 13.5px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); z-index: 1100;
+  }
+
   /* ---------- Vendas ---------- */
   .period-filter-row{ display:flex; gap:14px; align-items:flex-end; margin-bottom: 16px; flex-wrap:wrap; }
   .period-filter-row .field{ flex: 0 0 160px; }
@@ -347,6 +417,7 @@
     <button type="button" class="view-tab" id="tabClientes" data-view="clients">🗂 Acompanhamento / Rating</button>
     <button type="button" class="view-tab" id="tabLimpaNome" data-view="limpa_nome">🧾 Limpa Nome</button>
     <button type="button" class="view-tab" id="tabConsultas" data-view="consultas">🔍 Consultas realizadas</button>
+    <button type="button" class="view-tab" id="tabIdeias" data-view="ideias">💡 Ateliê de Ideias</button>
   </div>
 
   <!-- ===================== LOGIN VIEW ===================== -->
@@ -531,6 +602,117 @@
     <div class="empty-state" id="vendasEmptyState" style="display:none;">Nenhuma venda registrada ainda.</div>
     <div class="save-status" id="vendaSaveStatus">&nbsp;</div>
   </div>
+
+  <!-- ===================== ATELIÊ DE IDEIAS ===================== -->
+  <div id="ideiasView" style="display:none;">
+    <div class="ideias-header">
+      <h2>Ateliê de Ideias</h2>
+      <div class="ideias-subtitle">Todo sistema bom começa com uma anotação solta. Este é o lugar pra elas.</div>
+      <div class="ideias-metrics" id="ideiasMetrics">💡 0 ideias registradas · ✅ 0 viraram realidade · 🔥 0 em andamento agora</div>
+    </div>
+
+    <div class="ideias-tip" id="ideiasTip" style="display:none;"></div>
+
+    <div class="clients-toolbar">
+      <select id="ideiasFiltroCategoria">
+        <option value="">Todas as categorias</option>
+        <option value="Sistema A10">Sistema A10</option>
+        <option value="Negócio A10">Negócio A10</option>
+        <option value="Vida &amp; Outros">Vida &amp; Outros</option>
+      </select>
+      <select id="ideiasFiltroPrioridade">
+        <option value="">Todas as prioridades</option>
+        <option value="urgente">🔥 Urgente</option>
+        <option value="em_breve">🟡 Em breve</option>
+        <option value="quando_der">⚪ Quando der</option>
+      </select>
+      <button class="btn-primary" id="newIdeiaBtn" style="margin-left:auto;">+ Nova faísca</button>
+      <button class="back-btn" id="logoutBtn4" style="margin-bottom:0;">Sair</button>
+    </div>
+
+    <div class="empty-state" id="ideiasEmptyState" style="display:none;">
+      Toda grande virada começou com uma anotação despretensiosa. Qual é a sua?
+      <div style="margin-top:12px;"><button class="btn-primary" id="ideiasEmptyBtn">+ Registrar primeira ideia</button></div>
+    </div>
+
+    <div class="ideias-board" id="ideiasBoard" style="display:none;">
+      <div class="ideia-column">
+        <div class="ideia-column-head">
+          <div class="ideia-column-title">💭 Faísca</div>
+          <div class="ideia-column-count" id="countFaisca">0</div>
+        </div>
+        <div class="ideia-column-sub">Só uma ideia ainda crua</div>
+        <div class="ideia-column-body" id="colFaisca" data-estagio="faisca"></div>
+      </div>
+      <div class="ideia-column">
+        <div class="ideia-column-head">
+          <div class="ideia-column-title">🔧 Em lapidação</div>
+          <div class="ideia-column-count" id="countEmLapidacao">0</div>
+        </div>
+        <div class="ideia-column-sub">Já tem forma, falta amadurecer</div>
+        <div class="ideia-column-body" id="colEmLapidacao" data-estagio="em_lapidacao"></div>
+      </div>
+      <div class="ideia-column">
+        <div class="ideia-column-head">
+          <div class="ideia-column-title">🚀 Pronta pra sair do papel</div>
+          <div class="ideia-column-count" id="countPronta">0</div>
+        </div>
+        <div class="ideia-column-sub">Só falta começar</div>
+        <div class="ideia-column-body" id="colPronta" data-estagio="pronta"></div>
+      </div>
+      <div class="ideia-column">
+        <div class="ideia-column-head">
+          <div class="ideia-column-title">✅ No ar</div>
+          <div class="ideia-column-count" id="countNoAr">0</div>
+        </div>
+        <div class="ideia-column-sub">Já virou realidade</div>
+        <div class="ideia-column-body" id="colNoAr" data-estagio="no_ar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ideiaModalOverlay" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2>Nova faísca</h2>
+        <button type="button" class="modal-close" id="closeIdeiaModal">✕</button>
+      </div>
+      <div class="field">
+        <label>Título</label>
+        <input type="text" id="ideiaTitulo" placeholder="Como você chamaria essa ideia em poucas palavras?">
+      </div>
+      <div class="field">
+        <label>Descrição</label>
+        <textarea id="ideiaDescricao" rows="4" placeholder="Solta o raciocínio aqui. Detalhe o quanto quiser — ou nada, se for só um lampejo."></textarea>
+      </div>
+      <div class="field">
+        <label>Isso pertence a...</label>
+        <select id="ideiaCategoria">
+          <option value="Sistema A10">Sistema A10</option>
+          <option value="Negócio A10">Negócio A10</option>
+          <option value="Vida &amp; Outros">Vida &amp; Outros</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Se pudesse resolver isso amanhã, você resolveria?</label>
+        <select id="ideiaPrioridade">
+          <option value="urgente">🔥 Sim, urgente</option>
+          <option value="em_breve">🟡 Em breve</option>
+          <option value="quando_der" selected>⚪ Quando der</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tags</label>
+        <input type="text" id="ideiaTags" placeholder="Palavras-chave (opcional)">
+      </div>
+      <div class="form-actions">
+        <button type="button" class="back-btn" id="cancelIdeiaBtn">Cancelar</button>
+        <button type="button" class="btn-primary" id="saveIdeiaBtn">Registrar ideia</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ideiaToast" class="ideia-toast" style="display:none;"></div>
 
   <!-- ===================== CLIENT VIEW ===================== -->
   <div id="clientView" style="display:none;">
@@ -845,12 +1027,14 @@ function deactivateAllTabs(){
   document.getElementById('tabClientes').classList.remove('active');
   document.getElementById('tabLimpaNome').classList.remove('active');
   document.getElementById('tabConsultas').classList.remove('active');
+  document.getElementById('tabIdeias').classList.remove('active');
 }
 function hideAllViews(){
   document.getElementById('overviewView').style.display = 'none';
   document.getElementById('listView').style.display = 'none';
   document.getElementById('clientView').style.display = 'none';
   document.getElementById('salesView').style.display = 'none';
+  document.getElementById('ideiasView').style.display = 'none';
 }
 
 async function showListView(){
@@ -1744,6 +1928,219 @@ async function createVenda(){
   renderVendasGrid();
 }
 
+/* ==================== ATELIÊ DE IDEIAS ==================== */
+let ideiasIndex = [];
+let ideiasFiltroCategoria = '';
+let ideiasFiltroPrioridade = '';
+let draggedIdeiaId = null;
+let ideiaToastTimeout = null;
+
+const IDEIA_ESTAGIOS = ['faisca','em_lapidacao','pronta','no_ar'];
+const IDEIA_COL_EL = { faisca:'colFaisca', em_lapidacao:'colEmLapidacao', pronta:'colPronta', no_ar:'colNoAr' };
+const IDEIA_COUNT_EL = { faisca:'countFaisca', em_lapidacao:'countEmLapidacao', pronta:'countPronta', no_ar:'countNoAr' };
+
+function prioridadeIcon(p){
+  return p === 'urgente' ? '🔥' : p === 'em_breve' ? '🟡' : '⚪';
+}
+
+async function loadIdeias(){
+  const { data, error } = await supabaseClient.from('ideias').select('*').order('atualizado_em', { ascending:false });
+  if(error){ console.error(error); return []; }
+  return data || [];
+}
+
+async function showIdeiasView(){
+  deactivateAllTabs();
+  document.getElementById('tabIdeias').classList.add('active');
+  document.getElementById('viewTabs').style.display = 'flex';
+  hideAllViews();
+  document.getElementById('ideiasView').style.display = 'block';
+  ideiasIndex = await loadIdeias();
+  renderIdeias();
+}
+
+function renderIdeiasMetrics(){
+  const total = ideiasIndex.length;
+  const noAr = ideiasIndex.filter(i => i.estagio === 'no_ar').length;
+  const urgentes = ideiasIndex.filter(i => i.prioridade === 'urgente' && i.estagio !== 'no_ar').length;
+  document.getElementById('ideiasMetrics').textContent = `💡 ${total} ideias registradas · ✅ ${noAr} viraram realidade · 🔥 ${urgentes} em andamento agora`;
+}
+
+function renderIdeiasTip(){
+  const tipEl = document.getElementById('ideiasTip');
+  const limite = Date.now() - (7*24*60*60*1000);
+  const paradas = ideiasIndex.filter(i => i.estagio === 'faisca' && new Date(i.criado_em).getTime() < limite);
+  if(paradas.length > 0){
+    tipEl.textContent = '💡 Ideia sem prazo é ideia esquecida. Que tal mover uma faísca pra "em lapidação" hoje?';
+    tipEl.style.display = 'block';
+  } else {
+    tipEl.style.display = 'none';
+  }
+}
+
+function showIdeiaToast(msg){
+  const el = document.getElementById('ideiaToast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(ideiaToastTimeout);
+  ideiaToastTimeout = setTimeout(()=>{ el.style.display = 'none'; }, 3500);
+}
+
+function ideiaCardHtml(idea){
+  const tags = (idea.tags||[]).map(t=>`<span class="ideia-tag">#${t}</span>`).join('');
+  return `
+    <div class="ideia-card${idea.favorito?' favorito':''}" draggable="true" data-id="${idea.id}">
+      <div class="ideia-card-top">
+        <button type="button" class="ideia-star" data-id="${idea.id}" title="Favoritar">${idea.favorito?'⭐':'☆'}</button>
+        <span title="Prioridade">${prioridadeIcon(idea.prioridade)}</span>
+        <button type="button" class="ideia-del" data-id="${idea.id}" title="Excluir">✕</button>
+      </div>
+      <div class="ideia-titulo">${idea.titulo || 'Sem título'}</div>
+      ${idea.descricao ? `<div class="ideia-desc">${idea.descricao}</div>` : ''}
+      <div class="ideia-meta">
+        <span class="ideia-categoria-badge">${idea.categoria}</span>
+        ${tags}
+      </div>
+      <div class="ideia-date">${formatDateBR((idea.atualizado_em||'').slice(0,10))}</div>
+    </div>
+  `;
+}
+
+function wireIdeiaColumn(colEl){
+  colEl.querySelectorAll('.ideia-card').forEach(card => {
+    card.addEventListener('dragstart', ()=>{
+      draggedIdeiaId = card.dataset.id;
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', ()=>{
+      card.classList.remove('dragging');
+    });
+    const starBtn = card.querySelector('.ideia-star');
+    if(starBtn) starBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleIdeiaFavorito(card.dataset.id); });
+    const delBtn = card.querySelector('.ideia-del');
+    if(delBtn) delBtn.addEventListener('click', (e)=>{ e.stopPropagation(); deleteIdeia(card.dataset.id); });
+  });
+  colEl.addEventListener('dragover', (e)=>{ e.preventDefault(); colEl.classList.add('drag-over'); });
+  colEl.addEventListener('dragleave', ()=>{ colEl.classList.remove('drag-over'); });
+  colEl.addEventListener('drop', (e)=>{
+    e.preventDefault();
+    colEl.classList.remove('drag-over');
+    const novoEstagio = colEl.dataset.estagio;
+    if(draggedIdeiaId) moveIdeia(draggedIdeiaId, novoEstagio);
+    draggedIdeiaId = null;
+  });
+}
+
+function renderIdeias(){
+  renderIdeiasMetrics();
+  renderIdeiasTip();
+
+  const filtered = ideiasIndex
+    .filter(i => !ideiasFiltroCategoria || i.categoria === ideiasFiltroCategoria)
+    .filter(i => !ideiasFiltroPrioridade || i.prioridade === ideiasFiltroPrioridade);
+
+  const boardEl = document.getElementById('ideiasBoard');
+  const emptyEl = document.getElementById('ideiasEmptyState');
+  if(ideiasIndex.length === 0){
+    boardEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  boardEl.style.display = 'grid';
+  emptyEl.style.display = 'none';
+
+  IDEIA_ESTAGIOS.forEach(estagio => {
+    const items = filtered
+      .filter(i => i.estagio === estagio)
+      .sort((a,b) => {
+        if(!!b.favorito !== !!a.favorito) return (b.favorito?1:0) - (a.favorito?1:0);
+        return new Date(b.atualizado_em) - new Date(a.atualizado_em);
+      });
+    document.getElementById(IDEIA_COUNT_EL[estagio]).textContent = items.length;
+    const colEl = document.getElementById(IDEIA_COL_EL[estagio]);
+    if(items.length === 0){
+      colEl.innerHTML = `<div class="ideia-column-empty">${estagio==='no_ar' ? 'Ainda nenhuma ideia chegou até aqui. Continue lapidando — o dia chega.' : 'Nada por aqui ainda.'}</div>`;
+    } else {
+      colEl.innerHTML = items.map(ideiaCardHtml).join('');
+    }
+    wireIdeiaColumn(colEl);
+  });
+}
+
+async function saveIdeia(idea){
+  const { error } = await supabaseClient.from('ideias').upsert({
+    id: idea.id, titulo: idea.titulo || 'Sem título', descricao: idea.descricao || null,
+    categoria: idea.categoria, prioridade: idea.prioridade, estagio: idea.estagio,
+    tags: idea.tags || [], favorito: !!idea.favorito,
+    criado_em: idea.criado_em, atualizado_em: idea.atualizado_em
+  });
+  if(error) console.error(error);
+}
+
+async function moveIdeia(id, novoEstagio){
+  const idea = ideiasIndex.find(i => i.id === id);
+  if(!idea || idea.estagio === novoEstagio) return;
+  idea.estagio = novoEstagio;
+  idea.atualizado_em = new Date().toISOString();
+  await saveIdeia(idea);
+  renderIdeias();
+  if(novoEstagio === 'no_ar') showIdeiaToast('🎉 Mais uma saiu do papel. Bom trabalho.');
+}
+
+async function toggleIdeiaFavorito(id){
+  const idea = ideiasIndex.find(i => i.id === id);
+  if(!idea) return;
+  idea.favorito = !idea.favorito;
+  idea.atualizado_em = new Date().toISOString();
+  await saveIdeia(idea);
+  renderIdeias();
+}
+
+async function deleteIdeia(id){
+  if(!confirm('Excluir esta ideia? Essa ação não pode ser desfeita.')) return;
+  const { error } = await supabaseClient.from('ideias').delete().eq('id', id);
+  if(error){ console.error(error); alert('Não foi possível excluir agora.'); return; }
+  ideiasIndex = ideiasIndex.filter(i => i.id !== id);
+  renderIdeias();
+}
+
+function openIdeiaModal(){
+  document.getElementById('ideiaTitulo').value = '';
+  document.getElementById('ideiaDescricao').value = '';
+  document.getElementById('ideiaCategoria').value = 'Sistema A10';
+  document.getElementById('ideiaPrioridade').value = 'quando_der';
+  document.getElementById('ideiaTags').value = '';
+  document.getElementById('ideiaModalOverlay').style.display = 'flex';
+}
+function closeIdeiaModal(){
+  document.getElementById('ideiaModalOverlay').style.display = 'none';
+}
+
+async function createIdeia(){
+  const titulo = document.getElementById('ideiaTitulo').value.trim();
+  if(!titulo){ alert('Dá um título pra sua ideia.'); return; }
+  const now = new Date().toISOString();
+  const tagsRaw = document.getElementById('ideiaTags').value.trim();
+  const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [];
+  const idea = {
+    id: 'i_' + Date.now(),
+    titulo,
+    descricao: document.getElementById('ideiaDescricao').value.trim(),
+    categoria: document.getElementById('ideiaCategoria').value,
+    prioridade: document.getElementById('ideiaPrioridade').value,
+    estagio: 'faisca',
+    tags,
+    favorito: false,
+    criado_em: now,
+    atualizado_em: now
+  };
+  const { error } = await supabaseClient.from('ideias').insert(idea);
+  if(error){ console.error(error); alert('Não foi possível salvar a ideia agora.'); return; }
+  closeIdeiaModal();
+  ideiasIndex = await loadIdeias();
+  renderIdeias();
+}
+
 /* ---------- Board rendering (same behavior as before, now per-client) ---------- */
 function renderIncomeItem(item){
   const opts = RENDA_OPCOES.map(o => `<option ${o===item.fonte?'selected':''}>${o}</option>`).join('');
@@ -2381,6 +2778,19 @@ document.getElementById('logoutBtn3').addEventListener('click', async ()=>{
 });
 document.getElementById('tabLimpaNome').addEventListener('click', ()=>showSalesView('limpa_nome'));
 document.getElementById('tabConsultas').addEventListener('click', ()=>showSalesView('consultas'));
+document.getElementById('tabIdeias').addEventListener('click', showIdeiasView);
+document.getElementById('ideiasFiltroCategoria').addEventListener('change', (e)=>{ ideiasFiltroCategoria = e.target.value; renderIdeias(); });
+document.getElementById('ideiasFiltroPrioridade').addEventListener('change', (e)=>{ ideiasFiltroPrioridade = e.target.value; renderIdeias(); });
+document.getElementById('newIdeiaBtn').addEventListener('click', openIdeiaModal);
+document.getElementById('ideiasEmptyBtn').addEventListener('click', openIdeiaModal);
+document.getElementById('closeIdeiaModal').addEventListener('click', closeIdeiaModal);
+document.getElementById('cancelIdeiaBtn').addEventListener('click', closeIdeiaModal);
+document.getElementById('saveIdeiaBtn').addEventListener('click', createIdeia);
+document.getElementById('ideiaModalOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'ideiaModalOverlay') closeIdeiaModal(); });
+document.getElementById('logoutBtn4').addEventListener('click', async ()=>{
+  await supabaseClient.auth.signOut();
+  showLoginView();
+});
 document.getElementById('newVendaBtn').addEventListener('click', ()=>openVendaForm());
 document.getElementById('cancelVendaBtn').addEventListener('click', closeVendaForm);
 document.getElementById('saveVendaBtn').addEventListener('click', createVenda);
