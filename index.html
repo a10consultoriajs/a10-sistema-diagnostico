@@ -226,7 +226,7 @@
   .venda-item-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom: 8px; }
   .venda-item-top select{ border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; font-size: 12.5px; font-family:inherit; background:var(--paper-panel); }
   .venda-item .vfields{ display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
-  .venda-item .vfield label{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); display:block; margin-bottom: 3px; }
+  .venda-item .vfield label{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #F4FAFF; text-shadow: 0 0 8px rgba(244,250,255,0.45); display:block; margin-bottom: 3px; }
   .venda-item .vfield input, .venda-item .vfield select{
     width:100%; border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; font-size: 13px; font-family: inherit; background: var(--paper-panel);
   }
@@ -284,7 +284,7 @@
     display:flex; flex-wrap: wrap; gap: 18px; align-items:flex-end; margin-bottom: 10px;
   }
   .field{ display:flex; flex-direction:column; gap:4px; flex: 1 1 160px; }
-  .field label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
+  .field label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #F4FAFF; text-shadow: 0 0 8px rgba(244,250,255,0.45); }
   .field input, .field select{
     border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
     font-family: inherit; font-size: 14px; background: var(--paper); color: var(--ink); width: 100%;
@@ -1612,7 +1612,7 @@ function maskDateInput(el){
 }
 
 function getPrazoStatus(v){
-  const done = ['ENTREGUE','CONCLUIDO','CONCLUÍDO'].includes((v.execucao||'').toUpperCase());
+  const done = ['ENTREGUE','CONCLUIDO','CONCLUÍDO','CONCLUÍDOS','CONCLUIDOS'].includes((v.execucao||'').toUpperCase());
   if(done) return 'entregue';
   if(!v.data_entrada) return 'no_prazo';
   const start = new Date(v.data_entrada + 'T00:00:00');
@@ -1703,7 +1703,7 @@ function renderVendasDashboard(){
 }
 
 function vendaItemHtml(v){
-  const execOptions = ['AGUARDANDO INICIO','Ñ ENVIADO','ENVIADO','ENTREGUE','A10 INICIADO','CONCLUIDO'];
+  const execOptions = ['Próximos envios','Enviados','Concluídos','Agravo'];
   if(v.execucao && !execOptions.includes(v.execucao)) execOptions.push(v.execucao);
   const execOpts = execOptions.map(o=>`<option value="${o}" ${o===v.execucao?'selected':''}>${o}</option>`).join('');
   const currentTag = normalizeServicoTag(v.servico);
@@ -2249,7 +2249,7 @@ async function createVenda(){
     id: 'v_' + Date.now(),
     cliente,
     servico,
-    execucao: 'AGUARDANDO INICIO',
+    execucao: 'Próximos envios',
     data: {
       cpf_cnpj: cpf_cliente,
       whatsapp,
