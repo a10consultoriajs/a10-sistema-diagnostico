@@ -159,6 +159,14 @@
     padding: 6px 12px; font-size: 12px; color: var(--ink-soft); cursor:pointer;
   }
   .status-chip.active{ border-color: var(--navy); color: var(--navy); font-weight:600; }
+  .btn-select-group{ display:flex; flex-wrap:wrap; gap:6px; }
+  .btn-select{
+    background: var(--paper-panel); border: 1px solid var(--line); border-radius: 20px;
+    padding: 6px 12px; font-size: 12px; color: var(--ink-soft); cursor:pointer; font-family:inherit;
+  }
+  .btn-select.selected{ border-color: var(--navy); color: var(--navy); font-weight:600; background: var(--status-info-bg); }
+  .field-wide{ grid-column: 1 / -1; }
+  .vfield-wide{ grid-column: 1 / -1; }
   .venda-form{
     background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px;
     padding: 18px; margin-bottom: 16px; display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
@@ -567,11 +575,19 @@
     </div>
 
     <div class="venda-form" id="vendaFormPanel" style="display:none;">
-      <div class="field"><label>Cliente</label><input type="text" id="vfCliente"></div>
-      <div class="field"><label>CPF/CNPJ</label><input type="text" id="vfCpf"></div>
+      <div class="field"><label>Cliente (contratante)</label><input type="text" id="vfCliente"></div>
+      <div class="field"><label>CPF do contratante</label><input type="text" id="vfCpf"></div>
       <div class="field"><label>Cidade/UF</label><input type="text" id="vfCidade"></div>
       <div class="field"><label>Contato</label><input type="text" id="vfContato"></div>
-      <div class="field"><label>Origem</label><input type="text" id="vfOrigem"></div>
+      <div class="field">
+        <label>Origem</label>
+        <div class="btn-select-group" id="vfOrigemGroup">
+          <button type="button" class="btn-select" data-value="Indicações">Indicações</button>
+          <button type="button" class="btn-select" data-value="Redes sociais">Redes sociais</button>
+          <button type="button" class="btn-select" data-value="Ads">Ads</button>
+          <button type="button" class="btn-select" data-value="NetWorking">NetWorking</button>
+        </div>
+      </div>
       <div class="field"><label>Indicado por</label><input type="text" id="vfInformante"></div>
       <div class="field">
         <label>Serviço contratado</label>
@@ -587,13 +603,11 @@
           <option>ENTREGUE</option><option>A10 INICIADO</option><option>CONCLUIDO</option>
         </select>
       </div>
-      <div class="field"><label>Data de entrada</label><input type="date" id="vfData"></div>
-      <div class="field"><label>Início</label><input type="date" id="vfInicio"></div>
+      <div class="field"><label>Data da contratação</label><input type="date" id="vfData"></div>
       <div class="field"><label>Fechado (R$)</label><input type="text" id="vfFechado" placeholder="R$ 0,00"></div>
       <div class="field"><label>Recebido (R$)</label><input type="text" id="vfRecebido" placeholder="R$ 0,00"></div>
       <div class="field"><label>Custo (R$)</label><input type="text" id="vfCusto" placeholder="R$ 0,00"></div>
       <div class="field" id="vfNotaFiscalField" style="display:none;"><label>Nota Fiscal (R$)</label><input type="text" id="vfNotaFiscal" placeholder="R$ 0,00"></div>
-      <div class="field" id="vfDataPagamentoField" style="display:none;"><label>Data de pagamento</label><input type="date" id="vfDataPagamento"></div>
       <div class="field" id="vfDataEnvioListaField" style="display:none;"><label>Data de envio da lista</label><input type="date" id="vfDataEnvioLista"></div>
       <div class="field" id="vfDataConclusaoField" style="display:none;"><label>Data de conclusão</label><input type="date" id="vfDataConclusao"></div>
       <div class="field"><label>Falta (R$)</label><input type="text" id="vfFalta" placeholder="R$ 0,00"></div>
@@ -604,6 +618,11 @@
           <input type="password" id="vfSenhaSerasa">
           <button type="button" class="eye-btn" data-target="vfSenhaSerasa">👁</button>
         </div>
+      </div>
+      <div class="field field-wide" id="vfOrdensServicoField" style="display:none;">
+        <label>Ordem de serviço (CPF/CNPJ que serão atendidos)</label>
+        <div class="credit-rows" id="vfOrdensServicoRows"></div>
+        <button type="button" class="add-list-row" id="addOrdemServicoBtn">+ adicionar CPF/CNPJ</button>
       </div>
       <div class="form-actions">
         <button type="button" class="back-btn" id="cancelVendaBtn">Cancelar</button>
@@ -916,6 +935,12 @@ function parseBRLInput(el){
   const num = digits ? parseInt(digits,10)/100 : 0;
   el.value = formatBRL(num);
   return num;
+}
+function formatBRLFieldOnBlur(e){
+  const el = e.target;
+  let raw = (el.value||'').trim().replace(/R\$\s?/g,'').replace(/\./g,'').replace(',', '.');
+  const num = parseFloat(raw);
+  el.value = formatBRL(isNaN(num) ? 0 : num);
 }
 
 function businessDaysSince(startISO){
@@ -1606,12 +1631,15 @@ function vendaItemHtml(v){
     </div>
     <div class="vfields">
       <div class="vfield"><label>Cidade/UF</label><input type="text" data-field="cidade_uf" value="${v.cidade_uf||''}"></div>
-      <div class="vfield"><label>CPF/CNPJ</label><input type="text" data-field="cpf_cnpj" value="${v.cpf_cnpj||''}"></div>
+      <div class="vfield"><label>CPF do contratante</label><input type="text" data-field="cpf_cnpj" value="${v.cpf_cnpj||''}"></div>
       <div class="vfield"><label>Contato</label><input type="text" data-field="contato" value="${v.contato||''}"></div>
-      <div class="vfield"><label>Origem</label><input type="text" data-field="origem" value="${v.origem||''}"></div>
-      <div class="vfield"><label>Data entrada</label><input type="date" data-field="data_entrada" value="${v.data_entrada||''}"></div>
-      <div class="vfield"><label>Início</label><input type="date" data-field="inicio" value="${v.inicio||''}"></div>
-      ${isLimpaNome ? `<div class="vfield"><label>Data de pagamento</label><input type="date" data-field="data_pagamento" value="${v.data_pagamento||''}"></div>` : ''}
+      <div class="vfield vfield-wide">
+        <label>Origem</label>
+        <div class="btn-select-group" data-field-group="origem">
+          ${['Indicações','Redes sociais','Ads','NetWorking'].map(o=>`<button type="button" class="btn-select${v.origem===o?' selected':''}" data-value="${o}">${o}</button>`).join('')}
+        </div>
+      </div>
+      <div class="vfield"><label>Data da contratação</label><input type="date" data-field="data_entrada" value="${v.data_entrada||''}"></div>
       ${isLimpaNome ? `<div class="vfield"><label>Data de envio da lista</label><input type="date" data-field="data_envio_lista" value="${v.data_envio_lista||''}"></div>` : ''}
       ${isLimpaNome ? `<div class="vfield"><label>Data de conclusão</label><input type="date" data-field="data_conclusao" value="${v.data_conclusao||''}"></div>` : ''}
       <div class="vfield"><label>Fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
@@ -1629,6 +1657,18 @@ function vendaItemHtml(v){
         <button type="button" class="eye-btn" data-venda-eye="1">👁</button>
       </div>
     </div>
+    ${isLimpaNome ? `
+    <div class="credit-section-label">Ordem de serviço (CPF/CNPJ atendidos)</div>
+    <div class="credit-rows" data-ordens-list>
+      ${(v.ordens_servico||[]).map((doc,idx) => `
+        <div class="credit-row" data-idx="${idx}">
+          <input type="text" data-field="doc" placeholder="CPF ou CNPJ" value="${doc||''}">
+          <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
+        </div>
+      `).join('')}
+    </div>
+    <button type="button" class="add-list-row add-ordem-servico">+ adicionar CPF/CNPJ</button>
+    ` : ''}
     ${isLimpaNome ? `
     <div class="credit-section-label">Pagamentos recebidos</div>
     <div class="credit-rows" data-recebimentos-list>
@@ -1750,6 +1790,43 @@ function wireVendaItem(itemEl, v){
       addRecebBtn.addEventListener('click', ()=>{
         v.recebimentos = v.recebimentos || [];
         v.recebimentos.push({ data: new Date().toISOString().slice(0,10), valor: 0 });
+        saveVenda(v);
+        renderVendasGrid();
+      });
+    }
+  }
+
+  const origemGroup = itemEl.querySelector('[data-field-group="origem"]');
+  if(origemGroup){
+    origemGroup.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.btn-select');
+      if(!btn) return;
+      origemGroup.querySelectorAll('.btn-select').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      v.origem = btn.dataset.value;
+      saveVenda(v);
+    });
+  }
+
+  const ordensList = itemEl.querySelector('[data-ordens-list]');
+  if(ordensList){
+    ordensList.querySelectorAll('.credit-row').forEach(row => {
+      const idx = Number(row.dataset.idx);
+      row.querySelector('input').addEventListener('input', (e)=>{
+        v.ordens_servico[idx] = e.target.value;
+        saveVenda(v);
+      });
+      row.querySelector('.rm-btn').addEventListener('click', ()=>{
+        v.ordens_servico.splice(idx,1);
+        saveVenda(v);
+        renderVendasGrid();
+      });
+    });
+    const addOrdemBtn = itemEl.querySelector('.add-ordem-servico');
+    if(addOrdemBtn){
+      addOrdemBtn.addEventListener('click', ()=>{
+        v.ordens_servico = v.ordens_servico || [];
+        v.ordens_servico.push('');
         saveVenda(v);
         renderVendasGrid();
       });
@@ -1884,9 +1961,27 @@ async function deleteVenda(id){
 function updateNotaFiscalVisibility(){
   const isLimpaNome = document.getElementById('vfServico').value === 'Limpa nome';
   document.getElementById('vfNotaFiscalField').style.display = isLimpaNome ? 'flex' : 'none';
-  document.getElementById('vfDataPagamentoField').style.display = isLimpaNome ? 'flex' : 'none';
   document.getElementById('vfDataEnvioListaField').style.display = isLimpaNome ? 'flex' : 'none';
   document.getElementById('vfDataConclusaoField').style.display = isLimpaNome ? 'flex' : 'none';
+  document.getElementById('vfOrdensServicoField').style.display = isLimpaNome ? 'block' : 'none';
+}
+
+let vfOrdensServico = [];
+
+function renderVfOrdensServico(){
+  const rows = document.getElementById('vfOrdensServicoRows');
+  rows.innerHTML = vfOrdensServico.map((doc,idx) => `
+    <div class="credit-row" data-idx="${idx}">
+      <input type="text" data-idx="${idx}" placeholder="CPF ou CNPJ" value="${doc||''}">
+      <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
+    </div>
+  `).join('');
+  rows.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', (e)=>{ vfOrdensServico[Number(e.target.dataset.idx)] = e.target.value; });
+  });
+  rows.querySelectorAll('.rm-btn').forEach(btn => {
+    btn.addEventListener('click', ()=>{ vfOrdensServico.splice(Number(btn.dataset.idx),1); renderVfOrdensServico(); });
+  });
 }
 
 function openVendaForm(prefill){
@@ -1896,22 +1991,22 @@ function openVendaForm(prefill){
   document.getElementById('vfCpf').value = '';
   document.getElementById('vfCidade').value = '';
   document.getElementById('vfContato').value = '';
-  document.getElementById('vfOrigem').value = '';
+  document.querySelectorAll('#vfOrigemGroup .btn-select').forEach(b=>b.classList.remove('selected'));
   document.getElementById('vfInformante').value = '';
   document.getElementById('vfServico').value = salesMode === 'limpa_nome' ? 'Limpa nome' : 'Consulta Simples';
   document.getElementById('vfExecucao').value = 'AGUARDANDO INICIO';
   document.getElementById('vfData').value = new Date().toISOString().slice(0,10);
-  document.getElementById('vfInicio').value = '';
   document.getElementById('vfFechado').value = formatBRL(0);
   document.getElementById('vfRecebido').value = formatBRL(0);
   document.getElementById('vfCusto').value = formatBRL(0);
   document.getElementById('vfNotaFiscal').value = formatBRL(0);
-  document.getElementById('vfDataPagamento').value = '';
   document.getElementById('vfDataEnvioLista').value = '';
   document.getElementById('vfDataConclusao').value = '';
   document.getElementById('vfFalta').value = formatBRL(0);
   document.getElementById('vfQt').value = 1;
   document.getElementById('vfSenhaSerasa').value = '';
+  vfOrdensServico = [''];
+  renderVfOrdensServico();
   updateNotaFiscalVisibility();
   document.getElementById('vendaFormPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
@@ -1927,9 +2022,10 @@ async function createVenda(){
   const recebido = parseBRLInput(document.getElementById('vfRecebido'));
   const custo = parseBRLInput(document.getElementById('vfCusto'));
   const notaFiscal = servico === 'Limpa nome' ? parseBRLInput(document.getElementById('vfNotaFiscal')) : 0;
-  const data_pagamento = servico === 'Limpa nome' ? document.getElementById('vfDataPagamento').value : '';
   const data_envio_lista = servico === 'Limpa nome' ? document.getElementById('vfDataEnvioLista').value : '';
   const data_conclusao = servico === 'Limpa nome' ? document.getElementById('vfDataConclusao').value : '';
+  const ordens_servico = servico === 'Limpa nome' ? vfOrdensServico.filter(d => d && d.trim()) : [];
+  const origem = document.querySelector('#vfOrigemGroup .btn-select.selected');
   const cpf_cnpj = document.getElementById('vfCpf').value;
   const data_entrada = document.getElementById('vfData').value;
   const record = {
@@ -1941,14 +2037,13 @@ async function createVenda(){
       cpf_cnpj,
       cidade_uf: document.getElementById('vfCidade').value,
       contato: document.getElementById('vfContato').value,
-      origem: document.getElementById('vfOrigem').value,
+      origem: origem ? origem.dataset.value : '',
       informante: document.getElementById('vfInformante').value,
       senha_serasa: document.getElementById('vfSenhaSerasa').value,
       data_entrada,
-      inicio: document.getElementById('vfInicio').value,
-      data_pagamento,
       data_envio_lista,
       data_conclusao,
+      ordens_servico,
       fechado: parseBRLInput(document.getElementById('vfFechado')),
       recebido,
       custo,
@@ -3030,6 +3125,19 @@ document.getElementById('newVendaBtn').addEventListener('click', ()=>openVendaFo
 document.getElementById('cancelVendaBtn').addEventListener('click', closeVendaForm);
 document.getElementById('saveVendaBtn').addEventListener('click', createVenda);
 document.getElementById('vfServico').addEventListener('change', updateNotaFiscalVisibility);
+['vfFechado','vfRecebido','vfCusto','vfNotaFiscal','vfFalta'].forEach(id=>{
+  document.getElementById(id).addEventListener('blur', formatBRLFieldOnBlur);
+});
+document.getElementById('vfOrigemGroup').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.btn-select');
+  if(!btn) return;
+  document.querySelectorAll('#vfOrigemGroup .btn-select').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+});
+document.getElementById('addOrdemServicoBtn').addEventListener('click', ()=>{
+  vfOrdensServico.push('');
+  renderVfOrdensServico();
+});
 document.getElementById('vendasSearchInput').addEventListener('input', renderVendasGrid);
 document.getElementById('vendasPeriodFrom').addEventListener('change', (e)=>{
   vendasPeriodFrom = e.target.value; renderVendasDashboard(); renderVendasGrid();
