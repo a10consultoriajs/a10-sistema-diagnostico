@@ -456,8 +456,10 @@
   .credit-row input[data-field="valor"]{ flex: 0 0 110px; }
   .credit-row .rm-btn{ border:none; background:none; color: var(--ink-soft); cursor:pointer; font-size: 14px; padding: 2px 6px; }
   .credit-section-label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-top: 12px; display:block; }
-  .venda-update-row{ display:flex; align-items:center; gap:10px; margin-top: 14px; }
+  .venda-update-row{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top: 14px; }
   .venda-update-status{ font-size: 12px; color: var(--status-good); }
+  .venda-update-btn{ color:#fff; text-shadow: 0 0 8px rgba(255,255,255,0.85); }
+  .venda-update-btn:hover{ color:#fff; }
 
   .plan-list{ background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
   .plan-row{ display:flex; align-items:center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
@@ -2372,10 +2374,6 @@ function vendaItemHtml(v){
         <button type="button" class="eye-btn" data-venda-eye="1">👁</button>
       </div>
     </div>
-    <div class="venda-update-row">
-      <button type="button" class="btn-primary venda-update-btn">Atualizar informações</button>
-      <span class="venda-update-status"></span>
-    </div>
     ${isLimpaNome ? ordensServicoListHtml(v) : ''}
     ${isLimpaNome ? `
     <div class="credit-section-label">Pagamentos recebidos</div>
@@ -2391,6 +2389,10 @@ function vendaItemHtml(v){
     <button type="button" class="add-list-row add-recebimento-venda">+ adicionar recebimento</button>
     ` : ''}
     ${historicoHtml}
+    <div class="venda-update-row">
+      <span class="venda-update-status"></span>
+      <button type="button" class="btn-primary venda-update-btn">Atualizar informações</button>
+    </div>
     </div>
   `;
 }
@@ -2479,11 +2481,11 @@ function vendaItemSimplesHtml(v){
       <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
       <div class="vfield"><label>Lucro</label><input type="text" value="${formatBRL(lucro)}" readonly></div>
     </div>
-    <div class="venda-update-row">
-      <button type="button" class="btn-primary venda-update-btn">Atualizar informações</button>
-      <span class="venda-update-status"></span>
-    </div>
     ${ordensServicoListHtml(v)}
+    <div class="venda-update-row">
+      <span class="venda-update-status"></span>
+      <button type="button" class="btn-primary venda-update-btn">Atualizar informações</button>
+    </div>
     </div>
   `;
 }
