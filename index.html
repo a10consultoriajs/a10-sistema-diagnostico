@@ -212,6 +212,11 @@
   .filter-dropdown-newtag button{
     background: var(--gold); color:#3a2e05; border:none; border-radius: 8px; padding: 0 10px; font-size: 12px; font-weight:600; cursor:pointer;
   }
+  .stat-visibility-row{
+    display:flex; align-items:center; gap:8px; font-size: 13px; color: var(--ink); padding: 7px 8px;
+    border-radius: 7px; cursor:pointer;
+  }
+  .stat-visibility-row:hover{ background: var(--paper); }
   .period-label{ font-size: 12.5px; color: var(--ink-soft); margin-bottom: 14px; }
   .period-label strong{ color: var(--gold-soft); }
   .dashboard-vendas{ grid-template-columns: repeat(5, 1fr); }
@@ -666,17 +671,25 @@ try{
       <div class="plan-list" id="overviewSearchList"></div>
     </div>
 
-    <div class="filter-dropdown" id="periodDropdownWrap">
-      <button type="button" class="filter-dropdown-btn" id="periodDropdownBtn">
-        <span id="periodDropdownBtnText">📅 Período</span><span class="filter-dropdown-caret">▾</span>
-      </button>
-      <div class="filter-dropdown-menu" id="periodDropdownMenu">
-        <button type="button" class="view-tab" data-preset="mes_atual">Mês atual</button>
-        <button type="button" class="view-tab" data-preset="mes_anterior">Mês anterior</button>
-        <button type="button" class="view-tab" data-preset="3m">Últimos 3 meses</button>
-        <button type="button" class="view-tab" data-preset="6m">Últimos 6 meses</button>
-        <button type="button" class="view-tab" data-preset="12m">Últimos 12 meses</button>
-        <button type="button" class="view-tab" data-preset="custom">Período personalizado</button>
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <div class="filter-dropdown" id="periodDropdownWrap">
+        <button type="button" class="filter-dropdown-btn" id="periodDropdownBtn">
+          <span id="periodDropdownBtnText">📅 Período</span><span class="filter-dropdown-caret">▾</span>
+        </button>
+        <div class="filter-dropdown-menu" id="periodDropdownMenu">
+          <button type="button" class="view-tab" data-preset="mes_atual">Mês atual</button>
+          <button type="button" class="view-tab" data-preset="mes_anterior">Mês anterior</button>
+          <button type="button" class="view-tab" data-preset="3m">Últimos 3 meses</button>
+          <button type="button" class="view-tab" data-preset="6m">Últimos 6 meses</button>
+          <button type="button" class="view-tab" data-preset="12m">Últimos 12 meses</button>
+          <button type="button" class="view-tab" data-preset="custom">Período personalizado</button>
+        </div>
+      </div>
+      <div class="filter-dropdown" id="statVisibilityWrap">
+        <button type="button" class="filter-dropdown-btn" id="statVisibilityBtn">
+          <span>👁 Exibir valores</span><span class="filter-dropdown-caret">▾</span>
+        </button>
+        <div class="filter-dropdown-menu" id="statVisibilityMenu"></div>
       </div>
     </div>
     <div class="period-label" id="periodActiveLabel"></div>
@@ -698,6 +711,10 @@ try{
       <div class="stat-card" data-ov="remanescente">
         <div class="stat-value" id="ovRemanescente">R$ 0</div><div class="stat-label">Valores a receber</div>
         <div class="stat-sub" id="ovRemanescentePeriod"></div><div class="stat-compare" id="ovRemanescenteCompare"></div>
+      </div>
+      <div class="stat-card" data-ov="atrasado">
+        <div class="stat-value" id="ovAtrasado">R$ 0</div><div class="stat-label">Pagamentos em atraso</div>
+        <div class="stat-sub" id="ovAtrasadoPeriod"></div><div class="stat-compare" id="ovAtrasadoCompare"></div>
       </div>
       <div class="stat-card" data-ov="lucro">
         <div class="stat-value" id="ovLucro">R$ 0</div><div class="stat-label">Lucro</div>
@@ -1189,6 +1206,15 @@ function custoOf(v){
 function qtOf(v){
   return (v.ordens_servico && v.ordens_servico.length) ? v.ordens_servico.length : (Number(v.qt)||1);
 }
+function pagamentoStatus(v){
+  const remanescente = remanescenteOf(v);
+  if(remanescente <= 0.004) return null;
+  if(!v.data_vencimento_remanescente) return null;
+  const venc = new Date(v.data_vencimento_remanescente + 'T00:00:00');
+  if(isNaN(venc.getTime())) return null;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  return venc < hoje ? 'atraso' : 'em_dia';
+}
 function lucroOf(v){
   const tag = normalizeServicoTag(v.servico);
   if(tag === 'Consulta Simples' || tag === 'Consulta completa'){
@@ -1371,6 +1397,45 @@ async function showListView(){
 let overviewPeriodFrom = '';
 let overviewPeriodTo = '';
 let overviewActiveKind = null;
+const STAT_CARD_DEFS = [
+  { key:'fechado', label:'Faturamento' },
+  { key:'recebido', label:'Valores recebidos' },
+  { key:'remanescente', label:'Valores a receber' },
+  { key:'atrasado', label:'Pagamentos em atraso' },
+  { key:'lucro', label:'Lucro' }
+];
+let hiddenStatCards = [];
+try{ hiddenStatCards = JSON.parse(localStorage.getItem('a10:hiddenStatCards') || '[]'); }catch(e){ hiddenStatCards = []; }
+function saveHiddenStatCards(){ try{ localStorage.setItem('a10:hiddenStatCards', JSON.stringify(hiddenStatCards)); }catch(e){} }
+function applyStatCardVisibility(){
+  document.querySelectorAll('#overviewDashboard .stat-card').forEach(el => {
+    el.style.display = hiddenStatCards.includes(el.dataset.ov) ? 'none' : '';
+  });
+  renderStatVisibilityMenu();
+}
+function renderStatVisibilityMenu(){
+  const menu = document.getElementById('statVisibilityMenu');
+  if(!menu) return;
+  menu.innerHTML = STAT_CARD_DEFS.map(def => `
+    <label class="stat-visibility-row">
+      <input type="checkbox" data-ov-toggle="${def.key}" ${hiddenStatCards.includes(def.key) ? '' : 'checked'}>
+      ${def.label}
+    </label>
+  `).join('');
+  menu.querySelectorAll('[data-ov-toggle]').forEach(cb => {
+    cb.addEventListener('click', (e)=> e.stopPropagation());
+    cb.addEventListener('change', (e)=>{
+      const key = e.target.dataset.ovToggle;
+      if(e.target.checked){
+        hiddenStatCards = hiddenStatCards.filter(k => k !== key);
+      } else if(!hiddenStatCards.includes(key)){
+        hiddenStatCards.push(key);
+      }
+      saveHiddenStatCards();
+      applyStatCardVisibility();
+    });
+  });
+}
 let overviewActiveMonthDrilldown = null;
 let overviewActivePreset = '';
 
@@ -1448,11 +1513,12 @@ function overviewClientItems(){
 function computeFinancialTotals(from, to){
   const vItems = vendasInRange(from, to);
   const cItems = clientsInRange(from, to);
-  let fechado=0, recebido=0, remanescente=0, lucro=0, qt=0;
+  let fechado=0, recebido=0, remanescente=0, atrasado=0, lucro=0, qt=0;
   vItems.forEach(v => {
     fechado += Number(v.fechado)||0;
     recebido += Number(v.recebido)||0;
     remanescente += remanescenteOf(v);
+    if(pagamentoStatus(v) === 'atraso') atrasado += remanescenteOf(v);
     lucro += lucroOf(v);
     qt += qtOf(v);
   });
@@ -1465,7 +1531,7 @@ function computeFinancialTotals(from, to){
     lucro += rec;
     qt += 1;
   });
-  return { fechado, recebido, remanescente, lucro, qt };
+  return { fechado, recebido, remanescente, atrasado, lucro, qt };
 }
 
 function computePreviousPeriodRange(from, to){
@@ -1707,13 +1773,15 @@ function renderOverview(){
   document.getElementById('ovFechado').textContent = moneyBRL(current.fechado);
   document.getElementById('ovRecebido').textContent = moneyBRL(current.recebido);
   document.getElementById('ovRemanescente').textContent = moneyBRL(current.remanescente);
+  document.getElementById('ovAtrasado').textContent = moneyBRL(current.atrasado);
   document.getElementById('ovLucro').textContent = moneyBRL(current.lucro);
-  ['ovFechadoPeriod','ovRecebidoPeriod','ovRemanescentePeriod','ovLucroPeriod'].forEach(id=>{
+  ['ovFechadoPeriod','ovRecebidoPeriod','ovRemanescentePeriod','ovAtrasadoPeriod','ovLucroPeriod'].forEach(id=>{
     document.getElementById(id).textContent = periodText;
   });
   renderCompareBadge('ovFechadoCompare', current.fechado, previous ? previous.fechado : null);
   renderCompareBadge('ovRecebidoCompare', current.recebido, previous ? previous.recebido : null);
   renderCompareBadge('ovRemanescenteCompare', current.remanescente, previous ? previous.remanescente : null);
+  renderCompareBadge('ovAtrasadoCompare', current.atrasado, previous ? previous.atrasado : null);
   renderCompareBadge('ovLucroCompare', current.lucro, previous ? previous.lucro : null);
   document.getElementById('ovQtHint').textContent = `${current.qt} serviço${current.qt===1?'':'s'} no período`;
 
@@ -1721,6 +1789,7 @@ function renderOverview(){
   renderOverviewChart('overviewChartRecebido', totals, 'recebido');
   renderOverviewChart('overviewChartLucro', totals, 'lucro', 'current');
   renderMonthlyDashboard();
+  applyStatCardVisibility();
   if(overviewActiveKind) renderOverviewDrilldown(overviewActiveKind);
   if(overviewActiveMonthDrilldown) renderReceivablesMonthDrilldown(overviewActiveMonthDrilldown);
 }
@@ -1741,6 +1810,8 @@ function overviewEntriesFor(kind){
       if(r>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: r, clienteId: c.id, tipo:'cliente' });
     });
     vItems.forEach(v => { const r = remanescenteOf(v); if(r>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: r, vendaId: v.id, tipo:'venda' }); });
+  } else if(kind === 'atrasado'){
+    vItems.forEach(v => { if(pagamentoStatus(v) === 'atraso') entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: remanescenteOf(v), vendaId: v.id, tipo:'venda' }); });
   } else if(kind === 'recebido'){
     cItems.forEach(c => { if(Number(c.valorRecebido)>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: Number(c.valorRecebido), clienteId: c.id, tipo:'cliente' }); });
     vItems.forEach(v => { if(Number(v.recebido)>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.recebido), vendaId: v.id, tipo:'venda' }); });
@@ -1814,7 +1885,7 @@ async function openVendaFromOverview(v){
 function renderOverviewDrilldown(kind){
   overviewActiveKind = kind;
   overviewActiveMonthDrilldown = null;
-  const titles = { qt: 'Quantidade de serviços', fechado: 'Faturamento', recebido: 'Valores recebidos', remanescente: 'Valores a receber', custo: 'Custos pagos', lucro: 'Lucro' };
+  const titles = { qt: 'Quantidade de serviços', fechado: 'Faturamento', recebido: 'Valores recebidos', remanescente: 'Valores a receber', atrasado: 'Pagamentos em atraso', custo: 'Custos pagos', lucro: 'Lucro' };
   document.getElementById('overviewDrilldownTitle').textContent = titles[kind] || 'Detalhes';
   const entries = overviewEntriesFor(kind);
   const listEl = document.getElementById('overviewDrilldownList');
@@ -2353,12 +2424,17 @@ function vendaItemHtml(v){
     : isConsultas
       ? `Pago ${moneyBRL(v.valor_pago)}`
       : `Recebido ${moneyBRL(v.recebido)}`;
+  const pagStatus = pagamentoStatus(v);
+  const pagBadgeHtml = pagStatus
+    ? `<span class="svc-badge ${pagStatus==='atraso'?'svc-atraso':'svc-andamento'}">💰 ${pagStatus==='atraso'?'Pagamento em atraso':'Pagamento em dia'}</span>`
+    : '';
   return `
     <div class="venda-item-top">
       <button type="button" class="pedido-toggle-btn chevron" title="Expandir/recolher">▶</button>
       <select data-field="servico" class="servico-select">${servicoOpts}</select>
       <span class="vg-date">Contratado em ${formatDateBR(v.data_entrada) || '—'}</span>
       <span class="svc-badge ${prazoBadgeClass(prazo)}">${prazoLabel(prazo)}</span>
+      ${pagBadgeHtml}
       <select data-field="execucao">${execOpts}</select>
       <span class="pedido-mini-stat">${miniStat}</span>
       <button type="button" class="del-venda-btn" title="Excluir">✕ excluir</button>
@@ -2385,6 +2461,7 @@ function vendaItemHtml(v){
         <div class="vfield"><label>Valor fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
         <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
         <div class="vfield"><label>Valor remanescente</label><input type="text" data-field="remanescente" data-money="1" value="${formatBRL(remanescenteOf(v))}" readonly></div>
+        <div class="vfield"><label>Vencimento do remanescente</label><input type="text" inputmode="numeric" data-field="data_vencimento_remanescente" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_vencimento_remanescente)}"></div>
         <div class="vfield"><label>Custo operacional</label><input type="text" data-field="custo_operacional" data-money="1" value="${formatBRL(v.custo_operacional)}"></div>
         <div class="vfield"><label>Margem de lucro</label><input type="text" data-field="margem_lucro" data-money="1" value="${formatBRL(v.margem_lucro)}" readonly></div>
       ` : ''}
@@ -2394,6 +2471,7 @@ function vendaItemHtml(v){
         <div class="vfield"><label>Valor fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
         <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
         <div class="vfield"><label>Valor remanescente</label><input type="text" data-field="remanescente" data-money="1" value="${formatBRL(remanescenteOf(v))}" readonly></div>
+        <div class="vfield"><label>Vencimento do remanescente</label><input type="text" inputmode="numeric" data-field="data_vencimento_remanescente" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_vencimento_remanescente)}"></div>
         <div class="vfield"><label>Nota Fiscal</label><input type="text" data-field="nota_fiscal" data-money="1" value="${formatBRL(v.nota_fiscal)}"></div>
         <div class="vfield"><label>Taxa de Inclusão</label><input type="text" data-field="taxa_inclusao" data-money="1" value="${formatBRL(v.taxa_inclusao)}"></div>
         <div class="vfield"><label>Margem de lucro</label><input type="text" data-field="margem_lucro" data-money="1" value="${formatBRL(v.margem_lucro)}" readonly></div>
@@ -2496,12 +2574,17 @@ function vendaItemSimplesHtml(v){
   const prazo = getPrazoStatus(v);
   const lucro = (Number(v.recebido)||0) - (Number(v.custo)||0);
   const miniStat = `${qtOf(v)} ${qtOf(v)===1?'ordem':'ordens'} · Recebido ${moneyBRL(v.recebido)}`;
+  const pagStatus = pagamentoStatus(v);
+  const pagBadgeHtml = pagStatus
+    ? `<span class="svc-badge ${pagStatus==='atraso'?'svc-atraso':'svc-andamento'}">💰 ${pagStatus==='atraso'?'Pagamento em atraso':'Pagamento em dia'}</span>`
+    : '';
   return `
     <div class="venda-item-top">
       <button type="button" class="pedido-toggle-btn chevron" title="Expandir/recolher">▶</button>
       <select data-field="servico" class="servico-select">${servicoOpts}</select>
       <span class="vg-date">Contratado em ${formatDateBR(v.data_entrada) || '—'}</span>
       <span class="svc-badge ${prazoBadgeClass(prazo)}">${prazoLabel(prazo)}</span>
+      ${pagBadgeHtml}
       <select data-field="execucao">${execOpts}</select>
       <span class="pedido-mini-stat">${miniStat}</span>
       <button type="button" class="del-venda-btn" title="Excluir">✕ excluir</button>
@@ -2513,6 +2596,7 @@ function vendaItemSimplesHtml(v){
       <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
       <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
       <div class="vfield"><label>Remanescente</label><input type="text" class="vf-remanescente" value="${formatBRL(remanescenteOf(v))}" readonly></div>
+      <div class="vfield"><label>Vencimento do remanescente</label><input type="text" inputmode="numeric" data-field="data_vencimento_remanescente" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_vencimento_remanescente)}"></div>
       <div class="vfield"><label>Lucro</label><input type="text" class="vf-lucro" value="${formatBRL(lucro)}" readonly></div>
     </div>
     ${ordensServicoListHtml(v)}
@@ -2564,7 +2648,7 @@ function wireVendaItemSimples(itemEl, v){
       }
       saveVenda(v);
       renderVendasDashboard();
-      if(field === 'execucao' || (field === 'data_entrada' && input.dataset.date)) renderVendasGrid();
+      if(field === 'execucao' || field === 'data_vencimento_remanescente' || (field === 'data_entrada' && input.dataset.date)) renderVendasGrid();
     });
   });
   wireOrdensServicoList(itemEl, v);
@@ -2635,7 +2719,7 @@ function wireVendaItem(itemEl, v){
       if(['fechado','recebido','custo','valor_pago','custo_operacional','nota_fiscal','taxa_inclusao'].includes(field)) recalcLucro(v, itemEl);
       saveVenda(v);
       renderVendasDashboard();
-      if(field === 'execucao' || (field === 'data_entrada' && input.dataset.date)) renderVendasGrid();
+      if(field === 'execucao' || field === 'data_vencimento_remanescente' || (field === 'data_entrada' && input.dataset.date)) renderVendasGrid();
     });
   });
   wireOrdensServicoList(itemEl, v);
@@ -4438,6 +4522,8 @@ document.querySelectorAll('#periodDropdownMenu .view-tab').forEach(btn=>{
   });
 });
 wireDropdownToggle('periodDropdownBtn', 'periodDropdownMenu');
+wireDropdownToggle('statVisibilityBtn', 'statVisibilityMenu');
+applyStatCardVisibility();
 wireDropdownToggle('statusFilterBtn', 'vendasStatusChips');
 document.getElementById('statusFilterClearBtn').addEventListener('click', (e)=>{
   e.stopPropagation();
