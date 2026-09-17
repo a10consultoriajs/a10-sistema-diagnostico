@@ -512,6 +512,7 @@ try{
     <div class="tagline" id="headerTagline">Diagnóstico e acompanhamento de reputação financeira</div>
     <div class="nav-dropdown" id="navDropdown">
       <button type="button" class="view-tab active" id="tabOverview" data-view="overview">Inicial</button>
+      <button type="button" class="view-tab" id="tabTodosClientes" data-view="todos_clientes">Clientes</button>
       <button type="button" class="view-tab" id="tabClientes" data-view="clients">Consultoria / Rating</button>
       <button type="button" class="view-tab" id="tabLimpaNome" data-view="limpa_nome">Limpa Nome</button>
       <button type="button" class="view-tab" id="tabConsultas" data-view="consultas">Consultas realizadas</button>
@@ -670,17 +671,17 @@ try{
     <div class="section-head" style="margin-top:22px;"><h2 style="font-size:16px; margin:0;">Dashboard mensal</h2></div>
     <div class="monthly-charts-grid">
       <div class="chart-card">
-        <label>Faturamento por período</label>
-        <div class="chart-canvas-wrap"><canvas id="chartFaturamentoMensal"></canvas><div class="chart-empty-state" id="emptyFaturamentoMensal" style="display:none;">Sem dados neste período.</div></div>
+        <label>Valores a receber por período</label>
+        <div class="chart-subtitle">Saldo em aberto dos contratos fechados em cada mês (não é acumulado) · Clique numa barra para ver quem está devendo</div>
+        <div class="chart-canvas-wrap"><canvas id="chartAReceberMensal"></canvas><div class="chart-empty-state" id="emptyAReceberMensal" style="display:none;">Sem dados neste período.</div></div>
       </div>
       <div class="chart-card">
         <label>Quantidade de serviços vendidos por período</label>
         <div class="chart-canvas-wrap"><canvas id="chartQtdMensal"></canvas><div class="chart-empty-state" id="emptyQtdMensal" style="display:none;">Sem dados neste período.</div></div>
       </div>
       <div class="chart-card">
-        <label>Valores a receber por período</label>
-        <div class="chart-subtitle">Saldo em aberto dos contratos fechados em cada mês (não é acumulado)</div>
-        <div class="chart-canvas-wrap"><canvas id="chartAReceberMensal"></canvas><div class="chart-empty-state" id="emptyAReceberMensal" style="display:none;">Sem dados neste período.</div></div>
+        <label>Faturamento por período</label>
+        <div class="chart-canvas-wrap"><canvas id="chartFaturamentoMensal"></canvas><div class="chart-empty-state" id="emptyFaturamentoMensal" style="display:none;">Sem dados neste período.</div></div>
       </div>
       <div class="chart-card">
         <label>Quantidade de serviços por categoria</label>
@@ -931,6 +932,17 @@ try{
     </div>
     <div class="plan-list" id="parceirosList"></div>
     <div class="empty-state" id="parceirosEmptyState" style="display:none;">Nenhum parceiro cadastrado ainda.</div>
+  </div>
+
+  <!-- ===================== TODOS OS CLIENTES (VISAO GERAL) ===================== -->
+  <div id="allClientsView" style="display:none;">
+    <h2 style="margin:0 0 14px;">Clientes</h2>
+    <div class="clients-toolbar">
+      <input type="text" id="allClientsSearchInput" placeholder="Buscar por nome ou CPF...">
+      <button class="back-btn" id="logoutBtnTodosClientes" style="margin-bottom:0;">Sair</button>
+    </div>
+    <div id="allClientsGrid"></div>
+    <div class="empty-state" id="allClientsEmptyState" style="display:none;">Nenhum cliente cadastrado ainda.</div>
   </div>
 
   <!-- ===================== CLIENT VIEW ===================== -->
@@ -1268,6 +1280,7 @@ async function saveClient(){
 /* ---------- View switching ---------- */
 function deactivateAllTabs(){
   document.getElementById('tabOverview').classList.remove('active');
+  document.getElementById('tabTodosClientes').classList.remove('active');
   document.getElementById('tabClientes').classList.remove('active');
   document.getElementById('tabLimpaNome').classList.remove('active');
   document.getElementById('tabConsultas').classList.remove('active');
@@ -1277,6 +1290,7 @@ function deactivateAllTabs(){
 }
 function hideAllViews(){
   document.getElementById('overviewView').style.display = 'none';
+  document.getElementById('allClientsView').style.display = 'none';
   document.getElementById('listView').style.display = 'none';
   document.getElementById('clientView').style.display = 'none';
   document.getElementById('salesView').style.display = 'none';
@@ -1298,6 +1312,7 @@ async function showListView(){
 let overviewPeriodFrom = '';
 let overviewPeriodTo = '';
 let overviewActiveKind = null;
+let overviewActiveMonthDrilldown = null;
 let overviewActivePreset = '';
 
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -1503,6 +1518,7 @@ function computeMonthlySeries(){
   });
   const keys = Object.keys(monthly).sort();
   return {
+    keys,
     labels: keys.map(formatMonthLabel),
     fechado: keys.map(k=>monthly[k].fechado),
     recebido: keys.map(k=>monthly[k].recebido),
@@ -1539,6 +1555,12 @@ function renderMonthlyChart(canvasId, label, series, color, opts){
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      onClick: opts.onBarClick ? (evt, elements) => {
+        if(elements && elements.length) opts.onBarClick(series.keys ? series.keys[elements[0].index] : null);
+      } : undefined,
+      onHover: opts.onBarClick ? (evt, elements) => {
+        evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+      } : undefined,
       plugins: {
         legend: { display:false },
         tooltip: { callbacks: { label: (ctx)=> format(ctx.parsed.y) } }
@@ -1553,9 +1575,9 @@ function renderMonthlyChart(canvasId, label, series, color, opts){
 
 function renderMonthlyDashboard(){
   const series = computeMonthlySeries();
-  renderMonthlyChart('chartFaturamentoMensal', 'Faturamento', { labels: series.labels, values: series.fechado }, '#4C8DFF');
-  renderMonthlyChart('chartQtdMensal', 'Serviços vendidos', { labels: series.labels, values: series.qt }, '#2ECC71', { format: (v)=> String(Math.round(v)), integer: true });
-  renderMonthlyChart('chartAReceberMensal', 'A receber', { labels: series.labels, values: series.remanescente }, '#E5544A');
+  renderMonthlyChart('chartFaturamentoMensal', 'Faturamento', { labels: series.labels, keys: series.keys, values: series.fechado }, '#4C8DFF');
+  renderMonthlyChart('chartQtdMensal', 'Serviços vendidos', { labels: series.labels, keys: series.keys, values: series.qt }, '#2ECC71', { format: (v)=> String(Math.round(v)), integer: true });
+  renderMonthlyChart('chartAReceberMensal', 'A receber', { labels: series.labels, keys: series.keys, values: series.remanescente }, '#E5544A', { onBarClick: renderReceivablesMonthDrilldown });
 }
 
 let categoryPie3DInstance = null;
@@ -1641,6 +1663,7 @@ function renderOverview(){
   renderOverviewChart('overviewChartLucro', totals, 'lucro', 'current');
   renderMonthlyDashboard();
   if(overviewActiveKind) renderOverviewDrilldown(overviewActiveKind);
+  if(overviewActiveMonthDrilldown) renderReceivablesMonthDrilldown(overviewActiveMonthDrilldown);
 }
 
 function overviewEntriesFor(kind){
@@ -1731,6 +1754,7 @@ async function openVendaFromOverview(v){
 
 function renderOverviewDrilldown(kind){
   overviewActiveKind = kind;
+  overviewActiveMonthDrilldown = null;
   const titles = { qt: 'Quantidade de serviços', fechado: 'Faturamento', recebido: 'Valores recebidos', remanescente: 'Valores a receber', custo: 'Custos pagos', lucro: 'Lucro' };
   document.getElementById('overviewDrilldownTitle').textContent = titles[kind] || 'Detalhes';
   const entries = overviewEntriesFor(kind);
@@ -1755,6 +1779,52 @@ function renderOverviewDrilldown(kind){
   document.getElementById('overviewDrilldown').style.display = 'block';
 }
 
+function overviewEntriesForMonth(monthKey){
+  const vItems = overviewNonPromotedVendas();
+  const cItems = overviewClientItems();
+  const entries = [];
+  vItems.forEach(v => {
+    if((v.data_entrada||'').slice(0,7) !== monthKey) return;
+    const r = remanescenteOf(v);
+    if(r > 0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: r, vendaId: v.id, tipo:'venda' });
+  });
+  cItems.forEach(c => {
+    if((c.startDate||'').slice(0,7) !== monthKey) return;
+    const r = Math.max(0, (Number(c.valorNegociado)||0) - (Number(c.valorRecebido)||0));
+    if(r > 0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: r, clienteId: c.id, tipo:'cliente' });
+  });
+  entries.sort((a,b)=> b.valor - a.valor);
+  return entries;
+}
+
+function renderReceivablesMonthDrilldown(monthKey){
+  if(!monthKey) return;
+  overviewActiveMonthDrilldown = monthKey;
+  overviewActiveKind = null;
+  document.querySelectorAll('#overviewDashboard .stat-card').forEach(x=>x.classList.remove('active'));
+  document.getElementById('overviewDrilldownTitle').textContent = `Devendo em ${formatMonthLabel(monthKey)}`;
+  const entries = overviewEntriesForMonth(monthKey);
+  const listEl = document.getElementById('overviewDrilldownList');
+  if(entries.length === 0){
+    listEl.innerHTML = '<div class="history-empty">Nenhum cliente devendo neste mês.</div>';
+  } else {
+    listEl.innerHTML = entries.map((e,i) => `
+      <div class="plan-row" data-idx="${i}" style="cursor:pointer;">
+        <span class="lbl">${e.nome || 'Sem nome'} <span style="color:var(--ink-soft); font-size:11.5px;">· ${e.categoria}</span></span>
+        <strong>${moneyBRL(e.valor)}</strong>
+      </div>
+    `).join('');
+    listEl.querySelectorAll('.plan-row').forEach((row, i) => {
+      row.addEventListener('click', () => {
+        const e = entries[i];
+        if(e.tipo === 'cliente') openClient(e.clienteId);
+        else openVendaFromOverview(vendasIndex.find(v=>v.id===e.vendaId));
+      });
+    });
+  }
+  document.getElementById('overviewDrilldown').style.display = 'block';
+}
+
 async function showOverview(){
   deactivateAllTabs();
   document.getElementById('tabOverview').classList.add('active');
@@ -1765,6 +1835,7 @@ async function showOverview(){
   document.getElementById('overviewSearchResults').style.display = 'none';
   document.getElementById('overviewSearchInput').value = '';
   overviewActiveKind = null;
+  overviewActiveMonthDrilldown = null;
   document.querySelectorAll('#overviewDashboard .stat-card').forEach(x=>x.classList.remove('active'));
   clientIndex = await loadIndex();
   vendasIndex = await loadVendas();
@@ -3030,6 +3101,113 @@ async function showCadastrosView(){
   renderCadastrosGrid();
 }
 
+/* ==================== CLIENTES (VISAO GERAL) ==================== */
+let allClientsExpanded = new Set();
+
+function buildClientDirectory(){
+  const map = new Map();
+  function keyFor(nome, doc){
+    const digits = (doc||'').replace(/\D/g,'');
+    if(digits) return 'doc:'+digits;
+    return 'name:'+(nome||'Sem nome').trim().toUpperCase();
+  }
+  function ensure(nome, doc){
+    const key = keyFor(nome, doc);
+    if(!map.has(key)) map.set(key, { key, nome: nome || 'Sem nome', cpf: doc || '', vendaIds: [], clienteIds: [] });
+    const entry = map.get(key);
+    if((!entry.nome || entry.nome === 'Sem nome') && nome) entry.nome = nome;
+    if(!entry.cpf && doc) entry.cpf = doc;
+    return entry;
+  }
+  vendasIndex.forEach(v => ensure(v.cliente, v.cpf_cnpj).vendaIds.push(v.id));
+  clientIndex.forEach(c => ensure(c.nome, c.clientDoc).clienteIds.push(c.id));
+  return Array.from(map.values()).sort((a,b) => (a.nome||'').localeCompare(b.nome||'', 'pt-BR'));
+}
+
+function clientDirectoryDetailHtml(entry){
+  const vendaRows = entry.vendaIds.map(id => vendasIndex.find(v=>v.id===id)).filter(Boolean).map(v => `
+    <div class="plan-row" data-venda-id="${v.id}" style="cursor:pointer;">
+      <span class="lbl">${normalizeServicoTag(v.servico)} <span style="color:var(--ink-soft); font-size:11.5px;">· ${v.execucao || 'Sem status'}</span></span>
+      <strong>${moneyBRL(v.fechado)}</strong>
+    </div>
+  `).join('');
+  const clienteRows = entry.clienteIds.map(id => clientIndex.find(c=>c.id===id)).filter(Boolean).map(c => `
+    <div class="plan-row" data-cliente-id="${c.id}" style="cursor:pointer;">
+      <span class="lbl">Consultoria / Rating <span style="color:var(--ink-soft); font-size:11.5px;">· Score ${c.score||0} · Rating ${c.rating||'—'}</span></span>
+      <strong>${moneyBRL(c.valorNegociado)}</strong>
+    </div>
+  `).join('');
+  const rows = vendaRows + clienteRows;
+  return rows || '<div class="history-empty">Nenhum registro encontrado para este cliente.</div>';
+}
+
+function renderAllClientsGrid(){
+  const grid = document.getElementById('allClientsGrid');
+  const empty = document.getElementById('allClientsEmptyState');
+  const directory = buildClientDirectory();
+  const q = (document.getElementById('allClientsSearchInput').value || '').trim().toLowerCase();
+  const filtered = q ? directory.filter(d => (d.nome||'').toLowerCase().includes(q) || (d.cpf||'').toLowerCase().includes(q)) : directory;
+  grid.innerHTML = '';
+  if(directory.length === 0){
+    empty.textContent = 'Nenhum cliente cadastrado ainda.';
+    empty.style.display = 'block';
+    return;
+  }
+  if(filtered.length === 0){
+    empty.textContent = 'Nenhum cliente encontrado para essa busca.';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  filtered.forEach(entry => {
+    const isOpen = allClientsExpanded.has(entry.key);
+    const totalRegistros = entry.vendaIds.length + entry.clienteIds.length;
+    const wrap = document.createElement('div');
+    wrap.className = 'venda-group' + (isOpen ? ' open' : '');
+    wrap.innerHTML = `
+      <div class="venda-group-head">
+        <div>
+          <div class="vg-name">${entry.nome}</div>
+          <div class="vg-sub">CPF/CNPJ: ${entry.cpf || 'não informado'} · ${totalRegistros} registro${totalRegistros===1?'':'s'}</div>
+        </div>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="venda-group-body"></div>
+    `;
+    const body = wrap.querySelector('.venda-group-body');
+    body.innerHTML = clientDirectoryDetailHtml(entry);
+    body.querySelectorAll('[data-venda-id]').forEach(row => {
+      row.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        openVendaFromOverview(vendasIndex.find(v=>v.id===row.dataset.vendaId));
+      });
+    });
+    body.querySelectorAll('[data-cliente-id]').forEach(row => {
+      row.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        openClient(row.dataset.clienteId);
+      });
+    });
+    wrap.querySelector('.venda-group-head').addEventListener('click', ()=>{
+      if(allClientsExpanded.has(entry.key)) allClientsExpanded.delete(entry.key); else allClientsExpanded.add(entry.key);
+      renderAllClientsGrid();
+    });
+    grid.appendChild(wrap);
+  });
+}
+
+async function showAllClientsView(){
+  deactivateAllTabs();
+  document.getElementById('tabTodosClientes').classList.add('active');
+  document.getElementById('viewTabs').style.display = 'flex';
+  hideAllViews();
+  document.getElementById('allClientsView').style.display = 'block';
+  clientIndex = await loadIndex();
+  vendasIndex = await loadVendas();
+  renderAllClientsGrid();
+}
+
 /* ==================== PARCEIROS ==================== */
 let parceirosIndex = [];
 
@@ -3903,6 +4081,7 @@ document.getElementById('overviewCloseDrilldown').addEventListener('click', ()=>
   document.getElementById('overviewDrilldown').style.display = 'none';
   document.querySelectorAll('#overviewDashboard .stat-card').forEach(x=>x.classList.remove('active'));
   overviewActiveKind = null;
+  overviewActiveMonthDrilldown = null;
 });
 document.getElementById('overviewSearchInput').addEventListener('input', (e)=>{
   overviewSearch(e.target.value);
@@ -3952,6 +4131,12 @@ document.getElementById('logoutBtn4').addEventListener('click', async ()=>{
 document.getElementById('tabCadastros').addEventListener('click', showCadastrosView);
 document.getElementById('cadastrosSearchInput').addEventListener('input', renderCadastrosGrid);
 document.getElementById('logoutBtn5').addEventListener('click', async ()=>{
+  await supabaseClient.auth.signOut();
+  showLoginView();
+});
+document.getElementById('tabTodosClientes').addEventListener('click', showAllClientsView);
+document.getElementById('allClientsSearchInput').addEventListener('input', renderAllClientsGrid);
+document.getElementById('logoutBtnTodosClientes').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
   showLoginView();
 });
