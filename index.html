@@ -10,11 +10,26 @@
     --green: #2ECC71; --green-deep: #1E9E58; --green-soft: rgba(46,204,113,0.14);
     --paper: #060A12; --paper-panel: #101725; --paper-raised: #161F31;
     --ink: #EAEFF7; --ink-soft: #8B96AB; --line: rgba(255,255,255,0.09);
+    --input-recessed-bg: rgba(255,255,255,0.06); --input-recessed-border: rgba(255,255,255,0.15);
+    --label-color: #F4FAFF; --label-glow: rgba(244,250,255,0.45);
     --status-pending: #E8A33D; --status-pending-bg: rgba(232,163,61,0.14);
     --status-info: #4C8DFF; --status-info-bg: rgba(76,141,255,0.14);
     --status-good: #2ECC71; --status-good-bg: rgba(46,204,113,0.14);
     --status-neutral: #8B96AB; --status-neutral-bg: rgba(139,150,171,0.14);
     --status-atraso: #E5544A; --status-atraso-bg: rgba(229,84,74,0.14);
+  }
+  :root[data-theme="light"]{
+    --navy: #0B2A4A; --navy-deep: #071b30; --gold: #C9A227; --gold-soft: #E6C766;
+    --green: #2f9e63; --green-deep: #1E9E58; --green-soft: rgba(59,143,109,0.12);
+    --paper: #F6F4EE; --paper-panel: #FFFFFF; --paper-raised: #FFFFFF;
+    --ink: #16202B; --ink-soft: #57626F; --line: #E1DCCF;
+    --input-recessed-bg: rgba(0,0,0,0.03); --input-recessed-border: rgba(0,0,0,0.15);
+    --label-color: #0B2A4A; --label-glow: rgba(0,0,0,0);
+    --status-pending: #E8A33D; --status-pending-bg: #FBEAD1;
+    --status-info: #3E6FA6; --status-info-bg: #E5EDF6;
+    --status-good: #3B8F6D; --status-good-bg: #E1F1E9;
+    --status-neutral: #8B93A1; --status-neutral-bg: #EDEEF0;
+    --status-atraso: #C0392B; --status-atraso-bg: #FBE1DC;
   }
   *{ box-sizing: border-box; }
   html{ overflow-x: hidden; }
@@ -75,6 +90,7 @@
   }
   .view-tab:hover{ background: var(--paper); }
   .view-tab.active{ background: var(--gold); color:#3a2e05; font-weight:600; }
+  .nav-dropdown-divider{ height:1px; background: var(--line); margin: 6px 4px; }
 
   .overview-charts-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
   @media (max-width: 720px){ .overview-charts-grid{ grid-template-columns: 1fr; } }
@@ -214,9 +230,9 @@
   .venda-item-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom: 8px; }
   .venda-item-top select{ border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; font-size: 12.5px; font-family:inherit; background:var(--paper-panel); }
   .venda-item .vfields{ display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
-  .venda-item .vfield label{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #F4FAFF; text-shadow: 0 0 8px rgba(244,250,255,0.45); display:block; margin-bottom: 3px; }
+  .venda-item .vfield label{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--label-color); text-shadow: 0 0 8px var(--label-glow); display:block; margin-bottom: 3px; }
   .venda-item .vfield input, .venda-item .vfield select{
-    width:100%; border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; font-size: 13px; font-family: inherit; background: var(--paper-panel);
+    width:100%; border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; font-size: 13px; font-family: inherit; background: var(--paper-panel); color: var(--ink);
   }
   .venda-item .vfield.protected-field{ display:flex; gap:4px; align-items:flex-end; }
   .venda-item .del-venda-btn{ border:none; background:none; color: var(--ink-soft); cursor:pointer; font-size: 13px; padding: 2px 6px; }
@@ -272,7 +288,7 @@
     display:flex; flex-wrap: wrap; gap: 18px; align-items:flex-end; margin-bottom: 10px;
   }
   .field{ display:flex; flex-direction:column; gap:4px; flex: 1 1 160px; }
-  .field label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #F4FAFF; text-shadow: 0 0 8px rgba(244,250,255,0.45); }
+  .field label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--label-color); text-shadow: 0 0 8px var(--label-glow); }
   .field input, .field select{
     border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
     font-family: inherit; font-size: 14px; background: var(--paper); color: var(--ink); width: 100%;
@@ -306,14 +322,14 @@
   .item-detail{ margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.12); }
   .item-detail textarea{
     width:100%; min-height: 54px; border: 1px solid rgba(0,0,0,0.12); border-radius: 7px;
-    padding: 7px 9px; font-family: inherit; font-size: 13px; background: rgba(255,255,255,0.6); color: inherit; resize: vertical;
+    padding: 7px 9px; font-family: inherit; font-size: 13px; background: var(--input-recessed-bg); color: var(--ink); resize: vertical;
   }
   .item-detail textarea:focus{ outline: none; border-color: var(--navy); }
   .regularidade-row{ display:flex; align-items:center; gap: 8px; margin-top: 4px; }
-  .regularidade-row select{ border: 1px solid rgba(0,0,0,0.15); border-radius: 7px; padding: 5px 8px; font-family: inherit; font-size: 12.5px; background: rgba(255,255,255,0.7); color: inherit; }
+  .regularidade-row select{ border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; font-family: inherit; font-size: 12.5px; background: var(--input-recessed-bg); color: var(--ink); }
   .list-rows{ display:flex; flex-direction:column; gap: 6px; margin-bottom: 8px; }
   .list-row{ display:flex; gap: 6px; align-items:center; }
-  .list-row input{ flex:1; border: 1px solid rgba(0,0,0,0.15); border-radius: 7px; padding: 6px 8px; font-family: inherit; font-size: 13px; background: rgba(255,255,255,0.7); color: inherit; }
+  .list-row input{ flex:1; border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; font-family: inherit; font-size: 13px; background: var(--input-recessed-bg); color: var(--ink); }
   .list-row .rm-btn{ border:none; background:none; color: var(--ink-soft); cursor:pointer; font-size: 14px; padding: 2px 6px; }
   .add-list-row{ border: 1px dashed rgba(0,0,0,0.2); background:none; border-radius: 7px; padding: 5px 9px; font-size: 12px; color: var(--ink-soft); cursor:pointer; }
 
@@ -327,7 +343,7 @@
   .status-neutral .dot{ background: var(--status-neutral); }
 
   .income-row{ display:flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
-  .income-row select, .income-row input{ border: 1px solid rgba(0,0,0,0.15); border-radius: 7px; padding: 6px 8px; font-family: inherit; font-size: 13px; background: rgba(255,255,255,0.7); color: inherit; }
+  .income-row select, .income-row input{ border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; font-family: inherit; font-size: 13px; background: var(--input-recessed-bg); color: var(--ink); }
   .income-row select{ flex: 1 1 130px; }
   .income-row input{ flex: 1 1 110px; }
 
@@ -378,16 +394,16 @@
   .history-empty{ font-size: 12px; color: var(--ink-soft); }
   .hist-edit-row{ display:flex; gap: 6px; margin-bottom: 6px; align-items:center; }
   .hist-edit-row input, .hist-edit-row select{
-    border: 1px solid rgba(0,0,0,0.15); border-radius: 7px; padding: 5px 7px;
-    font-family: inherit; font-size: 12px; background: rgba(255,255,255,0.7); color: inherit; flex:1;
+    border: 1px solid var(--line); border-radius: 7px; padding: 5px 7px;
+    font-family: inherit; font-size: 12px; background: var(--input-recessed-bg); color: var(--ink); flex:1;
   }
   .hist-edit-row .rm-btn{ flex:0; border:none; background:none; color: var(--ink-soft); cursor:pointer; font-size: 14px; padding: 2px 6px; }
 
   .credit-rows{ display:flex; flex-direction:column; gap: 6px; margin-top: 10px; }
   .credit-row{ display:flex; gap: 6px; flex-wrap: wrap; }
   .credit-row input, .credit-row select{
-    border: 1px solid rgba(0,0,0,0.15); border-radius: 7px; padding: 6px 8px;
-    font-family: inherit; font-size: 12.5px; background: rgba(255,255,255,0.7); color: inherit;
+    border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px;
+    font-family: inherit; font-size: 12.5px; background: var(--input-recessed-bg); color: var(--ink);
   }
   .credit-row input[data-field="date"]{ flex: 0 0 128px; }
   .credit-row input[data-field="banco"]{ flex: 1 1 110px; }
@@ -444,6 +460,13 @@
   footer.note{ margin-top: 30px; font-size: 12px; color: var(--ink-soft); text-align:center; }
   .save-status{ font-size: 11.5px; color: var(--ink-soft); text-align:right; margin-top: -8px; margin-bottom: 18px; min-height: 14px; }
 </style>
+
+<script>
+try{
+  const savedTheme = localStorage.getItem('a10:theme');
+  if(savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+}catch(e){}
+</script>
 </head>
 <body>
 <div class="app">
@@ -461,6 +484,8 @@
       <button type="button" class="view-tab" id="tabIdeias" data-view="ideias">Ateliê de Ideias</button>
       <button type="button" class="view-tab" id="tabCadastros" data-view="cadastros">Cadastros recebidos</button>
       <button type="button" class="view-tab" id="tabParceiros" data-view="parceiros">Parceiros</button>
+      <div class="nav-dropdown-divider"></div>
+      <button type="button" class="view-tab" id="themeToggleBtn">🌙 Modo escuro</button>
     </div>
   </header>
 
@@ -3390,6 +3415,21 @@ document.getElementById('menuToggleBtn').addEventListener('click', (e)=>{
 document.getElementById('navDropdown').addEventListener('click', ()=>{
   document.getElementById('navDropdown').classList.remove('open');
 });
+function updateThemeToggleLabel(){
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  document.getElementById('themeToggleBtn').textContent = isLight ? '🌙 Modo escuro' : '☀️ Modo claro';
+}
+document.getElementById('themeToggleBtn').addEventListener('click', ()=>{
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  if(isLight){
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+  try{ localStorage.setItem('a10:theme', isLight ? 'dark' : 'light'); }catch(e){}
+  updateThemeToggleLabel();
+});
+updateThemeToggleLabel();
 document.addEventListener('click', (e)=>{
   const dropdown = document.getElementById('navDropdown');
   const menuWrap = document.getElementById('viewTabs');
