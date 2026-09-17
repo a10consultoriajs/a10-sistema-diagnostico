@@ -2434,7 +2434,7 @@ function vendaItemHtml(v){
         <div class="vfield"><label>Valor fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
         <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
         <div class="vfield"><label>Valor remanescente</label><input type="text" data-field="remanescente" data-money="1" value="${formatBRL(remanescenteOf(v))}" readonly></div>
-        <div class="vfield"><label>Vencimento do remanescente</label><input type="text" inputmode="numeric" data-field="data_vencimento_remanescente" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_vencimento_remanescente)}"></div>
+        <div class="vfield vf-vencimento-wrap" style="${remanescenteOf(v) > 0.004 ? '' : 'display:none;'}"><label>Vencimento do remanescente</label><input type="text" inputmode="numeric" data-field="data_vencimento_remanescente" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_vencimento_remanescente)}"></div>
         <div class="vfield"><label>Custo operacional</label><input type="text" data-field="custo_operacional" data-money="1" value="${formatBRL(v.custo_operacional)}"></div>
         <div class="vfield"><label>Margem de lucro</label><input type="text" data-field="margem_lucro" data-money="1" value="${formatBRL(v.margem_lucro)}" readonly></div>
       ` : ''}
@@ -2444,7 +2444,7 @@ function vendaItemHtml(v){
         <div class="vfield"><label>Valor fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
         <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
         <div class="vfield"><label>Valor remanescente</label><input type="text" data-field="remanescente" data-money="1" value="${formatBRL(remanescenteOf(v))}" readonly></div>
-        <div class="vfield"><label>Vencimento do remanescente</label><input type="text" inputmode="numeric" data-field="data_vencimento_remanescente" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_vencimento_remanescente)}"></div>
+        <div class="vfield vf-vencimento-wrap" style="${remanescenteOf(v) > 0.004 ? '' : 'display:none;'}"><label>Vencimento do remanescente</label><input type="text" inputmode="numeric" data-field="data_vencimento_remanescente" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_vencimento_remanescente)}"></div>
         <div class="vfield"><label>Nota Fiscal</label><input type="text" data-field="nota_fiscal" data-money="1" value="${formatBRL(v.nota_fiscal)}"></div>
         <div class="vfield"><label>Taxa de Inclusão</label><input type="text" data-field="taxa_inclusao" data-money="1" value="${formatBRL(v.taxa_inclusao)}"></div>
         <div class="vfield"><label>Margem de lucro</label><input type="text" data-field="margem_lucro" data-money="1" value="${formatBRL(v.margem_lucro)}" readonly></div>
@@ -2493,6 +2493,8 @@ function recalcLucro(v, itemEl){
   v.remanescente = remanescenteOf(v);
   const remInput = itemEl.querySelector('[data-field="remanescente"]');
   if(remInput) remInput.value = formatBRL(v.remanescente);
+  const vencimentoWrap = itemEl.querySelector('.vf-vencimento-wrap');
+  if(vencimentoWrap) vencimentoWrap.style.display = v.remanescente > 0.004 ? '' : 'none';
   const recebido = Number(v.recebido)||0;
   if(tag === 'Acompanhamento / Rating'){
     v.margem_lucro = recebido - (Number(v.custo_operacional)||0);
@@ -2569,7 +2571,7 @@ function vendaItemSimplesHtml(v){
       <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
       <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
       <div class="vfield"><label>Remanescente</label><input type="text" class="vf-remanescente" value="${formatBRL(remanescenteOf(v))}" readonly></div>
-      <div class="vfield"><label>Vencimento do remanescente</label><input type="text" inputmode="numeric" data-field="data_vencimento_remanescente" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_vencimento_remanescente)}"></div>
+      <div class="vfield vf-vencimento-wrap" style="${remanescenteOf(v) > 0.004 ? '' : 'display:none;'}"><label>Vencimento do remanescente</label><input type="text" inputmode="numeric" data-field="data_vencimento_remanescente" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_vencimento_remanescente)}"></div>
       <div class="vfield"><label>Lucro</label><input type="text" class="vf-lucro" value="${formatBRL(lucro)}" readonly></div>
     </div>
     ${ordensServicoListHtml(v)}
@@ -2616,6 +2618,8 @@ function wireVendaItemSimples(itemEl, v){
       if(['fechado','recebido','custo'].includes(field)){
         const remInput = itemEl.querySelector('.vf-remanescente');
         if(remInput) remInput.value = formatBRL(remanescenteOf(v));
+        const vencimentoWrap = itemEl.querySelector('.vf-vencimento-wrap');
+        if(vencimentoWrap) vencimentoWrap.style.display = remanescenteOf(v) > 0.004 ? '' : 'none';
         const lucroInput = itemEl.querySelector('.vf-lucro');
         if(lucroInput) lucroInput.value = formatBRL((Number(v.recebido)||0) - (Number(v.custo)||0));
       }
