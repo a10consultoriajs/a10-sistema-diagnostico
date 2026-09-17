@@ -1307,6 +1307,10 @@ async function saveClient(){
 }
 
 /* ---------- View switching ---------- */
+function saveLastView(view){
+  try{ localStorage.setItem('a10:lastView', view); }catch(e){}
+}
+
 function deactivateAllTabs(){
   document.getElementById('tabOverview').classList.remove('active');
   document.getElementById('tabTodosClientes').classList.remove('active');
@@ -1329,6 +1333,7 @@ function hideAllViews(){
 }
 
 async function showListView(){
+  saveLastView('clients');
   deactivateAllTabs();
   document.getElementById('tabClientes').classList.add('active');
   document.getElementById('viewTabs').style.display = 'flex';
@@ -1855,6 +1860,7 @@ function renderReceivablesMonthDrilldown(monthKey){
 }
 
 async function showOverview(){
+  saveLastView('overview');
   deactivateAllTabs();
   document.getElementById('tabOverview').classList.add('active');
   document.getElementById('viewTabs').style.display = 'flex';
@@ -2157,6 +2163,7 @@ async function loadVendas(){
 
 async function showSalesView(mode){
   salesMode = mode;
+  saveLastView(mode);
   deactivateAllTabs();
   document.getElementById('tabLimpaNome').classList.toggle('active', mode === 'limpa_nome');
   document.getElementById('tabConsultas').classList.toggle('active', mode === 'consultas');
@@ -3096,6 +3103,7 @@ async function loadIdeias(){
 }
 
 async function showIdeiasView(){
+  saveLastView('ideias');
   deactivateAllTabs();
   document.getElementById('tabIdeias').classList.add('active');
   document.getElementById('viewTabs').style.display = 'flex';
@@ -3332,6 +3340,7 @@ async function loadCadastros(){
 }
 
 async function showCadastrosView(){
+  saveLastView('cadastros');
   deactivateAllTabs();
   document.getElementById('tabCadastros').classList.add('active');
   document.getElementById('viewTabs').style.display = 'flex';
@@ -3438,6 +3447,7 @@ function renderAllClientsGrid(){
 }
 
 async function showAllClientsView(){
+  saveLastView('todos_clientes');
   deactivateAllTabs();
   document.getElementById('tabTodosClientes').classList.add('active');
   document.getElementById('viewTabs').style.display = 'flex';
@@ -3499,6 +3509,7 @@ function renderParceirosList(){
 }
 
 async function showParceirosView(){
+  saveLastView('parceiros');
   deactivateAllTabs();
   document.getElementById('tabParceiros').classList.add('active');
   document.getElementById('viewTabs').style.display = 'flex';
@@ -4492,10 +4503,22 @@ async function doLogin(){
   await showOverview();
 }
 
+async function restoreLastView(){
+  let last = '';
+  try{ last = localStorage.getItem('a10:lastView') || ''; }catch(e){}
+  if(last === 'todos_clientes') return showAllClientsView();
+  if(last === 'clients') return showListView();
+  if(last === 'limpa_nome' || last === 'consultas') return showSalesView(last);
+  if(last === 'ideias') return showIdeiasView();
+  if(last === 'cadastros') return showCadastrosView();
+  if(last === 'parceiros') return showParceirosView();
+  return showOverview();
+}
+
 async function init(){
   const { data } = await supabaseClient.auth.getSession();
   if(data && data.session){
-    await showOverview();
+    await restoreLastView();
   } else {
     showLoginView();
   }
