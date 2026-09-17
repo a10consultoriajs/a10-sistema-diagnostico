@@ -59,6 +59,10 @@
   .stat-card .stat-value{ font-family: Arial, Helvetica, sans-serif; font-size: 21px; font-weight:600; color: var(--navy); line-height:1.2; overflow-wrap: break-word; word-break: break-word; }
   @media (max-width: 480px){ .stat-card .stat-value{ font-size: 17px; } .stat-card{ padding: 12px 12px; } }
   .stat-card .stat-label{ font-size: 12px; color: var(--ink-soft); margin-top: 6px; text-transform: uppercase; letter-spacing:0.05em; }
+  .stat-card .stat-sub{ font-size: 11px; color: var(--ink-soft); margin-top: 8px; }
+  .stat-card .stat-compare{ font-size: 11.5px; margin-top: 4px; font-weight:600; }
+  .stat-card .stat-compare.up{ color: var(--status-good); }
+  .stat-card .stat-compare.down{ color: var(--status-atraso); }
   .stat-card.stat-atraso .stat-value{ color: var(--status-atraso); }
   .stat-card.stat-info .stat-value{ color: var(--status-info); }
   .stat-card.stat-good .stat-value{ color: var(--status-good); }
@@ -100,7 +104,12 @@
     background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
   }
   .chart-card label{ font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); display:block; margin-bottom: 10px; }
+  .chart-subtitle{ font-size: 11px; color: var(--ink-soft); margin: -6px 0 10px; }
   .chart-canvas-wrap{ position:relative; height: 220px; }
+  .chart-empty-state{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size: 13px; color: var(--ink-soft); background: var(--paper-panel);
+  }
 
   /* ---------- Ateliê de Ideias ---------- */
   .ideias-header{ margin-bottom: 18px; }
@@ -175,6 +184,9 @@
   /* ---------- Vendas ---------- */
   .period-filter-row{ display:flex; gap:14px; align-items:flex-end; margin-bottom: 16px; flex-wrap:wrap; }
   .period-filter-row .field{ flex: 0 0 160px; }
+  .period-preset-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 8px; }
+  .period-label{ font-size: 12.5px; color: var(--ink-soft); margin-bottom: 14px; }
+  .period-label strong{ color: var(--gold-soft); }
   .dashboard-vendas{ grid-template-columns: repeat(5, 1fr); }
   .dashboard-vendas .stat-value{ font-size: 18px; word-break: break-word; }
   @media (max-width: 900px){ .dashboard-vendas{ grid-template-columns: repeat(3, 1fr); } }
@@ -600,36 +612,59 @@ try{
       <div class="plan-list" id="overviewSearchList"></div>
     </div>
 
-    <div class="period-filter-row">
+    <div class="period-preset-row" id="periodPresetRow">
+      <button type="button" class="status-chip" data-preset="mes_atual">Mês atual</button>
+      <button type="button" class="status-chip" data-preset="mes_anterior">Mês anterior</button>
+      <button type="button" class="status-chip" data-preset="3m">Últimos 3 meses</button>
+      <button type="button" class="status-chip" data-preset="6m">Últimos 6 meses</button>
+      <button type="button" class="status-chip" data-preset="12m">Últimos 12 meses</button>
+      <button type="button" class="status-chip" data-preset="custom">Período personalizado</button>
+    </div>
+    <div class="period-label" id="periodActiveLabel"></div>
+    <div class="period-filter-row" id="customPeriodRow" style="display:none;">
       <div class="field"><label>De</label><input type="date" id="overviewPeriodFrom"></div>
       <div class="field"><label>Até</label><input type="date" id="overviewPeriodTo"></div>
       <button type="button" class="back-btn" id="overviewClearPeriodBtn">Limpar período</button>
     </div>
 
     <div class="dashboard" id="overviewDashboard">
-      <div class="stat-card" data-ov="qt"><div class="stat-value" id="ovQt">0</div><div class="stat-label">Serviços realizados</div></div>
-      <div class="stat-card" data-ov="recebido"><div class="stat-value" id="ovRecebido">R$ 0</div><div class="stat-label">Valores recebidos</div></div>
-      <div class="stat-card" data-ov="custo"><div class="stat-value" id="ovCusto">R$ 0</div><div class="stat-label">Custos pagos</div></div>
-      <div class="stat-card" data-ov="lucro"><div class="stat-value" id="ovLucro">R$ 0</div><div class="stat-label">Lucro total</div></div>
+      <div class="stat-card" data-ov="fechado">
+        <div class="stat-value" id="ovFechado">R$ 0</div><div class="stat-label">Faturamento</div>
+        <div class="stat-sub" id="ovFechadoPeriod"></div><div class="stat-compare" id="ovFechadoCompare"></div>
+      </div>
+      <div class="stat-card" data-ov="recebido">
+        <div class="stat-value" id="ovRecebido">R$ 0</div><div class="stat-label">Valores recebidos</div>
+        <div class="stat-sub" id="ovRecebidoPeriod"></div><div class="stat-compare" id="ovRecebidoCompare"></div>
+      </div>
+      <div class="stat-card" data-ov="remanescente">
+        <div class="stat-value" id="ovRemanescente">R$ 0</div><div class="stat-label">Valores a receber</div>
+        <div class="stat-sub" id="ovRemanescentePeriod"></div><div class="stat-compare" id="ovRemanescenteCompare"></div>
+      </div>
+      <div class="stat-card" data-ov="lucro">
+        <div class="stat-value" id="ovLucro">R$ 0</div><div class="stat-label">Lucro</div>
+        <div class="stat-sub" id="ovLucroPeriod"></div><div class="stat-compare" id="ovLucroCompare"></div>
+      </div>
     </div>
+    <div class="hint" style="margin-top:-8px; margin-bottom:18px;" id="ovQtHint"></div>
 
     <div class="section-head" style="margin-top:22px;"><h2 style="font-size:16px; margin:0;">Dashboard mensal</h2></div>
     <div class="monthly-charts-grid">
       <div class="chart-card">
-        <label>Faturamento mensal</label>
-        <div class="chart-canvas-wrap"><canvas id="chartFaturamentoMensal"></canvas></div>
+        <label>Faturamento por período</label>
+        <div class="chart-canvas-wrap"><canvas id="chartFaturamentoMensal"></canvas><div class="chart-empty-state" id="emptyFaturamentoMensal" style="display:none;">Sem dados neste período.</div></div>
       </div>
       <div class="chart-card">
-        <label>Valores recebidos mensal</label>
-        <div class="chart-canvas-wrap"><canvas id="chartRecebidoMensal"></canvas></div>
+        <label>Valores recebidos por período</label>
+        <div class="chart-canvas-wrap"><canvas id="chartRecebidoMensal"></canvas><div class="chart-empty-state" id="emptyRecebidoMensal" style="display:none;">Sem dados neste período.</div></div>
       </div>
       <div class="chart-card">
-        <label>Valores a receber mensal</label>
-        <div class="chart-canvas-wrap"><canvas id="chartAReceberMensal"></canvas></div>
+        <label>Valores a receber por período</label>
+        <div class="chart-subtitle">Saldo em aberto dos contratos fechados em cada mês (não é acumulado)</div>
+        <div class="chart-canvas-wrap"><canvas id="chartAReceberMensal"></canvas><div class="chart-empty-state" id="emptyAReceberMensal" style="display:none;">Sem dados neste período.</div></div>
       </div>
       <div class="chart-card">
-        <label>Lucro mensal</label>
-        <div class="chart-canvas-wrap"><canvas id="chartLucroMensal"></canvas></div>
+        <label>Lucro por período</label>
+        <div class="chart-canvas-wrap"><canvas id="chartLucroMensal"></canvas><div class="chart-empty-state" id="emptyLucroMensal" style="display:none;">Sem dados neste período.</div></div>
       </div>
     </div>
 
@@ -1233,15 +1268,115 @@ async function showListView(){
 let overviewPeriodFrom = '';
 let overviewPeriodTo = '';
 let overviewActiveKind = null;
+let overviewActivePreset = '';
 
-function overviewNonPromotedVendas(){
+function pad2(n){ return String(n).padStart(2,'0'); }
+function ymd(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+
+function applyPeriodPreset(preset){
+  if(preset === 'custom'){
+    document.getElementById('customPeriodRow').style.display = 'flex';
+    overviewActivePreset = 'custom';
+    updatePeriodPresetUI();
+    return;
+  }
+  const now = new Date();
+  let from = '', to = '';
+  if(preset === 'mes_atual'){
+    from = ymd(new Date(now.getFullYear(), now.getMonth(), 1));
+    to = ymd(new Date(now.getFullYear(), now.getMonth()+1, 0));
+  } else if(preset === 'mes_anterior'){
+    from = ymd(new Date(now.getFullYear(), now.getMonth()-1, 1));
+    to = ymd(new Date(now.getFullYear(), now.getMonth(), 0));
+  } else if(preset === '3m'){
+    from = ymd(new Date(now.getFullYear(), now.getMonth()-2, 1));
+    to = ymd(new Date(now.getFullYear(), now.getMonth()+1, 0));
+  } else if(preset === '6m'){
+    from = ymd(new Date(now.getFullYear(), now.getMonth()-5, 1));
+    to = ymd(new Date(now.getFullYear(), now.getMonth()+1, 0));
+  } else if(preset === '12m'){
+    from = ymd(new Date(now.getFullYear(), now.getMonth()-11, 1));
+    to = ymd(new Date(now.getFullYear(), now.getMonth()+1, 0));
+  }
+  document.getElementById('customPeriodRow').style.display = 'none';
+  overviewPeriodFrom = from;
+  overviewPeriodTo = to;
+  document.getElementById('overviewPeriodFrom').value = from;
+  document.getElementById('overviewPeriodTo').value = to;
+  overviewActivePreset = preset;
+  updatePeriodPresetUI();
+  renderOverview();
+}
+
+function updatePeriodPresetUI(){
+  document.querySelectorAll('#periodPresetRow .status-chip').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.preset === overviewActivePreset);
+  });
+  const label = document.getElementById('periodActiveLabel');
+  if(overviewPeriodFrom && overviewPeriodTo){
+    label.innerHTML = `Período selecionado: <strong>${formatDateBR(overviewPeriodFrom)} a ${formatDateBR(overviewPeriodTo)}</strong>`;
+  } else {
+    label.innerHTML = `Período selecionado: <strong>Todos os registros</strong>`;
+  }
+}
+
+function vendasInRange(from, to){
   return vendasIndex
     .filter(v => normalizeServicoTag(v.servico) !== 'Acompanhamento / Rating')
-    .filter(v => inPeriod(v.data_entrada, overviewPeriodFrom, overviewPeriodTo));
+    .filter(v => inPeriod(v.data_entrada, from, to));
+}
+function clientsInRange(from, to){
+  return clientIndex.filter(c => inPeriod(c.startDate, from, to));
+}
+function overviewNonPromotedVendas(){
+  return vendasInRange(overviewPeriodFrom, overviewPeriodTo);
 }
 
 function overviewClientItems(){
-  return clientIndex.filter(c => inPeriod(c.startDate, overviewPeriodFrom, overviewPeriodTo));
+  return clientsInRange(overviewPeriodFrom, overviewPeriodTo);
+}
+
+function computeFinancialTotals(from, to){
+  const vItems = vendasInRange(from, to);
+  const cItems = clientsInRange(from, to);
+  let fechado=0, recebido=0, remanescente=0, lucro=0, qt=0;
+  vItems.forEach(v => {
+    fechado += Number(v.fechado)||0;
+    recebido += Number(v.recebido)||0;
+    remanescente += remanescenteOf(v);
+    lucro += lucroOf(v);
+    qt += Number(v.qt)||0;
+  });
+  cItems.forEach(c => {
+    const negociado = Number(c.valorNegociado)||0;
+    const rec = Number(c.valorRecebido)||0;
+    fechado += negociado;
+    recebido += rec;
+    remanescente += Math.max(0, negociado - rec);
+    lucro += rec;
+    qt += 1;
+  });
+  return { fechado, recebido, remanescente, lucro, qt };
+}
+
+function computePreviousPeriodRange(from, to){
+  if(!from || !to) return null;
+  const fromD = new Date(from + 'T00:00:00');
+  const toD = new Date(to + 'T00:00:00');
+  if(isNaN(fromD.getTime()) || isNaN(toD.getTime())) return null;
+  const days = Math.round((toD - fromD) / 86400000) + 1;
+  const prevTo = new Date(fromD); prevTo.setDate(prevTo.getDate() - 1);
+  const prevFrom = new Date(prevTo); prevFrom.setDate(prevFrom.getDate() - (days - 1));
+  return { from: ymd(prevFrom), to: ymd(prevTo) };
+}
+
+function renderCompareBadge(elId, current, previous){
+  const el = document.getElementById(elId);
+  if(previous === null || !previous){ el.textContent = ''; el.className = 'stat-compare'; return; }
+  const pct = ((current - previous) / Math.abs(previous)) * 100;
+  const sign = pct >= 0 ? '+' : '';
+  el.className = 'stat-compare ' + (pct >= 0 ? 'up' : 'down');
+  el.textContent = `${sign}${pct.toFixed(1)}% vs período anterior`;
 }
 
 function overviewCategoryTotals(){
@@ -1271,7 +1406,7 @@ function overviewCategoryTotals(){
 
 function renderOverviewChart(elId, totals, field, barClass){
   const shortLabels = { 'Acompanhamento/Rating': 'Acomp./Rating', 'Limpa Nome': 'Limpa Nome', 'Consultas': 'Consultas' };
-  const cats = Object.keys(totals);
+  const cats = Object.keys(totals).sort((a,b)=> totals[b][field] - totals[a][field]);
   const maxV = Math.max(...cats.map(k=>totals[k][field]), 1);
   const el = document.getElementById(elId);
   el.innerHTML = cats.map(k => {
@@ -1305,9 +1440,20 @@ function computeMonthlySeries(){
     if(!key) return;
     const m = ensure(key);
     m.fechado += Number(v.fechado)||0;
-    m.recebido += Number(v.recebido)||0;
     m.remanescente += remanescenteOf(v);
     m.lucro += lucroOf(v);
+    // Recebido: atribuir a cada pagamento seu proprio mes (recebimentos[]),
+    // e o restante (nao detalhado por data) ao mes da contratacao.
+    let tracked = 0;
+    (v.recebimentos||[]).forEach(r => {
+      const valor = Number(r.valor)||0;
+      tracked += valor;
+      const rKey = (r.data||'').slice(0,7);
+      if(rKey) ensure(rKey).recebido += valor;
+      else m.recebido += valor;
+    });
+    const remainder = (Number(v.recebido)||0) - tracked;
+    if(Math.abs(remainder) > 0.004) m.recebido += remainder;
   });
   cItems.forEach(c => {
     const key = (c.startDate||'').slice(0,7);
@@ -1330,35 +1476,29 @@ function computeMonthlySeries(){
   };
 }
 
-function linearRegressionPoints(values){
-  const n = values.length;
-  if(n < 2) return values.slice();
-  const xs = values.map((_,i)=>i);
-  const sumX = xs.reduce((a,b)=>a+b,0);
-  const sumY = values.reduce((a,b)=>a+b,0);
-  const sumXY = xs.reduce((s,x,i)=>s+x*values[i],0);
-  const sumXX = xs.reduce((s,x)=>s+x*x,0);
-  const denom = (n*sumXX - sumX*sumX) || 1;
-  const slope = (n*sumXY - sumX*sumY) / denom;
-  const intercept = (sumY - slope*sumX) / n;
-  return xs.map(x => slope*x + intercept);
-}
-
 let monthlyChartInstances = {};
-function renderMonthlyChart(canvasId, label, series, color){
+function renderMonthlyChart(canvasId, label, series, color, opts){
+  opts = opts || {};
   const canvas = document.getElementById(canvasId);
   if(!canvas || typeof Chart === 'undefined') return;
+  const emptyEl = document.getElementById('empty' + canvasId.replace(/^chart/, ''));
+  const hasData = series.values.length > 0 && series.values.some(v => Math.abs(v) > 0.004);
+  if(emptyEl) emptyEl.style.display = hasData ? 'none' : 'flex';
+  canvas.style.visibility = hasData ? 'visible' : 'hidden';
   if(monthlyChartInstances[canvasId]) monthlyChartInstances[canvasId].destroy();
+  if(!hasData) return;
   const inkSoft = getComputedStyle(document.documentElement).getPropertyValue('--ink-soft').trim();
   const line = getComputedStyle(document.documentElement).getPropertyValue('--line').trim();
-  const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim();
-  const trend = linearRegressionPoints(series.values);
+  const negColor = getComputedStyle(document.documentElement).getPropertyValue('--status-atraso').trim();
+  const backgroundColors = opts.allowNegative
+    ? series.values.map(v => v < 0 ? negColor : color)
+    : color;
   monthlyChartInstances[canvasId] = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
     data: {
       labels: series.labels,
       datasets: [
-        { type:'bar', label, data: series.values, backgroundColor: color, borderRadius: 5, order: 2, maxBarThickness: 42 },
-        { type:'line', label:'Tendência', data: trend, borderColor: gold, borderWidth: 2, pointRadius: 0, tension: 0, fill: false, order: 1 }
+        { label, data: series.values, backgroundColor: backgroundColors, borderRadius: 5, maxBarThickness: 42 }
       ]
     },
     options: {
@@ -1368,7 +1508,7 @@ function renderMonthlyChart(canvasId, label, series, color){
         tooltip: { callbacks: { label: (ctx)=> moneyBRL(ctx.parsed.y) } }
       },
       scales: {
-        x: { ticks:{ color: inkSoft }, grid:{ color: line } },
+        x: { ticks:{ color: inkSoft, autoSkip: true, maxRotation: 0, minRotation: 0 }, grid:{ color: line, display:false } },
         y: { ticks:{ color: inkSoft, callback: (v)=> moneyBRL(v) }, grid:{ color: line } }
       }
     }
@@ -1380,20 +1520,32 @@ function renderMonthlyDashboard(){
   renderMonthlyChart('chartFaturamentoMensal', 'Faturamento', { labels: series.labels, values: series.fechado }, '#4C8DFF');
   renderMonthlyChart('chartRecebidoMensal', 'Recebido', { labels: series.labels, values: series.recebido }, '#2ECC71');
   renderMonthlyChart('chartAReceberMensal', 'A receber', { labels: series.labels, values: series.remanescente }, '#E5544A');
-  renderMonthlyChart('chartLucroMensal', 'Lucro', { labels: series.labels, values: series.lucro }, '#D4AF37');
+  renderMonthlyChart('chartLucroMensal', 'Lucro', { labels: series.labels, values: series.lucro }, '#D4AF37', { allowNegative: true });
 }
 
 function renderOverview(){
   const totals = overviewCategoryTotals();
-  const cats = Object.values(totals);
-  const qt = cats.reduce((s,t)=>s+t.qt,0);
-  const recebido = cats.reduce((s,t)=>s+t.recebido,0);
-  const custo = cats.reduce((s,t)=>s+t.custo,0);
-  const lucro = cats.reduce((s,t)=>s+t.lucro,0);
-  document.getElementById('ovQt').textContent = qt;
-  document.getElementById('ovRecebido').textContent = moneyBRL(recebido);
-  document.getElementById('ovCusto').textContent = moneyBRL(custo);
-  document.getElementById('ovLucro').textContent = moneyBRL(lucro);
+  const current = computeFinancialTotals(overviewPeriodFrom, overviewPeriodTo);
+  const prevRange = computePreviousPeriodRange(overviewPeriodFrom, overviewPeriodTo);
+  const previous = prevRange ? computeFinancialTotals(prevRange.from, prevRange.to) : null;
+
+  const periodText = (overviewPeriodFrom && overviewPeriodTo)
+    ? `${formatDateBR(overviewPeriodFrom)} a ${formatDateBR(overviewPeriodTo)}`
+    : 'Todos os registros';
+
+  document.getElementById('ovFechado').textContent = moneyBRL(current.fechado);
+  document.getElementById('ovRecebido').textContent = moneyBRL(current.recebido);
+  document.getElementById('ovRemanescente').textContent = moneyBRL(current.remanescente);
+  document.getElementById('ovLucro').textContent = moneyBRL(current.lucro);
+  ['ovFechadoPeriod','ovRecebidoPeriod','ovRemanescentePeriod','ovLucroPeriod'].forEach(id=>{
+    document.getElementById(id).textContent = periodText;
+  });
+  renderCompareBadge('ovFechadoCompare', current.fechado, previous ? previous.fechado : null);
+  renderCompareBadge('ovRecebidoCompare', current.recebido, previous ? previous.recebido : null);
+  renderCompareBadge('ovRemanescenteCompare', current.remanescente, previous ? previous.remanescente : null);
+  renderCompareBadge('ovLucroCompare', current.lucro, previous ? previous.lucro : null);
+  document.getElementById('ovQtHint').textContent = `${current.qt} serviço${current.qt===1?'':'s'} no período`;
+
   renderOverviewChart('overviewChartRecebido', totals, 'recebido');
   renderOverviewChart('overviewChartLucro', totals, 'lucro', 'current');
   renderMonthlyDashboard();
@@ -1407,6 +1559,15 @@ function overviewEntriesFor(kind){
   if(kind === 'qt'){
     cItems.forEach(c => entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: 1, clienteId: c.id, tipo:'cliente' }));
     vItems.forEach(v => entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.qt)||0, vendaId: v.id, tipo:'venda' }));
+  } else if(kind === 'fechado'){
+    cItems.forEach(c => { if(Number(c.valorNegociado)>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: Number(c.valorNegociado), clienteId: c.id, tipo:'cliente' }); });
+    vItems.forEach(v => { if(Number(v.fechado)>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.fechado), vendaId: v.id, tipo:'venda' }); });
+  } else if(kind === 'remanescente'){
+    cItems.forEach(c => {
+      const r = Math.max(0, (Number(c.valorNegociado)||0) - (Number(c.valorRecebido)||0));
+      if(r>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: r, clienteId: c.id, tipo:'cliente' });
+    });
+    vItems.forEach(v => { const r = remanescenteOf(v); if(r>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: r, vendaId: v.id, tipo:'venda' }); });
   } else if(kind === 'recebido'){
     cItems.forEach(c => { if(Number(c.valorRecebido)>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: Number(c.valorRecebido), clienteId: c.id, tipo:'cliente' }); });
     vItems.forEach(v => { if(Number(v.recebido)>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.recebido), vendaId: v.id, tipo:'venda' }); });
@@ -1479,7 +1640,7 @@ async function openVendaFromOverview(v){
 
 function renderOverviewDrilldown(kind){
   overviewActiveKind = kind;
-  const titles = { qt: 'Quantidade de serviços', recebido: 'Valores recebidos', custo: 'Custos pagos', lucro: 'Lucro total' };
+  const titles = { qt: 'Quantidade de serviços', fechado: 'Faturamento', recebido: 'Valores recebidos', remanescente: 'Valores a receber', custo: 'Custos pagos', lucro: 'Lucro' };
   document.getElementById('overviewDrilldownTitle').textContent = titles[kind] || 'Detalhes';
   const entries = overviewEntriesFor(kind);
   const listEl = document.getElementById('overviewDrilldownList');
@@ -3585,17 +3746,23 @@ document.getElementById('overviewSearchInput').addEventListener('input', (e)=>{
   overviewSearch(e.target.value);
 });
 document.getElementById('overviewPeriodFrom').addEventListener('change', (e)=>{
-  overviewPeriodFrom = e.target.value; renderOverview();
+  overviewPeriodFrom = e.target.value; updatePeriodPresetUI(); renderOverview();
 });
 document.getElementById('overviewPeriodTo').addEventListener('change', (e)=>{
-  overviewPeriodTo = e.target.value; renderOverview();
+  overviewPeriodTo = e.target.value; updatePeriodPresetUI(); renderOverview();
 });
 document.getElementById('overviewClearPeriodBtn').addEventListener('click', ()=>{
-  overviewPeriodFrom = ''; overviewPeriodTo = '';
+  overviewPeriodFrom = ''; overviewPeriodTo = ''; overviewActivePreset = '';
   document.getElementById('overviewPeriodFrom').value = '';
   document.getElementById('overviewPeriodTo').value = '';
+  document.getElementById('customPeriodRow').style.display = 'none';
+  updatePeriodPresetUI();
   renderOverview();
 });
+document.querySelectorAll('#periodPresetRow .status-chip').forEach(btn=>{
+  btn.addEventListener('click', ()=> applyPeriodPreset(btn.dataset.preset));
+});
+updatePeriodPresetUI();
 document.getElementById('logoutBtn3').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
   showLoginView();
