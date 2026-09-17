@@ -585,7 +585,6 @@ try{
       <button type="button" class="view-tab" id="tabCadastros" data-view="cadastros">Cadastros recebidos</button>
       <button type="button" class="view-tab" id="tabParceiros" data-view="parceiros">Parceiros</button>
       <button type="button" class="view-tab" id="tabContatos" data-view="contatos">Contatos</button>
-      <button type="button" class="view-tab" id="tabFunil" data-view="funil">Funil de Atendimento</button>
       <div class="nav-dropdown-divider"></div>
       <button type="button" class="view-tab" id="themeToggleBtn">🌙 Modo escuro</button>
     </div>
@@ -1029,100 +1028,6 @@ try{
     <div class="empty-state" id="contatosEmptyState" style="display:none;">Nenhum contato importado ainda.</div>
   </div>
 
-  <!-- ===================== FUNIL DE ATENDIMENTO (CRM) ===================== -->
-  <div id="funilView" style="display:none;">
-    <div class="ideias-header">
-      <h2>Funil de Atendimento</h2>
-      <div class="ideias-subtitle">Acompanhe cada contato do primeiro "oi" até o fechamento.</div>
-      <div class="ideias-metrics" id="funilMetrics">📇 0 no funil · ✅ 0 fechados · 🤝 0 em negociação</div>
-    </div>
-
-    <div class="clients-toolbar">
-      <input type="text" id="funilSearchInput" placeholder="Buscar por nome ou telefone...">
-      <button class="btn-primary" id="newAtendimentoBtn" style="margin-left:auto;">+ Novo atendimento</button>
-      <button class="back-btn" id="logoutBtnFunil" style="margin-bottom:0;">Sair</button>
-    </div>
-
-    <div class="empty-state" id="funilEmptyState" style="display:none;">
-      Ainda não há ninguém no funil. Adicione o primeiro atendimento ou importe um contato.
-      <div style="margin-top:12px;"><button class="btn-primary" id="funilEmptyBtn">+ Novo atendimento</button></div>
-    </div>
-
-    <div class="ideias-board" id="funilBoard" style="display:none;">
-      <div class="ideia-column">
-        <div class="ideia-column-head">
-          <div class="ideia-column-title">🆕 Novo contato</div>
-          <div class="ideia-column-count" id="countFunilNovo">0</div>
-        </div>
-        <div class="ideia-column-sub">Ainda não foi trabalhado</div>
-        <div class="ideia-column-body" id="colFunilNovo" data-estagio="novo"></div>
-      </div>
-      <div class="ideia-column">
-        <div class="ideia-column-head">
-          <div class="ideia-column-title">🤝 Em negociação</div>
-          <div class="ideia-column-count" id="countFunilNegociacao">0</div>
-        </div>
-        <div class="ideia-column-sub">Conversa em andamento</div>
-        <div class="ideia-column-body" id="colFunilNegociacao" data-estagio="negociacao"></div>
-      </div>
-      <div class="ideia-column">
-        <div class="ideia-column-head">
-          <div class="ideia-column-title">✅ Fechado</div>
-          <div class="ideia-column-count" id="countFunilFechado">0</div>
-        </div>
-        <div class="ideia-column-sub">Virou cliente</div>
-        <div class="ideia-column-body" id="colFunilFechado" data-estagio="fechado"></div>
-      </div>
-      <div class="ideia-column">
-        <div class="ideia-column-head">
-          <div class="ideia-column-title">❌ Perdido</div>
-          <div class="ideia-column-count" id="countFunilPerdido">0</div>
-        </div>
-        <div class="ideia-column-sub">Não avançou</div>
-        <div class="ideia-column-body" id="colFunilPerdido" data-estagio="perdido"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="atendimentoModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h2>Novo atendimento</h2>
-        <button type="button" class="modal-close" id="closeAtendimentoModal">✕</button>
-      </div>
-      <div class="field">
-        <label>Nome</label>
-        <input type="text" id="atendimentoNome" placeholder="Nome do contato">
-      </div>
-      <div class="field">
-        <label>Telefone / WhatsApp</label>
-        <input type="text" id="atendimentoTelefone" placeholder="(11) 91234-5678">
-      </div>
-      <div class="field">
-        <label>CPF/CNPJ (opcional)</label>
-        <input type="text" id="atendimentoCpf" placeholder="000.000.000-00">
-      </div>
-      <div class="field">
-        <label>Origem</label>
-        <select id="atendimentoOrigem">
-          <option value="Indicação">Indicação</option>
-          <option value="Redes sociais">Redes sociais</option>
-          <option value="Contato importado">Contato importado</option>
-          <option value="Cadastro recebido">Cadastro recebido</option>
-          <option value="Outro">Outro</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Notas</label>
-        <textarea id="atendimentoNotas" rows="3" placeholder="O que já foi conversado, próximos passos..."></textarea>
-      </div>
-      <div class="form-actions">
-        <button type="button" class="back-btn" id="cancelAtendimentoBtn">Cancelar</button>
-        <button type="button" class="btn-primary" id="saveAtendimentoBtn">Salvar atendimento</button>
-      </div>
-    </div>
-  </div>
-
   <!-- ===================== TODOS OS CLIENTES (VISAO GERAL) ===================== -->
   <div id="allClientsView" style="display:none;">
     <h2 style="margin:0 0 14px;">Clientes</h2>
@@ -1496,7 +1401,6 @@ function deactivateAllTabs(){
   document.getElementById('tabCadastros').classList.remove('active');
   document.getElementById('tabParceiros').classList.remove('active');
   document.getElementById('tabContatos').classList.remove('active');
-  document.getElementById('tabFunil').classList.remove('active');
 }
 function hideAllViews(){
   document.getElementById('overviewView').style.display = 'none';
@@ -1508,7 +1412,6 @@ function hideAllViews(){
   document.getElementById('cadastrosView').style.display = 'none';
   document.getElementById('parceirosView').style.display = 'none';
   document.getElementById('contatosView').style.display = 'none';
-  document.getElementById('funilView').style.display = 'none';
 }
 
 async function showListView(){
@@ -4019,7 +3922,6 @@ function renderContatosGrid(){
         <div class="venda-group-menu-wrap">
           <button type="button" class="venda-group-menu-btn" title="Mais opções">⋮</button>
           <div class="venda-group-menu">
-            <button type="button" class="venda-group-menu-funil">➕ Adicionar ao funil</button>
             <button type="button" class="venda-group-menu-delete">🗑️ Excluir contato</button>
           </div>
         </div>
@@ -4067,13 +3969,7 @@ function renderContatosGrid(){
     });
     menu.querySelector('.venda-group-menu-delete').addEventListener('click', (e)=>{
       e.stopPropagation();
-      menu.classList.remove('open');
       deleteContato(c.id);
-    });
-    menu.querySelector('.venda-group-menu-funil').addEventListener('click', (e)=>{
-      e.stopPropagation();
-      menu.classList.remove('open');
-      addContatoToFunil(c);
     });
     wrap.querySelector('.venda-group-head').addEventListener('click', ()=>{
       if(contatosExpanded.has(c.id)) contatosExpanded.delete(c.id); else contatosExpanded.add(c.id);
@@ -4093,216 +3989,6 @@ async function showContatosView(){
   document.getElementById('contatosImportStatus').textContent = '';
   contatosIndex = await loadContatos();
   renderContatosGrid();
-}
-
-async function addContatoToFunil(c){
-  const now = new Date().toISOString();
-  const a = {
-    id: 'at_' + Date.now(),
-    nome: c.nome || 'Sem nome',
-    telefone: (c.telefones||[])[0] || '',
-    cpf_cnpj: '',
-    origem: 'Contato importado',
-    notas: '',
-    estagio: 'novo',
-    favorito: false,
-    criado_em: now,
-    atualizado_em: now
-  };
-  const { error } = await supabaseClient.from('atendimentos').insert(a);
-  if(error){ console.error(error); alert('Não foi possível adicionar ao funil agora.'); return; }
-  alert(`${a.nome} foi adicionado ao Funil de Atendimento.`);
-}
-
-/* ==================== FUNIL DE ATENDIMENTO (CRM) ==================== */
-let atendimentosIndex = [];
-let draggedAtendimentoId = null;
-const FUNIL_ESTAGIOS = ['novo','negociacao','fechado','perdido'];
-const FUNIL_COL_EL = { novo:'colFunilNovo', negociacao:'colFunilNegociacao', fechado:'colFunilFechado', perdido:'colFunilPerdido' };
-const FUNIL_COUNT_EL = { novo:'countFunilNovo', negociacao:'countFunilNegociacao', fechado:'countFunilFechado', perdido:'countFunilPerdido' };
-
-async function loadAtendimentos(){
-  const { data, error } = await supabaseClient.from('atendimentos').select('*').order('atualizado_em', { ascending:false });
-  if(error){ console.error(error); return []; }
-  return data || [];
-}
-
-async function saveAtendimento(a){
-  const { error } = await supabaseClient.from('atendimentos').upsert({
-    id: a.id, nome: a.nome || 'Sem nome', telefone: a.telefone || null, cpf_cnpj: a.cpf_cnpj || null,
-    origem: a.origem || null, notas: a.notas || null, estagio: a.estagio, favorito: !!a.favorito,
-    criado_em: a.criado_em, atualizado_em: a.atualizado_em
-  });
-  if(error) console.error(error);
-}
-
-async function moveAtendimento(id, novoEstagio){
-  const a = atendimentosIndex.find(x => x.id === id);
-  if(!a || a.estagio === novoEstagio) return;
-  a.estagio = novoEstagio;
-  a.atualizado_em = new Date().toISOString();
-  await saveAtendimento(a);
-  renderFunil();
-}
-
-async function toggleAtendimentoFavorito(id){
-  const a = atendimentosIndex.find(x => x.id === id);
-  if(!a) return;
-  a.favorito = !a.favorito;
-  a.atualizado_em = new Date().toISOString();
-  await saveAtendimento(a);
-  renderFunil();
-}
-
-async function deleteAtendimento(id){
-  if(!confirm('Excluir este atendimento do funil? Essa ação não pode ser desfeita.')) return;
-  const { error } = await supabaseClient.from('atendimentos').delete().eq('id', id);
-  if(error){ console.error(error); alert('Não foi possível excluir agora.'); return; }
-  atendimentosIndex = atendimentosIndex.filter(x => x.id !== id);
-  renderFunil();
-}
-
-function atendimentoCardHtml(a){
-  return `
-    <div class="ideia-card${a.favorito?' favorito':''}" draggable="true" data-id="${a.id}">
-      <div class="ideia-card-top">
-        <button type="button" class="ideia-star" data-id="${a.id}" title="Favoritar">${a.favorito?'⭐':'☆'}</button>
-        <span class="ideia-categoria-badge">${a.origem || 'Sem origem'}</span>
-        <button type="button" class="ideia-del" data-id="${a.id}" title="Excluir">✕</button>
-      </div>
-      <div class="ideia-titulo">${a.nome || 'Sem nome'}</div>
-      ${a.telefone ? `
-        <div class="quick-info-row" style="margin-top:6px;">
-          <span class="quick-info-value" style="font-size:12.5px;">${a.telefone}</span>
-          <button type="button" class="copy-btn" data-copy="${a.telefone}" title="Copiar">📋</button>
-          <a href="https://wa.me/55${a.telefone.replace(/\D/g,'')}" target="_blank" rel="noopener" class="whatsapp-open-btn" title="Abrir no WhatsApp">💬</a>
-        </div>
-      ` : ''}
-      ${a.notas ? `<div class="ideia-desc">${a.notas}</div>` : ''}
-      <div class="ideia-date">${formatDateBR((a.atualizado_em||'').slice(0,10))}</div>
-    </div>
-  `;
-}
-
-function wireFunilColumn(colEl){
-  colEl.querySelectorAll('.ideia-card').forEach(card => {
-    card.addEventListener('dragstart', ()=>{
-      draggedAtendimentoId = card.dataset.id;
-      card.classList.add('dragging');
-    });
-    card.addEventListener('dragend', ()=>{
-      card.classList.remove('dragging');
-    });
-    const starBtn = card.querySelector('.ideia-star');
-    if(starBtn) starBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleAtendimentoFavorito(card.dataset.id); });
-    const delBtn = card.querySelector('.ideia-del');
-    if(delBtn) delBtn.addEventListener('click', (e)=>{ e.stopPropagation(); deleteAtendimento(card.dataset.id); });
-    card.querySelectorAll('.copy-btn').forEach(btn => {
-      btn.addEventListener('click', async (e)=>{
-        e.stopPropagation();
-        try{
-          await navigator.clipboard.writeText(btn.dataset.copy);
-          const original = btn.textContent;
-          btn.textContent = '✓';
-          setTimeout(()=>{ btn.textContent = original; }, 1200);
-        }catch(err){
-          alert('Não foi possível copiar automaticamente. Valor: ' + btn.dataset.copy);
-        }
-      });
-    });
-    card.querySelectorAll('.whatsapp-open-btn').forEach(link => link.addEventListener('click', (e)=> e.stopPropagation()));
-  });
-  colEl.addEventListener('dragover', (e)=>{ e.preventDefault(); colEl.classList.add('drag-over'); });
-  colEl.addEventListener('dragleave', ()=>{ colEl.classList.remove('drag-over'); });
-  colEl.addEventListener('drop', (e)=>{
-    e.preventDefault();
-    colEl.classList.remove('drag-over');
-    const novoEstagio = colEl.dataset.estagio;
-    if(draggedAtendimentoId) moveAtendimento(draggedAtendimentoId, novoEstagio);
-    draggedAtendimentoId = null;
-  });
-}
-
-function renderFunilMetrics(){
-  const total = atendimentosIndex.length;
-  const fechados = atendimentosIndex.filter(a=>a.estagio==='fechado').length;
-  const negociacao = atendimentosIndex.filter(a=>a.estagio==='negociacao').length;
-  document.getElementById('funilMetrics').textContent = `📇 ${total} no funil · ✅ ${fechados} fechados · 🤝 ${negociacao} em negociação`;
-}
-
-function renderFunil(){
-  renderFunilMetrics();
-  const q = (document.getElementById('funilSearchInput').value || '').trim().toLowerCase();
-  const filtered = q ? atendimentosIndex.filter(a => (a.nome||'').toLowerCase().includes(q) || (a.telefone||'').toLowerCase().includes(q)) : atendimentosIndex;
-
-  const boardEl = document.getElementById('funilBoard');
-  const emptyEl = document.getElementById('funilEmptyState');
-  if(atendimentosIndex.length === 0){
-    boardEl.style.display = 'none';
-    emptyEl.style.display = 'block';
-    return;
-  }
-  boardEl.style.display = 'grid';
-  emptyEl.style.display = 'none';
-
-  FUNIL_ESTAGIOS.forEach(estagio => {
-    const items = filtered.filter(a => a.estagio === estagio).sort((a,b)=>{
-      if(!!b.favorito !== !!a.favorito) return (b.favorito?1:0)-(a.favorito?1:0);
-      return new Date(b.atualizado_em) - new Date(a.atualizado_em);
-    });
-    document.getElementById(FUNIL_COUNT_EL[estagio]).textContent = items.length;
-    const colEl = document.getElementById(FUNIL_COL_EL[estagio]);
-    colEl.innerHTML = items.length === 0
-      ? `<div class="ideia-column-empty">Nada por aqui ainda.</div>`
-      : items.map(atendimentoCardHtml).join('');
-    wireFunilColumn(colEl);
-  });
-}
-
-async function showFunilView(){
-  saveLastView('funil');
-  deactivateAllTabs();
-  document.getElementById('tabFunil').classList.add('active');
-  document.getElementById('viewTabs').style.display = 'flex';
-  hideAllViews();
-  document.getElementById('funilView').style.display = 'block';
-  atendimentosIndex = await loadAtendimentos();
-  renderFunil();
-}
-
-function openAtendimentoModal(){
-  document.getElementById('atendimentoNome').value = '';
-  document.getElementById('atendimentoTelefone').value = '';
-  document.getElementById('atendimentoCpf').value = '';
-  document.getElementById('atendimentoOrigem').value = 'Indicação';
-  document.getElementById('atendimentoNotas').value = '';
-  document.getElementById('atendimentoModalOverlay').style.display = 'flex';
-}
-function closeAtendimentoModal(){
-  document.getElementById('atendimentoModalOverlay').style.display = 'none';
-}
-
-async function createAtendimento(){
-  const nome = document.getElementById('atendimentoNome').value.trim();
-  if(!nome){ alert('Dá um nome pra esse atendimento.'); return; }
-  const now = new Date().toISOString();
-  const a = {
-    id: 'at_' + Date.now(),
-    nome,
-    telefone: document.getElementById('atendimentoTelefone').value.trim(),
-    cpf_cnpj: document.getElementById('atendimentoCpf').value.trim(),
-    origem: document.getElementById('atendimentoOrigem').value,
-    notas: document.getElementById('atendimentoNotas').value.trim(),
-    estagio: 'novo',
-    favorito: false,
-    criado_em: now,
-    atualizado_em: now
-  };
-  const { error } = await supabaseClient.from('atendimentos').insert(a);
-  if(error){ console.error(error); alert('Não foi possível salvar agora.'); return; }
-  closeAtendimentoModal();
-  atendimentosIndex = await loadAtendimentos();
-  renderFunil();
 }
 
 function renderCadastrosDashboard(){
@@ -5248,18 +4934,6 @@ document.addEventListener('click', (e)=>{
     document.querySelectorAll('#contatosGrid .venda-group-menu.open').forEach(m=>m.classList.remove('open'));
   }
 });
-document.getElementById('tabFunil').addEventListener('click', showFunilView);
-document.getElementById('newAtendimentoBtn').addEventListener('click', openAtendimentoModal);
-document.getElementById('funilEmptyBtn').addEventListener('click', openAtendimentoModal);
-document.getElementById('closeAtendimentoModal').addEventListener('click', closeAtendimentoModal);
-document.getElementById('cancelAtendimentoBtn').addEventListener('click', closeAtendimentoModal);
-document.getElementById('saveAtendimentoBtn').addEventListener('click', createAtendimento);
-document.getElementById('atendimentoModalOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'atendimentoModalOverlay') closeAtendimentoModal(); });
-document.getElementById('funilSearchInput').addEventListener('input', renderFunil);
-document.getElementById('logoutBtnFunil').addEventListener('click', async ()=>{
-  await supabaseClient.auth.signOut();
-  showLoginView();
-});
 document.getElementById('newVendaBtn').addEventListener('click', ()=>openVendaForm());
 document.getElementById('cancelVendaBtn').addEventListener('click', closeVendaForm);
 document.getElementById('saveVendaBtn').addEventListener('click', createVenda);
@@ -5347,7 +5021,6 @@ async function restoreLastView(){
   if(last === 'cadastros') return showCadastrosView();
   if(last === 'parceiros') return showParceirosView();
   if(last === 'contatos') return showContatosView();
-  if(last === 'funil') return showFunilView();
   return showOverview();
 }
 
