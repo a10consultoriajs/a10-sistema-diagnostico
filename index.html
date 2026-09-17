@@ -4458,6 +4458,7 @@ document.querySelectorAll('#overviewDashboard .stat-card').forEach(el => {
     document.querySelectorAll('#overviewDashboard .stat-card').forEach(x=>x.classList.remove('active'));
     el.classList.add('active');
     renderOverviewDrilldown(el.dataset.ov);
+    document.getElementById('overviewDrilldown').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
 document.getElementById('overviewCloseDrilldown').addEventListener('click', ()=>{
