@@ -263,6 +263,11 @@
   .venda-item{ background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
   .venda-item:last-child{ margin-bottom:0; }
   .venda-item-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom: 8px; }
+  .pedido-toggle-btn{ border:none; background:none; cursor:pointer; font-size: 11px; color: var(--ink-soft); padding: 2px; flex-shrink:0; }
+  .venda-item.pedido-open .pedido-toggle-btn{ transform: rotate(90deg); }
+  .pedido-mini-stat{ font-size: 12px; color: var(--ink-soft); white-space:nowrap; }
+  .pedido-full{ display:none; margin-top: 8px; }
+  .venda-item.pedido-open .pedido-full{ display:block; }
   .venda-item-top select{ border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; font-size: 12.5px; font-family:inherit; background:var(--paper-panel); }
   .venda-item .vfields{ display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
   .venda-item .vfield label{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--label-color); text-shadow: 0 0 8px var(--label-glow); display:block; margin-bottom: 3px; }
@@ -1145,13 +1150,19 @@ function formatBRLFieldOnBlur(e){
 function remanescenteOf(v){
   return (Number(v.fechado)||0) - (Number(v.recebido)||0);
 }
+function custoOf(v){
+  return (Number(v.custo)||0) + (Number(v.nota_fiscal)||0) + (Number(v.taxa_inclusao)||0);
+}
+function qtOf(v){
+  return (v.ordens_servico && v.ordens_servico.length) ? v.ordens_servico.length : (Number(v.qt)||1);
+}
 function lucroOf(v){
   const tag = normalizeServicoTag(v.servico);
   if(tag === 'Consulta Simples' || tag === 'Consulta completa'){
     return (Number(v.valor_pago)||0) - (Number(v.custo)||0);
   }
   if(tag === 'Limpa nome'){
-    return (Number(v.recebido)||0) - (Number(v.nota_fiscal)||0) - (Number(v.taxa_inclusao)||0);
+    return (Number(v.recebido)||0) - custoOf(v);
   }
   return (Number(v.recebido)||0) - (Number(v.custo_operacional)||0);
 }
@@ -1405,7 +1416,7 @@ function computeFinancialTotals(from, to){
     recebido += Number(v.recebido)||0;
     remanescente += remanescenteOf(v);
     lucro += lucroOf(v);
-    qt += Number(v.qt)||0;
+    qt += qtOf(v);
   });
   cItems.forEach(c => {
     const negociado = Number(c.valorNegociado)||0;
@@ -1457,9 +1468,9 @@ function overviewCategoryTotals(){
     const tag = normalizeServicoTag(v.servico);
     const key = tag === 'Limpa nome' ? 'Limpa Nome' : 'Consultas';
     totals[key].recebido += Number(v.recebido)||0;
-    totals[key].custo += Number(v.custo)||0 + (Number(v.nota_fiscal)||0) + (Number(v.taxa_inclusao)||0);
+    totals[key].custo += custoOf(v);
     totals[key].lucro += lucroOf(v);
-    totals[key].qt += Number(v.qt)||0;
+    totals[key].qt += qtOf(v);
   });
   return totals;
 }
@@ -1501,7 +1512,7 @@ function computeMonthlySeries(){
     const m = ensure(key);
     m.fechado += Number(v.fechado)||0;
     m.remanescente += remanescenteOf(v);
-    m.qt += Number(v.qt)||0;
+    m.qt += qtOf(v);
     // Recebido: atribuir a cada pagamento seu proprio mes (recebimentos[]),
     // e o restante (nao detalhado por data) ao mes da contratacao.
     let tracked = 0;
@@ -1682,7 +1693,7 @@ function overviewEntriesFor(kind){
   const entries = [];
   if(kind === 'qt'){
     cItems.forEach(c => entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: 1, clienteId: c.id, tipo:'cliente' }));
-    vItems.forEach(v => entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.qt)||0, vendaId: v.id, tipo:'venda' }));
+    vItems.forEach(v => entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: qtOf(v), vendaId: v.id, tipo:'venda' }));
   } else if(kind === 'fechado'){
     cItems.forEach(c => { if(Number(c.valorNegociado)>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: Number(c.valorNegociado), clienteId: c.id, tipo:'cliente' }); });
     vItems.forEach(v => { if(Number(v.fechado)>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.fechado), vendaId: v.id, tipo:'venda' }); });
@@ -1697,7 +1708,7 @@ function overviewEntriesFor(kind){
     vItems.forEach(v => { if(Number(v.recebido)>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.recebido), vendaId: v.id, tipo:'venda' }); });
   } else if(kind === 'custo'){
     vItems.forEach(v => {
-      const custo = (Number(v.custo)||0) + (Number(v.nota_fiscal)||0) + (Number(v.taxa_inclusao)||0);
+      const custo = custoOf(v);
       if(custo>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: custo, vendaId: v.id, tipo:'venda' });
     });
   } else if(kind === 'lucro'){
@@ -2028,6 +2039,7 @@ function allExecTags(){
 }
 let vendasPrazoFilter = null;
 let vendasExpanded = new Set();
+let pedidosExpanded = new Set();
 let salesMode = 'limpa_nome';
 let vendasPeriodFrom = '';
 let vendasPeriodTo = '';
@@ -2059,7 +2071,7 @@ function renderVendasHistorico(){
     if(!byMonth[ym]) byMonth[ym] = { recebido:0, lucro:0, qt:0 };
     byMonth[ym].recebido += Number(v.recebido)||0;
     byMonth[ym].lucro += Number(v.lucro)||0;
-    byMonth[ym].qt += Number(v.qt)||0;
+    byMonth[ym].qt += qtOf(v);
   });
   const months = Object.keys(byMonth).sort();
   const chartEl = document.getElementById('vendasHistoryChart');
@@ -2145,6 +2157,7 @@ async function showSalesView(mode){
   document.getElementById('salesView').style.display = 'block';
   document.getElementById('salesViewTitle').textContent = mode === 'limpa_nome' ? 'Limpa Nome' : 'Consultas realizadas';
   vendasExpanded = new Set();
+  pedidosExpanded = new Set();
   document.getElementById('vendasHistoryPanel').style.display = 'none';
   document.getElementById('vendasHistoryToggle').textContent = 'Ver histórico mensal';
   vendasIndex = await loadVendas();
@@ -2161,7 +2174,7 @@ function renderVendasDashboard(){
     recebido += Number(v.recebido)||0;
     remanescente += remanescenteOf(v);
     lucro += lucroOf(v);
-    qt += Number(v.qt)||0;
+    qt += qtOf(v);
     const st = v.execucao || 'Sem status';
     statusCounts[st] = (statusCounts[st]||0) + 1;
     prazoCounts[getPrazoStatus(v)]++;
@@ -2219,6 +2232,67 @@ function renderVendasDashboard(){
   newTagRow.querySelector('#newExecTagInput').addEventListener('click', (e)=> e.stopPropagation());
 }
 
+function ordensServicoListHtml(v){
+  const rows = (v.ordens_servico||[]).map((o,idx) => `
+    <div class="credit-row" data-idx="${idx}">
+      <input type="text" data-field="razao_social" placeholder="Razão social" value="${o.razao_social||''}">
+      <input type="text" data-field="doc" placeholder="CPF ou CNPJ" value="${o.doc||''}">
+      <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
+    </div>
+  `).join('');
+  return `
+    <div class="credit-section-label">Ordem de serviço (Razão social + CPF/CNPJ por serviço)</div>
+    <div class="credit-rows" data-ordens-list>${rows}</div>
+    <button type="button" class="add-list-row add-ordem-servico">+ adicionar ordem de serviço</button>
+  `;
+}
+
+function wireOrdensServicoList(itemEl, v){
+  const ordensList = itemEl.querySelector('[data-ordens-list]');
+  if(!ordensList) return;
+  ordensList.querySelectorAll('.credit-row').forEach(row => {
+    const idx = Number(row.dataset.idx);
+    row.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', (e)=>{
+        const field = e.target.dataset.field;
+        v.ordens_servico = v.ordens_servico || [];
+        v.ordens_servico[idx] = v.ordens_servico[idx] || { razao_social:'', doc:'' };
+        v.ordens_servico[idx][field] = e.target.value;
+        saveVenda(v);
+      });
+    });
+    const rmBtn = row.querySelector('.rm-btn');
+    if(rmBtn) rmBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      v.ordens_servico.splice(idx,1);
+      saveVenda(v);
+      renderVendasDashboard();
+      renderVendasGrid();
+    });
+  });
+  const addBtn = itemEl.querySelector('.add-ordem-servico');
+  if(addBtn){
+    addBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      v.ordens_servico = v.ordens_servico || [];
+      v.ordens_servico.push({ razao_social:'', doc:'' });
+      saveVenda(v);
+      renderVendasDashboard();
+      renderVendasGrid();
+    });
+  }
+}
+
+function wirePedidoToggle(itemEl, v){
+  const toggleBtn = itemEl.querySelector('.pedido-toggle-btn');
+  if(!toggleBtn) return;
+  toggleBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(pedidosExpanded.has(v.id)) pedidosExpanded.delete(v.id); else pedidosExpanded.add(v.id);
+    renderVendasGrid();
+  });
+}
+
 function vendaItemHtml(v){
   const execOptions = allExecTags();
   if(v.execucao && !execOptions.includes(v.execucao)) execOptions.push(v.execucao);
@@ -2233,14 +2307,22 @@ function vendaItemHtml(v){
   const historicoHtml = (v.historico && v.historico.length)
     ? `<div class="venda-historico">Histórico: ${v.historico.map(h=>`${h.de} → ${h.para} (${formatDateBR((h.data||'').slice(0,10))})`).join(' · ')}</div>`
     : '';
+  const miniStat = isLimpaNome
+    ? `${qtOf(v)} ${qtOf(v)===1?'ordem':'ordens'} · Recebido ${moneyBRL(v.recebido)}`
+    : isConsultas
+      ? `Pago ${moneyBRL(v.valor_pago)}`
+      : `Recebido ${moneyBRL(v.recebido)}`;
   return `
     <div class="venda-item-top">
+      <button type="button" class="pedido-toggle-btn chevron" title="Expandir/recolher">▶</button>
       <select data-field="servico" class="servico-select">${servicoOpts}</select>
       <span class="vg-date">Contratado em ${formatDateBR(v.data_entrada) || '—'}</span>
       <span class="svc-badge ${prazoBadgeClass(prazo)}">${prazoLabel(prazo)}</span>
       <select data-field="execucao">${execOpts}</select>
+      <span class="pedido-mini-stat">${miniStat}</span>
       <button type="button" class="del-venda-btn" title="Excluir">✕ excluir</button>
     </div>
+    <div class="pedido-full">
     <div class="vfields">
       <div class="vfield"><label>CPF do cliente</label><input type="text" data-field="cpf_cnpj" value="${v.cpf_cnpj||''}"></div>
       <div class="vfield"><label>WhatsApp</label><input type="text" data-field="whatsapp" value="${v.whatsapp||''}"></div>
@@ -2274,7 +2356,6 @@ function vendaItemHtml(v){
         <div class="vfield"><label>Nota Fiscal</label><input type="text" data-field="nota_fiscal" data-money="1" value="${formatBRL(v.nota_fiscal)}"></div>
         <div class="vfield"><label>Taxa de Inclusão</label><input type="text" data-field="taxa_inclusao" data-money="1" value="${formatBRL(v.taxa_inclusao)}"></div>
         <div class="vfield"><label>Margem de lucro</label><input type="text" data-field="margem_lucro" data-money="1" value="${formatBRL(v.margem_lucro)}" readonly></div>
-        <div class="vfield"><label>Quantidade de serviços</label><input type="number" data-field="qt" value="${v.qt||1}" min="1"></div>
       ` : ''}
       <div class="vfield protected-field">
         <div style="flex:1;">
@@ -2288,17 +2369,7 @@ function vendaItemHtml(v){
       <button type="button" class="btn-primary venda-update-btn">Atualizar informações</button>
       <span class="venda-update-status"></span>
     </div>
-    ${isLimpaNome ? `
-    <div class="credit-section-label">Ordem de serviço (Razão social + CPF/CNPJ por serviço)</div>
-    <div class="credit-rows" data-ordens-list>
-      ${Array.from({length: Math.max(1, Number(v.qt)||1)}, (_,idx) => (v.ordens_servico||[])[idx] || {razao_social:'', doc:''}).map((o,idx) => `
-        <div class="credit-row" data-idx="${idx}">
-          <input type="text" data-field="razao_social" placeholder="Razão social" value="${o.razao_social||''}">
-          <input type="text" data-field="doc" placeholder="CPF ou CNPJ" value="${o.doc||''}">
-        </div>
-      `).join('')}
-    </div>
-    ` : ''}
+    ${isLimpaNome ? ordensServicoListHtml(v) : ''}
     ${isLimpaNome ? `
     <div class="credit-section-label">Pagamentos recebidos</div>
     <div class="credit-rows" data-recebimentos-list>
@@ -2313,6 +2384,7 @@ function vendaItemHtml(v){
     <button type="button" class="add-list-row add-recebimento-venda">+ adicionar recebimento</button>
     ` : ''}
     ${historicoHtml}
+    </div>
   `;
 }
 
@@ -2371,11 +2443,117 @@ async function promoteToRating(v){
   await openClient(id);
 }
 
-function syncOrdensServicoToQt(v){
-  const qt = Math.max(1, Number(v.qt)||1);
-  v.ordens_servico = v.ordens_servico || [];
-  while(v.ordens_servico.length < qt) v.ordens_servico.push({razao_social:'', doc:''});
-  while(v.ordens_servico.length > qt) v.ordens_servico.pop();
+const PEDIDO_SIMPLES_TAGS = ['Limpa nome','Consulta Simples','Consulta completa'];
+
+function vendaItemSimplesHtml(v){
+  const currentTag = normalizeServicoTag(v.servico) || 'Limpa nome';
+  const servicoOpts = PEDIDO_SIMPLES_TAGS.map(t=>`<option value="${t}" ${t===currentTag?'selected':''}>${t}</option>`).join('');
+  const execOptions = allExecTags();
+  if(v.execucao && !execOptions.includes(v.execucao)) execOptions.push(v.execucao);
+  const execOpts = execOptions.map(o=>`<option value="${o}" ${o===v.execucao?'selected':''}>${o}</option>`).join('')
+    + `<option value="__new_tag__">+ Criar nova etiqueta...</option>`;
+  const prazo = getPrazoStatus(v);
+  const lucro = (Number(v.recebido)||0) - (Number(v.custo)||0);
+  const miniStat = `${qtOf(v)} ${qtOf(v)===1?'ordem':'ordens'} · Recebido ${moneyBRL(v.recebido)}`;
+  return `
+    <div class="venda-item-top">
+      <button type="button" class="pedido-toggle-btn chevron" title="Expandir/recolher">▶</button>
+      <select data-field="servico" class="servico-select">${servicoOpts}</select>
+      <span class="vg-date">Contratado em ${formatDateBR(v.data_entrada) || '—'}</span>
+      <span class="svc-badge ${prazoBadgeClass(prazo)}">${prazoLabel(prazo)}</span>
+      <select data-field="execucao">${execOpts}</select>
+      <span class="pedido-mini-stat">${miniStat}</span>
+      <button type="button" class="del-venda-btn" title="Excluir">✕ excluir</button>
+    </div>
+    <div class="pedido-full">
+    <div class="vfields">
+      <div class="vfield"><label>Data da contratação</label><input type="text" inputmode="numeric" data-field="data_entrada" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_entrada)}"></div>
+      <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
+      <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
+      <div class="vfield"><label>Lucro</label><input type="text" value="${formatBRL(lucro)}" readonly></div>
+    </div>
+    <div class="venda-update-row">
+      <button type="button" class="btn-primary venda-update-btn">Atualizar informações</button>
+      <span class="venda-update-status"></span>
+    </div>
+    ${ordensServicoListHtml(v)}
+    </div>
+  `;
+}
+
+function wireVendaItemSimples(itemEl, v){
+  itemEl.querySelectorAll('[data-field]').forEach(input => {
+    if(input.closest('[data-ordens-list]')) return;
+    const field = input.dataset.field;
+    if(field === 'servico') return;
+    const evt = (input.tagName === 'SELECT') ? 'change' : 'input';
+    input.addEventListener(evt, (e)=>{
+      if(field === 'execucao' && e.target.value === '__new_tag__'){
+        const name = prompt('Nome da nova etiqueta:');
+        if(name && name.trim()){
+          const trimmed = name.trim();
+          if(!customExecTags.includes(trimmed) && !BASE_EXEC_TAGS.includes(trimmed)){
+            customExecTags.push(trimmed);
+            saveCustomExecTags();
+          }
+          v.execucao = trimmed;
+          saveVenda(v);
+          renderVendasDashboard();
+          renderVendasGrid();
+        } else {
+          e.target.value = v.execucao || '';
+        }
+        return;
+      }
+      if(input.dataset.date){
+        maskDateInput(e.target);
+        const iso = parseDateBRtoISO(e.target.value);
+        if(!iso) return;
+        v[field] = iso;
+      } else {
+        v[field] = input.dataset.money ? parseBRLInput(e.target) : e.target.value;
+      }
+      v.fechado = Number(v.recebido)||0;
+      if(['recebido','custo'].includes(field)){
+        const lucroInput = itemEl.querySelector('.pedido-full .vfields input[readonly]');
+        if(lucroInput) lucroInput.value = formatBRL((Number(v.recebido)||0) - (Number(v.custo)||0));
+      }
+      saveVenda(v);
+      renderVendasDashboard();
+      if(field === 'execucao' || (field === 'data_entrada' && input.dataset.date)) renderVendasGrid();
+    });
+  });
+  wireOrdensServicoList(itemEl, v);
+  wirePedidoToggle(itemEl, v);
+  const servicoSelect = itemEl.querySelector('[data-field="servico"]');
+  if(servicoSelect){
+    servicoSelect.addEventListener('change', (e)=>{
+      v.servico = e.target.value;
+      saveVenda(v);
+      renderVendasDashboard();
+      renderVendasGrid();
+    });
+  }
+  itemEl.querySelector('.del-venda-btn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    deleteVenda(v.id);
+  });
+  const updateBtn = itemEl.querySelector('.venda-update-btn');
+  const updateStatus = itemEl.querySelector('.venda-update-status');
+  if(updateBtn){
+    updateBtn.addEventListener('click', async ()=>{
+      updateBtn.disabled = true;
+      updateBtn.textContent = 'Salvando...';
+      await saveVenda(v);
+      renderVendasDashboard();
+      updateBtn.textContent = 'Atualizar informações';
+      updateBtn.disabled = false;
+      if(updateStatus){
+        updateStatus.textContent = 'Informações atualizadas ✓';
+        setTimeout(()=>{ updateStatus.textContent = ''; }, 2000);
+      }
+    });
+  }
 }
 
 function wireVendaItem(itemEl, v){
@@ -2411,34 +2589,13 @@ function wireVendaItem(itemEl, v){
         v[field] = input.dataset.money ? parseBRLInput(e.target) : e.target.value;
       }
       if(['fechado','recebido','custo','valor_pago','custo_operacional','nota_fiscal','taxa_inclusao'].includes(field)) recalcLucro(v, itemEl);
-      if(field === 'qt'){
-        v.qt = Math.max(1, Math.round(Number(e.target.value))||1);
-        syncOrdensServicoToQt(v);
-        saveVenda(v);
-        renderVendasDashboard();
-        renderVendasGrid();
-        return;
-      }
       saveVenda(v);
       renderVendasDashboard();
       if(field === 'execucao' || (field === 'data_entrada' && input.dataset.date)) renderVendasGrid();
     });
   });
-  const ordensList = itemEl.querySelector('[data-ordens-list]');
-  if(ordensList){
-    ordensList.querySelectorAll('.credit-row').forEach(row => {
-      const idx = Number(row.dataset.idx);
-      row.querySelectorAll('input').forEach(inp => {
-        inp.addEventListener('input', (e)=>{
-          const field = e.target.dataset.field;
-          v.ordens_servico = v.ordens_servico || [];
-          v.ordens_servico[idx] = v.ordens_servico[idx] || { razao_social:'', doc:'' };
-          v.ordens_servico[idx][field] = e.target.value;
-          saveVenda(v);
-        });
-      });
-    });
-  }
+  wireOrdensServicoList(itemEl, v);
+  wirePedidoToggle(itemEl, v);
   const servicoSelect = itemEl.querySelector('[data-field="servico"]');
   if(servicoSelect){
     servicoSelect.addEventListener('change', (e)=>{ handleServicoChange(v, e.target.value); });
@@ -2517,6 +2674,28 @@ function wireVendaItem(itemEl, v){
   }
 }
 
+async function criarPedidoSimples(displayName, referenceItem){
+  const novo = {
+    id: 'v_' + Date.now(),
+    cliente: displayName,
+    servico: 'Limpa nome',
+    execucao: 'Próximos envios',
+    data_entrada: new Date().toISOString().slice(0,10),
+    cpf_cnpj: referenceItem ? (referenceItem.cpf_cnpj || '') : '',
+    whatsapp: referenceItem ? (referenceItem.whatsapp || '') : '',
+    fechado: 0, recebido: 0, custo: 0,
+    ordens_servico: [],
+    simples: true,
+    updatedAt: Date.now()
+  };
+  await saveVenda(novo);
+  vendasIndex.push(novo);
+  pedidosExpanded.add(novo.id);
+  vendasExpanded.add((displayName||'Sem nome').trim().toUpperCase());
+  renderVendasDashboard();
+  renderVendasGrid();
+}
+
 function renderVendasGrid(){
   const grid = document.getElementById('vendasGrid');
   const empty = document.getElementById('vendasEmptyState');
@@ -2561,13 +2740,14 @@ function renderVendasGrid(){
       acc.fechado += Number(v.fechado)||0;
       acc.recebido += Number(v.recebido)||0;
       acc.remanescente += remanescenteOf(v);
+      acc.custo += custoOf(v);
       acc.lucro += lucroOf(v);
+      acc.qt += qtOf(v);
       return acc;
-    }, {fechado:0, recebido:0, remanescente:0, lucro:0});
+    }, {fechado:0, recebido:0, remanescente:0, custo:0, lucro:0, qt:0});
 
     const prazoList = items.map(getPrazoStatus);
     const groupPrazo = prazoList.includes('atraso') ? 'atraso' : (prazoList.includes('no_prazo') ? 'no_prazo' : 'entregue');
-    const latestDate = items.reduce((acc,v)=> (v.data_entrada && (!acc || v.data_entrada > acc)) ? v.data_entrada : acc, '');
 
     const isOpen = vendasExpanded.has(key);
     const wrap = document.createElement('div');
@@ -2576,13 +2756,14 @@ function renderVendasGrid(){
       <div class="venda-group-head">
         <div>
           <div class="vg-name">${displayName}</div>
-          <div class="vg-sub">${items.length} serviço${items.length>1?'s':''} · ${items[0].cidade_uf || ''} · Contratado em ${formatDateBR(latestDate) || '—'}</div>
+          <div class="vg-sub">${totals.qt} serviço${totals.qt===1?'':'s'} · ${items.length} pedido${items.length===1?'':'s'}</div>
         </div>
         <div class="venda-group-totals">
           <span class="svc-badge ${prazoBadgeClass(groupPrazo)}">${prazoLabel(groupPrazo)}</span>
           <span>Fechado <strong>${moneyBRL(totals.fechado)}</strong></span>
           <span>Recebido <strong>${moneyBRL(totals.recebido)}</strong></span>
           <span>A receber <strong>${moneyBRL(totals.remanescente)}</strong></span>
+          <span>Custo <strong>${moneyBRL(totals.custo)}</strong></span>
           <span>Lucro <strong>${moneyBRL(totals.lucro)}</strong></span>
         </div>
         <span class="chevron">▶</span>
@@ -2592,16 +2773,22 @@ function renderVendasGrid(){
     const body = wrap.querySelector('.venda-group-body');
     items.forEach(v => {
       const itemEl = document.createElement('div');
-      itemEl.className = 'venda-item';
-      itemEl.innerHTML = vendaItemHtml(v);
-      wireVendaItem(itemEl, v);
+      const isPedidoOpen = pedidosExpanded.has(v.id);
+      itemEl.className = 'venda-item' + (isPedidoOpen ? ' pedido-open' : '');
+      if(v.simples){
+        itemEl.innerHTML = vendaItemSimplesHtml(v);
+        wireVendaItemSimples(itemEl, v);
+      } else {
+        itemEl.innerHTML = vendaItemHtml(v);
+        wireVendaItem(itemEl, v);
+      }
       body.appendChild(itemEl);
     });
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'add-venda-to-group';
     addBtn.textContent = '+ nova venda para ' + displayName;
-    addBtn.addEventListener('click', (e)=>{ e.stopPropagation(); openVendaForm({cliente: displayName}); });
+    addBtn.addEventListener('click', (e)=>{ e.stopPropagation(); criarPedidoSimples(displayName, items[0]); });
     body.appendChild(addBtn);
 
     wrap.querySelector('.venda-group-head').addEventListener('click', ()=>{
