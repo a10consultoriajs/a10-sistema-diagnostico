@@ -257,6 +257,13 @@
   }
   .venda-group-head{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; gap: 12px; flex-wrap:wrap; }
   .venda-group-head .vg-name{ font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight:600; }
+  .vg-name-input{
+    font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight:600; color: var(--ink);
+    border: 1px solid transparent; background: none; border-radius: 6px; padding: 2px 6px; margin: -2px 0 -2px -6px;
+    max-width: 100%; cursor:text;
+  }
+  .vg-name-input:hover{ border-color: var(--line); }
+  .vg-name-input:focus{ border-color: var(--gold-soft); background: var(--paper); outline:none; }
   .venda-group-head .vg-sub{ font-size: 12px; color: var(--ink-soft); }
   .vg-date{ font-size: 11px; color: var(--ink-soft); }
   .venda-historico{ margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--ink-soft); }
@@ -2771,7 +2778,7 @@ function renderVendasGrid(){
     wrap.innerHTML = `
       <div class="venda-group-head">
         <div>
-          <div class="vg-name">${displayName}</div>
+          <input type="text" class="vg-name-input" value="${displayName}">
           <div class="vg-sub">${totals.qt} serviço${totals.qt===1?'':'s'} · ${items.length} pedido${items.length===1?'':'s'}</div>
         </div>
         <div class="venda-group-totals">
@@ -2806,6 +2813,19 @@ function renderVendasGrid(){
     addBtn.textContent = '+ nova venda para ' + displayName;
     addBtn.addEventListener('click', (e)=>{ e.stopPropagation(); criarPedidoSimples(displayName, items[0]); });
     body.appendChild(addBtn);
+
+    const nameInput = wrap.querySelector('.vg-name-input');
+    nameInput.addEventListener('click', (e)=> e.stopPropagation());
+    nameInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') e.target.blur(); });
+    nameInput.addEventListener('blur', (e)=>{
+      const novoNome = e.target.value.trim();
+      if(!novoNome || novoNome === displayName){ e.target.value = displayName; return; }
+      items.forEach(v => { v.cliente = novoNome; saveVenda(v); });
+      const novaKey = novoNome.trim().toUpperCase();
+      if(vendasExpanded.has(key)){ vendasExpanded.delete(key); vendasExpanded.add(novaKey); }
+      renderVendasDashboard();
+      renderVendasGrid();
+    });
 
     wrap.querySelector('.venda-group-head').addEventListener('click', ()=>{
       if(vendasExpanded.has(key)) vendasExpanded.delete(key); else vendasExpanded.add(key);
