@@ -94,6 +94,13 @@
 
   .overview-charts-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
   @media (max-width: 720px){ .overview-charts-grid{ grid-template-columns: 1fr; } }
+  .monthly-charts-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0 22px; }
+  @media (max-width: 900px){ .monthly-charts-grid{ grid-template-columns: 1fr; } }
+  .chart-card{
+    background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+  }
+  .chart-card label{ font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); display:block; margin-bottom: 10px; }
+  .chart-canvas-wrap{ position:relative; height: 220px; }
 
   /* ---------- Ateliê de Ideias ---------- */
   .ideias-header{ margin-bottom: 18px; }
@@ -606,6 +613,26 @@ try{
       <div class="stat-card" data-ov="lucro"><div class="stat-value" id="ovLucro">R$ 0</div><div class="stat-label">Lucro total</div></div>
     </div>
 
+    <div class="section-head" style="margin-top:22px;"><h2 style="font-size:16px; margin:0;">Dashboard mensal</h2></div>
+    <div class="monthly-charts-grid">
+      <div class="chart-card">
+        <label>Faturamento mensal</label>
+        <div class="chart-canvas-wrap"><canvas id="chartFaturamentoMensal"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <label>Valores recebidos mensal</label>
+        <div class="chart-canvas-wrap"><canvas id="chartRecebidoMensal"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <label>Valores a receber mensal</label>
+        <div class="chart-canvas-wrap"><canvas id="chartAReceberMensal"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <label>Lucro mensal</label>
+        <div class="chart-canvas-wrap"><canvas id="chartLucroMensal"></canvas></div>
+      </div>
+    </div>
+
     <div class="overview-charts-grid">
       <div class="criteria-card">
         <label>Recebido por categoria</label>
@@ -1002,6 +1029,7 @@ try{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
 if('scrollRestoration' in history){ history.scrollRestoration = 'manual'; }
 window.scrollTo(0,0);
@@ -1234,8 +1262,8 @@ function overviewCategoryTotals(){
     const tag = normalizeServicoTag(v.servico);
     const key = tag === 'Limpa nome' ? 'Limpa Nome' : 'Consultas';
     totals[key].recebido += Number(v.recebido)||0;
-    totals[key].custo += Number(v.custo)||0;
-    totals[key].lucro += Number(v.lucro)||0;
+    totals[key].custo += Number(v.custo)||0 + (Number(v.nota_fiscal)||0) + (Number(v.taxa_inclusao)||0);
+    totals[key].lucro += lucroOf(v);
     totals[key].qt += Number(v.qt)||0;
   });
   return totals;
@@ -1258,6 +1286,103 @@ function renderOverviewChart(elId, totals, field, barClass){
   }).join('');
 }
 
+const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+function formatMonthLabel(key){
+  const [y,m] = key.split('-');
+  return `${MESES_ABREV[Number(m)-1]}/${y.slice(2)}`;
+}
+
+function computeMonthlySeries(){
+  const vItems = overviewNonPromotedVendas();
+  const cItems = overviewClientItems();
+  const monthly = {};
+  function ensure(key){
+    if(!monthly[key]) monthly[key] = { fechado:0, recebido:0, remanescente:0, lucro:0 };
+    return monthly[key];
+  }
+  vItems.forEach(v => {
+    const key = (v.data_entrada||'').slice(0,7);
+    if(!key) return;
+    const m = ensure(key);
+    m.fechado += Number(v.fechado)||0;
+    m.recebido += Number(v.recebido)||0;
+    m.remanescente += remanescenteOf(v);
+    m.lucro += lucroOf(v);
+  });
+  cItems.forEach(c => {
+    const key = (c.startDate||'').slice(0,7);
+    if(!key) return;
+    const m = ensure(key);
+    const negociado = Number(c.valorNegociado)||0;
+    const recebido = Number(c.valorRecebido)||0;
+    m.fechado += negociado;
+    m.recebido += recebido;
+    m.remanescente += Math.max(0, negociado - recebido);
+    m.lucro += recebido;
+  });
+  const keys = Object.keys(monthly).sort();
+  return {
+    labels: keys.map(formatMonthLabel),
+    fechado: keys.map(k=>monthly[k].fechado),
+    recebido: keys.map(k=>monthly[k].recebido),
+    remanescente: keys.map(k=>monthly[k].remanescente),
+    lucro: keys.map(k=>monthly[k].lucro)
+  };
+}
+
+function linearRegressionPoints(values){
+  const n = values.length;
+  if(n < 2) return values.slice();
+  const xs = values.map((_,i)=>i);
+  const sumX = xs.reduce((a,b)=>a+b,0);
+  const sumY = values.reduce((a,b)=>a+b,0);
+  const sumXY = xs.reduce((s,x,i)=>s+x*values[i],0);
+  const sumXX = xs.reduce((s,x)=>s+x*x,0);
+  const denom = (n*sumXX - sumX*sumX) || 1;
+  const slope = (n*sumXY - sumX*sumY) / denom;
+  const intercept = (sumY - slope*sumX) / n;
+  return xs.map(x => slope*x + intercept);
+}
+
+let monthlyChartInstances = {};
+function renderMonthlyChart(canvasId, label, series, color){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas || typeof Chart === 'undefined') return;
+  if(monthlyChartInstances[canvasId]) monthlyChartInstances[canvasId].destroy();
+  const inkSoft = getComputedStyle(document.documentElement).getPropertyValue('--ink-soft').trim();
+  const line = getComputedStyle(document.documentElement).getPropertyValue('--line').trim();
+  const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim();
+  const trend = linearRegressionPoints(series.values);
+  monthlyChartInstances[canvasId] = new Chart(canvas.getContext('2d'), {
+    data: {
+      labels: series.labels,
+      datasets: [
+        { type:'bar', label, data: series.values, backgroundColor: color, borderRadius: 5, order: 2, maxBarThickness: 42 },
+        { type:'line', label:'Tendência', data: trend, borderColor: gold, borderWidth: 2, pointRadius: 0, tension: 0, fill: false, order: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display:false },
+        tooltip: { callbacks: { label: (ctx)=> moneyBRL(ctx.parsed.y) } }
+      },
+      scales: {
+        x: { ticks:{ color: inkSoft }, grid:{ color: line } },
+        y: { ticks:{ color: inkSoft, callback: (v)=> moneyBRL(v) }, grid:{ color: line } }
+      }
+    }
+  });
+}
+
+function renderMonthlyDashboard(){
+  const series = computeMonthlySeries();
+  renderMonthlyChart('chartFaturamentoMensal', 'Faturamento', { labels: series.labels, values: series.fechado }, '#4C8DFF');
+  renderMonthlyChart('chartRecebidoMensal', 'Recebido', { labels: series.labels, values: series.recebido }, '#2ECC71');
+  renderMonthlyChart('chartAReceberMensal', 'A receber', { labels: series.labels, values: series.remanescente }, '#E5544A');
+  renderMonthlyChart('chartLucroMensal', 'Lucro', { labels: series.labels, values: series.lucro }, '#D4AF37');
+}
+
 function renderOverview(){
   const totals = overviewCategoryTotals();
   const cats = Object.values(totals);
@@ -1271,6 +1396,7 @@ function renderOverview(){
   document.getElementById('ovLucro').textContent = moneyBRL(lucro);
   renderOverviewChart('overviewChartRecebido', totals, 'recebido');
   renderOverviewChart('overviewChartLucro', totals, 'lucro', 'current');
+  renderMonthlyDashboard();
   if(overviewActiveKind) renderOverviewDrilldown(overviewActiveKind);
 }
 
@@ -1285,10 +1411,13 @@ function overviewEntriesFor(kind){
     cItems.forEach(c => { if(Number(c.valorRecebido)>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: Number(c.valorRecebido), clienteId: c.id, tipo:'cliente' }); });
     vItems.forEach(v => { if(Number(v.recebido)>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.recebido), vendaId: v.id, tipo:'venda' }); });
   } else if(kind === 'custo'){
-    vItems.forEach(v => { if(Number(v.custo)>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.custo), vendaId: v.id, tipo:'venda' }); });
+    vItems.forEach(v => {
+      const custo = (Number(v.custo)||0) + (Number(v.nota_fiscal)||0) + (Number(v.taxa_inclusao)||0);
+      if(custo>0) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: custo, vendaId: v.id, tipo:'venda' });
+    });
   } else if(kind === 'lucro'){
     cItems.forEach(c => { if(Number(c.valorRecebido)>0) entries.push({ nome: c.nome, categoria: 'Acompanhamento/Rating', valor: Number(c.valorRecebido), clienteId: c.id, tipo:'cliente' }); });
-    vItems.forEach(v => { if(Number(v.lucro)) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: Number(v.lucro), vendaId: v.id, tipo:'venda' }); });
+    vItems.forEach(v => { const l = lucroOf(v); if(l) entries.push({ nome: v.cliente, categoria: normalizeServicoTag(v.servico), valor: l, vendaId: v.id, tipo:'venda' }); });
   }
   entries.sort((a,b)=> b.valor - a.valor);
   return entries;
@@ -3428,6 +3557,7 @@ document.getElementById('themeToggleBtn').addEventListener('click', ()=>{
   }
   try{ localStorage.setItem('a10:theme', isLight ? 'dark' : 'light'); }catch(e){}
   updateThemeToggleLabel();
+  if(document.getElementById('overviewView').style.display !== 'none') renderMonthlyDashboard();
 });
 updateThemeToggleLabel();
 document.addEventListener('click', (e)=>{
