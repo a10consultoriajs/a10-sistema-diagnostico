@@ -1039,11 +1039,9 @@ try{
 
     <div class="clients-toolbar">
       <input type="text" id="funilSearchInput" placeholder="Buscar por nome ou telefone...">
-      <button type="button" class="back-btn" id="importClientesFunilBtn" style="margin-bottom:0;">📥 Importar clientes existentes</button>
       <button class="btn-primary" id="newAtendimentoBtn" style="margin-left:auto;">+ Novo atendimento</button>
       <button class="back-btn" id="logoutBtnFunil" style="margin-bottom:0;">Sair</button>
     </div>
-    <div class="hint" id="funilImportStatus" style="margin-top:-8px; margin-bottom:14px; display:block;"></div>
 
     <div class="empty-state" id="funilEmptyState" style="display:none;">
       Ainda não há ninguém no funil. Adicione o primeiro atendimento ou importe um contato.
@@ -4268,61 +4266,7 @@ async function showFunilView(){
   document.getElementById('viewTabs').style.display = 'flex';
   hideAllViews();
   document.getElementById('funilView').style.display = 'block';
-  document.getElementById('funilImportStatus').textContent = '';
   atendimentosIndex = await loadAtendimentos();
-  renderFunil();
-}
-
-function atendimentoKeyFor(nome, doc){
-  const digits = (doc||'').replace(/\D/g,'');
-  if(digits) return 'doc:'+digits;
-  return 'name:'+(nome||'Sem nome').trim().toUpperCase();
-}
-
-async function importClientesParaFunil(){
-  const statusEl = document.getElementById('funilImportStatus');
-  statusEl.textContent = 'Buscando clientes com etiquetas...';
-  vendasIndex = await loadVendas();
-  const map = new Map();
-  vendasIndex.forEach(v => {
-    const key = atendimentoKeyFor(v.cliente, v.cpf_cnpj);
-    if(!map.has(key)) map.set(key, { nome: v.cliente || 'Sem nome', cpf_cnpj: v.cpf_cnpj || '', telefone: v.whatsapp || '', etiquetas: new Set() });
-    const entry = map.get(key);
-    if(!entry.telefone && v.whatsapp) entry.telefone = v.whatsapp;
-    if(!entry.cpf_cnpj && v.cpf_cnpj) entry.cpf_cnpj = v.cpf_cnpj;
-    if(v.execucao) entry.etiquetas.add(v.execucao);
-  });
-  const existingKeys = new Set(atendimentosIndex.map(a => atendimentoKeyFor(a.nome, a.cpf_cnpj)));
-  const now = new Date().toISOString();
-  const novosRows = [];
-  map.forEach((info, key) => {
-    if(existingKeys.has(key)) return;
-    const notas = info.etiquetas.size ? `Etiqueta atual: ${Array.from(info.etiquetas).join(', ')}` : '';
-    const novo = {
-      id: 'at_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
-      nome: info.nome, telefone: info.telefone, cpf_cnpj: info.cpf_cnpj,
-      origem: 'Cliente existente', notas, estagio: 'fechado', favorito: false,
-      criado_em: now, atualizado_em: now
-    };
-    atendimentosIndex.push(novo);
-    existingKeys.add(key);
-    novosRows.push(novo);
-  });
-  if(novosRows.length === 0){
-    statusEl.textContent = 'Todos os clientes com etiquetas já estão no funil (coluna Fechado).';
-    return;
-  }
-  statusEl.textContent = `Importando ${novosRows.length} clientes...`;
-  const chunkSize = 500;
-  let saveError = false;
-  for(let i=0; i<novosRows.length; i+=chunkSize){
-    const chunk = novosRows.slice(i, i+chunkSize);
-    const { error } = await supabaseClient.from('atendimentos').insert(chunk);
-    if(error){ console.error(error); saveError = true; }
-  }
-  statusEl.textContent = saveError
-    ? 'Alguns clientes podem não ter sido salvos. Tente importar novamente.'
-    : `${novosRows.length} cliente${novosRows.length===1?'':'s'} adicionado${novosRows.length===1?'':'s'} ao funil, na coluna "Fechado".`;
   renderFunil();
 }
 
@@ -5306,7 +5250,6 @@ document.addEventListener('click', (e)=>{
 });
 document.getElementById('tabFunil').addEventListener('click', showFunilView);
 document.getElementById('newAtendimentoBtn').addEventListener('click', openAtendimentoModal);
-document.getElementById('importClientesFunilBtn').addEventListener('click', importClientesParaFunil);
 document.getElementById('funilEmptyBtn').addEventListener('click', openAtendimentoModal);
 document.getElementById('closeAtendimentoModal').addEventListener('click', closeAtendimentoModal);
 document.getElementById('cancelAtendimentoBtn').addEventListener('click', closeAtendimentoModal);
