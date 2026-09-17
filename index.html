@@ -993,6 +993,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+if('scrollRestoration' in history){ history.scrollRestoration = 'manual'; }
+window.scrollTo(0,0);
+document.documentElement.scrollLeft = 0;
+window.addEventListener('load', ()=>{
+  window.scrollTo(0,0);
+  document.documentElement.scrollLeft = 0;
+  document.body.scrollLeft = 0;
+});
 /* ---------- Conexão com o Supabase ---------- */
 const SUPABASE_URL = 'https://zcihwlfmmoodyoiiblmy.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_9MwjPlyox46FIUF4KLTTTA_-tmjae26';
