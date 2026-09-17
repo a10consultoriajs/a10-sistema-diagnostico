@@ -294,6 +294,11 @@
   .quick-info-row{ display:flex; align-items:center; gap:10px; }
   .quick-info-label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); width: 78px; flex-shrink:0; }
   .quick-info-value{ font-size: 14px; color: var(--ink); font-weight:500; flex:1; }
+  .quick-info-input{
+    flex:1; font-size: 14px; color: var(--ink); font-weight:500; font-family: inherit;
+    border: 1px solid var(--line); background: var(--paper); border-radius: 7px; padding: 6px 9px;
+  }
+  .quick-info-input:focus{ border-color: var(--gold-soft); outline:none; }
   .copy-btn{
     border: 1px solid var(--line); background: var(--paper); border-radius: 7px; padding: 4px 9px;
     font-size: 13px; cursor:pointer; flex-shrink:0;
@@ -3555,13 +3560,15 @@ function clientDirectoryDetailHtml(entry){
       </div>
     `);
   }
-  if(entry.whatsapp){
+  if(entry.vendaIds.length > 0){
     quickRows.push(`
       <div class="quick-info-row">
         <span class="quick-info-label">WhatsApp</span>
-        <span class="quick-info-value">${entry.whatsapp}</span>
-        <button type="button" class="copy-btn" data-copy="${entry.whatsapp}" title="Copiar WhatsApp">📋</button>
-        <a href="https://wa.me/55${entry.whatsapp.replace(/\D/g,'')}" target="_blank" rel="noopener" class="whatsapp-open-btn" title="Abrir no WhatsApp">💬</a>
+        <input type="text" class="quick-info-input whatsapp-edit-input" placeholder="Adicionar WhatsApp..." value="${entry.whatsapp||''}">
+        ${entry.whatsapp ? `
+          <button type="button" class="copy-btn" data-copy="${entry.whatsapp}" title="Copiar WhatsApp">📋</button>
+          <a href="https://wa.me/55${entry.whatsapp.replace(/\D/g,'')}" target="_blank" rel="noopener" class="whatsapp-open-btn" title="Abrir no WhatsApp">💬</a>
+        ` : ''}
       </div>
     `);
   }
@@ -3647,6 +3654,20 @@ function renderAllClientsGrid(){
     body.querySelectorAll('.whatsapp-open-btn').forEach(link => {
       link.addEventListener('click', (e)=> e.stopPropagation());
     });
+    const whatsappInput = body.querySelector('.whatsapp-edit-input');
+    if(whatsappInput){
+      whatsappInput.addEventListener('click', (e)=> e.stopPropagation());
+      whatsappInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') e.target.blur(); });
+      whatsappInput.addEventListener('blur', (e)=>{
+        const novoValor = e.target.value.trim();
+        if(novoValor === (entry.whatsapp||'')) return;
+        entry.vendaIds.forEach(id => {
+          const v = vendasIndex.find(x=>x.id===id);
+          if(v){ v.whatsapp = novoValor; saveVenda(v); }
+        });
+        renderAllClientsGrid();
+      });
+    }
     wrap.querySelector('.venda-group-head').addEventListener('click', ()=>{
       if(allClientsExpanded.has(entry.key)) allClientsExpanded.delete(entry.key); else allClientsExpanded.add(entry.key);
       renderAllClientsGrid();
