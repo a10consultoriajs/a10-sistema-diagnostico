@@ -191,6 +191,11 @@
     border-radius: 10px; padding: 9px 14px; font-size: 13px; color: var(--ink); cursor:pointer; font-weight:500;
   }
   .filter-dropdown-btn:hover{ border-color: var(--gold-soft); }
+  .filter-clear-btn{
+    border: 1px solid var(--line); background: var(--paper-panel); color: var(--ink-soft); border-radius: 8px;
+    width: 30px; height: 34px; cursor:pointer; font-size: 13px; flex-shrink:0;
+  }
+  .filter-clear-btn:hover{ border-color: var(--status-atraso); color: var(--status-atraso); }
   .filter-dropdown-caret{ font-size: 10px; color: var(--ink-soft); }
   .filter-dropdown-menu{
     display:none; flex-direction:column; gap: 2px; position:absolute; top: calc(100% + 6px); left: 0;
@@ -785,10 +790,11 @@ try{
       <div class="stat-card"><div class="stat-value" id="vdTotalLucro">R$ 0</div><div class="stat-label">Lucro</div></div>
       <div class="stat-card"><div class="stat-value" id="vdTotalQt">0</div><div class="stat-label">Serviços</div></div>
     </div>
-    <div class="filter-dropdown" id="statusFilterWrap">
+    <div class="filter-dropdown" id="statusFilterWrap" style="display:flex; align-items:center; gap:6px;">
       <button type="button" class="filter-dropdown-btn" id="statusFilterBtn">
         <span id="statusFilterBtnText">🏷️ Etiquetas</span><span class="filter-dropdown-caret">▾</span>
       </button>
+      <button type="button" class="filter-clear-btn" id="statusFilterClearBtn" title="Mostrar todos os clientes" style="display:none;">✕</button>
       <div class="filter-dropdown-menu" id="vendasStatusChips"></div>
     </div>
 
@@ -2193,6 +2199,7 @@ function renderVendasDashboard(){
   });
 
   document.getElementById('statusFilterBtnText').textContent = '🏷️ ' + (vendasStatusFilter || 'Etiquetas');
+  document.getElementById('statusFilterClearBtn').style.display = vendasStatusFilter ? 'block' : 'none';
 
   const chipsEl = document.getElementById('vendasStatusChips');
   chipsEl.innerHTML = '';
@@ -4339,6 +4346,13 @@ document.querySelectorAll('#periodDropdownMenu .view-tab').forEach(btn=>{
 });
 wireDropdownToggle('periodDropdownBtn', 'periodDropdownMenu');
 wireDropdownToggle('statusFilterBtn', 'vendasStatusChips');
+document.getElementById('statusFilterClearBtn').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  vendasStatusFilter = null;
+  document.getElementById('vendasStatusChips').classList.remove('open');
+  renderVendasDashboard();
+  renderVendasGrid();
+});
 updatePeriodPresetUI();
 document.getElementById('logoutBtn3').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
