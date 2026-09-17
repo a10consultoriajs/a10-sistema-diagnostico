@@ -654,8 +654,8 @@ try{
         <div class="chart-canvas-wrap"><canvas id="chartFaturamentoMensal"></canvas><div class="chart-empty-state" id="emptyFaturamentoMensal" style="display:none;">Sem dados neste período.</div></div>
       </div>
       <div class="chart-card">
-        <label>Valores recebidos por período</label>
-        <div class="chart-canvas-wrap"><canvas id="chartRecebidoMensal"></canvas><div class="chart-empty-state" id="emptyRecebidoMensal" style="display:none;">Sem dados neste período.</div></div>
+        <label>Quantidade de serviços vendidos por período</label>
+        <div class="chart-canvas-wrap"><canvas id="chartQtdMensal"></canvas><div class="chart-empty-state" id="emptyQtdMensal" style="display:none;">Sem dados neste período.</div></div>
       </div>
       <div class="chart-card">
         <label>Valores a receber por período</label>
@@ -663,8 +663,8 @@ try{
         <div class="chart-canvas-wrap"><canvas id="chartAReceberMensal"></canvas><div class="chart-empty-state" id="emptyAReceberMensal" style="display:none;">Sem dados neste período.</div></div>
       </div>
       <div class="chart-card">
-        <label>Lucro por período</label>
-        <div class="chart-canvas-wrap"><canvas id="chartLucroMensal"></canvas><div class="chart-empty-state" id="emptyLucroMensal" style="display:none;">Sem dados neste período.</div></div>
+        <label>Quantidade de serviços por categoria</label>
+        <div class="chart-canvas-wrap"><canvas id="chartCategoriaPizza3D"></canvas><div class="chart-empty-state" id="emptyCategoriaPizza3D" style="display:none;">Sem dados neste período.</div></div>
       </div>
     </div>
 
@@ -1432,7 +1432,7 @@ function computeMonthlySeries(){
   const cItems = overviewClientItems();
   const monthly = {};
   function ensure(key){
-    if(!monthly[key]) monthly[key] = { fechado:0, recebido:0, remanescente:0, lucro:0 };
+    if(!monthly[key]) monthly[key] = { fechado:0, recebido:0, remanescente:0, qt:0 };
     return monthly[key];
   }
   vItems.forEach(v => {
@@ -1441,7 +1441,7 @@ function computeMonthlySeries(){
     const m = ensure(key);
     m.fechado += Number(v.fechado)||0;
     m.remanescente += remanescenteOf(v);
-    m.lucro += lucroOf(v);
+    m.qt += Number(v.qt)||0;
     // Recebido: atribuir a cada pagamento seu proprio mes (recebimentos[]),
     // e o restante (nao detalhado por data) ao mes da contratacao.
     let tracked = 0;
@@ -1464,7 +1464,7 @@ function computeMonthlySeries(){
     m.fechado += negociado;
     m.recebido += recebido;
     m.remanescente += Math.max(0, negociado - recebido);
-    m.lucro += recebido;
+    m.qt += 1;
   });
   const keys = Object.keys(monthly).sort();
   return {
@@ -1472,7 +1472,7 @@ function computeMonthlySeries(){
     fechado: keys.map(k=>monthly[k].fechado),
     recebido: keys.map(k=>monthly[k].recebido),
     remanescente: keys.map(k=>monthly[k].remanescente),
-    lucro: keys.map(k=>monthly[k].lucro)
+    qt: keys.map(k=>monthly[k].qt)
   };
 }
 
@@ -1493,6 +1493,7 @@ function renderMonthlyChart(canvasId, label, series, color, opts){
   const backgroundColors = opts.allowNegative
     ? series.values.map(v => v < 0 ? negColor : color)
     : color;
+  const format = opts.format || moneyBRL;
   monthlyChartInstances[canvasId] = new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: {
@@ -1505,11 +1506,11 @@ function renderMonthlyChart(canvasId, label, series, color, opts){
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display:false },
-        tooltip: { callbacks: { label: (ctx)=> moneyBRL(ctx.parsed.y) } }
+        tooltip: { callbacks: { label: (ctx)=> format(ctx.parsed.y) } }
       },
       scales: {
         x: { ticks:{ color: inkSoft, autoSkip: true, maxRotation: 0, minRotation: 0 }, grid:{ color: line, display:false } },
-        y: { ticks:{ color: inkSoft, callback: (v)=> moneyBRL(v) }, grid:{ color: line } }
+        y: { ticks:{ color: inkSoft, callback: (v)=> format(v), precision: opts.integer ? 0 : undefined }, grid:{ color: line } }
       }
     }
   });
@@ -1518,9 +1519,63 @@ function renderMonthlyChart(canvasId, label, series, color, opts){
 function renderMonthlyDashboard(){
   const series = computeMonthlySeries();
   renderMonthlyChart('chartFaturamentoMensal', 'Faturamento', { labels: series.labels, values: series.fechado }, '#4C8DFF');
-  renderMonthlyChart('chartRecebidoMensal', 'Recebido', { labels: series.labels, values: series.recebido }, '#2ECC71');
+  renderMonthlyChart('chartQtdMensal', 'Serviços vendidos', { labels: series.labels, values: series.qt }, '#2ECC71', { format: (v)=> String(Math.round(v)), integer: true });
   renderMonthlyChart('chartAReceberMensal', 'A receber', { labels: series.labels, values: series.remanescente }, '#E5544A');
-  renderMonthlyChart('chartLucroMensal', 'Lucro', { labels: series.labels, values: series.lucro }, '#D4AF37', { allowNegative: true });
+}
+
+let categoryPie3DInstance = null;
+function renderCategoryQtyPie3D(totals){
+  const canvas = document.getElementById('chartCategoriaPizza3D');
+  const emptyEl = document.getElementById('emptyCategoriaPizza3D');
+  if(!canvas || typeof Chart === 'undefined') return;
+  const labelMap = { 'Limpa Nome': 'Limpa Nome', 'Acompanhamento/Rating': 'Consultoria/Rating', 'Consultas': 'Consultas' };
+  const colorMap = { 'Limpa Nome': '#D4AF37', 'Acompanhamento/Rating': '#4C8DFF', 'Consultas': '#2ECC71' };
+  const cats = Object.keys(totals).sort((a,b)=> totals[b].qt - totals[a].qt);
+  const values = cats.map(k => totals[k].qt);
+  const hasData = values.some(v => v > 0);
+  if(emptyEl) emptyEl.style.display = hasData ? 'none' : 'flex';
+  canvas.style.visibility = hasData ? 'visible' : 'hidden';
+  if(categoryPie3DInstance) categoryPie3DInstance.destroy();
+  if(!hasData) return;
+  const inkSoft = getComputedStyle(document.documentElement).getPropertyValue('--ink-soft').trim();
+  const pieShadowPlugin = {
+    id: 'pieShadow3d',
+    beforeDatasetsDraw(chart){
+      const { ctx, chartArea } = chart;
+      const meta = chart.getDatasetMeta(0);
+      if(!meta || !meta.data || !meta.data[0]) return;
+      const arc = meta.data[0];
+      const cx = arc.x, cy = arc.y, r = arc.outerRadius;
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + Math.min(10, r*0.09), r, r, 0, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.filter = 'blur(4px)';
+      ctx.fill();
+      ctx.restore();
+    }
+  };
+  categoryPie3DInstance = new Chart(canvas.getContext('2d'), {
+    type: 'pie',
+    data: {
+      labels: cats.map(k => labelMap[k] || k),
+      datasets: [{
+        data: values,
+        backgroundColor: cats.map(k => colorMap[k] || '#999'),
+        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--paper-panel').trim() || '#0B1B2B',
+        borderWidth: 2,
+        hoverOffset: 10
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: inkSoft, boxWidth: 12, padding: 12 } },
+        tooltip: { callbacks: { label: (ctx)=> `${ctx.label}: ${ctx.parsed} serviço${ctx.parsed===1?'':'s'}` } }
+      }
+    },
+    plugins: [pieShadowPlugin]
+  });
 }
 
 function renderOverview(){
@@ -1546,6 +1601,7 @@ function renderOverview(){
   renderCompareBadge('ovLucroCompare', current.lucro, previous ? previous.lucro : null);
   document.getElementById('ovQtHint').textContent = `${current.qt} serviço${current.qt===1?'':'s'} no período`;
 
+  renderCategoryQtyPie3D(totals);
   renderOverviewChart('overviewChartRecebido', totals, 'recebido');
   renderOverviewChart('overviewChartLucro', totals, 'lucro', 'current');
   renderMonthlyDashboard();
@@ -3718,7 +3774,10 @@ document.getElementById('themeToggleBtn').addEventListener('click', ()=>{
   }
   try{ localStorage.setItem('a10:theme', isLight ? 'dark' : 'light'); }catch(e){}
   updateThemeToggleLabel();
-  if(document.getElementById('overviewView').style.display !== 'none') renderMonthlyDashboard();
+  if(document.getElementById('overviewView').style.display !== 'none'){
+    renderMonthlyDashboard();
+    renderCategoryQtyPie3D(overviewCategoryTotals());
+  }
 });
 updateThemeToggleLabel();
 document.addEventListener('click', (e)=>{
