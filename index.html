@@ -562,10 +562,11 @@
           <div class="field"><label>Nota Fiscal (R$)</label><input type="text" id="vfNotaFiscalLN" placeholder="R$ 0,00"></div>
           <div class="field"><label>Taxa de Inclusão (R$)</label><input type="text" id="vfTaxaInclusaoLN" placeholder="R$ 0,00"></div>
           <div class="field"><label>Margem de lucro (R$)</label><input type="text" id="vfMargemLN" placeholder="R$ 0,00" readonly></div>
-          <div class="field"><label>Razão social (Ordem de Serviço)</label><input type="text" id="vfRazaoSocialLN"></div>
-          <div class="field"><label>CPF ou CNPJ</label><input type="text" id="vfDocLN"></div>
           <div class="field"><label>Quantidade de serviços</label><input type="number" id="vfQtLN" value="1" min="1"></div>
         </div>
+        <div class="credit-section-label">Ordem de serviço (Razão social + CPF/CNPJ por serviço)</div>
+        <div class="credit-rows" id="vfOrdensServicoRows"></div>
+      </div>
       </div>
       </div>
 
@@ -1756,8 +1757,6 @@ function vendaItemHtml(v){
         <div class="vfield"><label>Nota Fiscal</label><input type="text" data-field="nota_fiscal" data-money="1" value="${formatBRL(v.nota_fiscal)}"></div>
         <div class="vfield"><label>Taxa de Inclusão</label><input type="text" data-field="taxa_inclusao" data-money="1" value="${formatBRL(v.taxa_inclusao)}"></div>
         <div class="vfield"><label>Margem de lucro</label><input type="text" data-field="margem_lucro" data-money="1" value="${formatBRL(v.margem_lucro)}" readonly></div>
-        <div class="vfield"><label>Razão social (Ordem de Serviço)</label><input type="text" data-field="razao_social" value="${v.razao_social||''}"></div>
-        <div class="vfield"><label>CPF ou CNPJ</label><input type="text" data-field="doc_atendido" value="${v.doc_atendido||''}"></div>
         <div class="vfield"><label>Quantidade de serviços</label><input type="number" data-field="qt" value="${v.qt||1}" min="1"></div>
       ` : ''}
       <div class="vfield protected-field">
@@ -1772,6 +1771,17 @@ function vendaItemHtml(v){
       <button type="button" class="btn-primary venda-update-btn">Atualizar informações</button>
       <span class="venda-update-status"></span>
     </div>
+    ${isLimpaNome ? `
+    <div class="credit-section-label">Ordem de serviço (Razão social + CPF/CNPJ por serviço)</div>
+    <div class="credit-rows" data-ordens-list>
+      ${Array.from({length: Math.max(1, Number(v.qt)||1)}, (_,idx) => (v.ordens_servico||[])[idx] || {razao_social:'', doc:''}).map((o,idx) => `
+        <div class="credit-row" data-idx="${idx}">
+          <input type="text" data-field="razao_social" placeholder="Razão social" value="${o.razao_social||''}">
+          <input type="text" data-field="doc" placeholder="CPF ou CNPJ" value="${o.doc||''}">
+        </div>
+      `).join('')}
+    </div>
+    ` : ''}
     ${isLimpaNome ? `
     <div class="credit-section-label">Pagamentos recebidos</div>
     <div class="credit-rows" data-recebimentos-list>
@@ -1844,9 +1854,16 @@ async function promoteToRating(v){
   await openClient(id);
 }
 
+function syncOrdensServicoToQt(v){
+  const qt = Math.max(1, Number(v.qt)||1);
+  v.ordens_servico = v.ordens_servico || [];
+  while(v.ordens_servico.length < qt) v.ordens_servico.push({razao_social:'', doc:''});
+  while(v.ordens_servico.length > qt) v.ordens_servico.pop();
+}
+
 function wireVendaItem(itemEl, v){
   itemEl.querySelectorAll('[data-field]').forEach(input => {
-    if(input.closest('[data-recebimentos-list]')) return;
+    if(input.closest('[data-recebimentos-list]') || input.closest('[data-ordens-list]')) return;
     const field = input.dataset.field;
     if(field === 'servico') return;
     const evt = (input.tagName === 'SELECT') ? 'change' : 'input';
@@ -1860,11 +1877,34 @@ function wireVendaItem(itemEl, v){
         v[field] = input.dataset.money ? parseBRLInput(e.target) : e.target.value;
       }
       if(['fechado','recebido','custo','valor_pago','custo_operacional','nota_fiscal','taxa_inclusao'].includes(field)) recalcLucro(v, itemEl);
+      if(field === 'qt'){
+        v.qt = Math.max(1, Math.round(Number(e.target.value))||1);
+        syncOrdensServicoToQt(v);
+        saveVenda(v);
+        renderVendasDashboard();
+        renderVendasGrid();
+        return;
+      }
       saveVenda(v);
       renderVendasDashboard();
       if(field === 'execucao' || (field === 'data_entrada' && input.dataset.date)) renderVendasGrid();
     });
   });
+  const ordensList = itemEl.querySelector('[data-ordens-list]');
+  if(ordensList){
+    ordensList.querySelectorAll('.credit-row').forEach(row => {
+      const idx = Number(row.dataset.idx);
+      row.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('input', (e)=>{
+          const field = e.target.dataset.field;
+          v.ordens_servico = v.ordens_servico || [];
+          v.ordens_servico[idx] = v.ordens_servico[idx] || { razao_social:'', doc:'' };
+          v.ordens_servico[idx][field] = e.target.value;
+          saveVenda(v);
+        });
+      });
+    });
+  }
   const servicoSelect = itemEl.querySelector('[data-field="servico"]');
   if(servicoSelect){
     servicoSelect.addEventListener('change', (e)=>{ handleServicoChange(v, e.target.value); });
@@ -2103,6 +2143,31 @@ function recalcLimpaNomeCalc(){
   document.getElementById('vfMargemLN').value = formatBRL(recebido - notaFiscal - taxaInclusao);
 }
 
+let vfOrdensServico = [];
+
+function renderVfOrdensServico(){
+  const rows = document.getElementById('vfOrdensServicoRows');
+  rows.innerHTML = vfOrdensServico.map((o,idx) => `
+    <div class="credit-row" data-idx="${idx}">
+      <input type="text" data-idx="${idx}" data-field="razao_social" placeholder="Razão social" value="${o.razao_social||''}">
+      <input type="text" data-idx="${idx}" data-field="doc" placeholder="CPF ou CNPJ" value="${o.doc||''}">
+    </div>
+  `).join('');
+  rows.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', (e)=>{
+      vfOrdensServico[Number(e.target.dataset.idx)][e.target.dataset.field] = e.target.value;
+    });
+  });
+}
+
+function syncVfOrdensServicoToQt(){
+  const qt = Math.max(1, Math.round(Number(document.getElementById('vfQtLN').value))||1);
+  document.getElementById('vfQtLN').value = qt;
+  while(vfOrdensServico.length < qt) vfOrdensServico.push({ razao_social:'', doc:'' });
+  while(vfOrdensServico.length > qt) vfOrdensServico.pop();
+  renderVfOrdensServico();
+}
+
 function goToVendaStep(step){
   document.getElementById('vfStep1').style.display = step === 1 ? 'grid' : 'none';
   document.getElementById('vfStep2').style.display = step === 2 ? 'grid' : 'none';
@@ -2164,9 +2229,9 @@ async function openVendaForm(prefill){
   document.getElementById('vfNotaFiscalLN').value = formatBRL(0);
   document.getElementById('vfTaxaInclusaoLN').value = formatBRL(0);
   document.getElementById('vfMargemLN').value = formatBRL(0);
-  document.getElementById('vfRazaoSocialLN').value = '';
-  document.getElementById('vfDocLN').value = '';
   document.getElementById('vfQtLN').value = 1;
+  vfOrdensServico = [{ razao_social:'', doc:'' }];
+  renderVfOrdensServico();
 
   document.getElementById('vendaFormPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
@@ -2239,8 +2304,7 @@ async function createVenda(){
       nota_fiscal: notaFiscal,
       taxa_inclusao: taxaInclusao,
       margem_lucro: recebido - notaFiscal - taxaInclusao,
-      razao_social: document.getElementById('vfRazaoSocialLN').value,
-      doc_atendido: document.getElementById('vfDocLN').value,
+      ordens_servico: vfOrdensServico,
       qt: Math.max(1, Math.round(Number(document.getElementById('vfQtLN').value)) || 1)
     };
   }
@@ -3420,6 +3484,7 @@ document.getElementById('vfServico').addEventListener('change', updateServiceSta
 ['vfDataContratacaoCR','vfDataConclusaoCR','vfDataContratacaoLN','vfDataEnvioLN'].forEach(id=>{
   document.getElementById(id).addEventListener('input', (e)=>{ maskDateInput(e.target); });
 });
+document.getElementById('vfQtLN').addEventListener('input', syncVfOrdensServicoToQt);
 document.getElementById('vendasSearchInput').addEventListener('input', renderVendasGrid);
 document.getElementById('vendasPeriodFrom').addEventListener('change', (e)=>{
   vendasPeriodFrom = e.target.value; renderVendasDashboard(); renderVendasGrid();
