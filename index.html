@@ -150,6 +150,7 @@
   .ideia-card.dragging{ opacity: 0.4; }
   .ideia-card.favorito{ border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold-soft); }
   .ideia-card-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px; }
+  .ideia-img-thumb{ width:100%; max-height:140px; object-fit:cover; border-radius:8px; margin-bottom:8px; cursor:pointer; display:block; border:1px solid var(--line); }
   .ideia-star{ border:none; background:none; cursor:pointer; font-size: 15px; padding: 0; color: var(--gold); }
   .ideia-del{ border:none; background:none; cursor:pointer; font-size: 12px; padding: 0; color: var(--ink-soft); }
   .ideia-del:hover{ color:#b23; }
@@ -877,6 +878,15 @@ try{
       <div class="field">
         <label>Descrição</label>
         <textarea id="ideiaDescricao" rows="4" placeholder="Solta o raciocínio aqui. Detalhe o quanto quiser — ou nada, se for só um lampejo."></textarea>
+      </div>
+      <div class="field">
+        <label>Imagem (print da tela)</label>
+        <input type="file" id="ideiaImagemInput" accept="image/*">
+        <div style="margin-top:4px; font-size:12px; color:var(--ink-soft);">Dica: você também pode colar um print direto aqui (Ctrl+V).</div>
+        <div id="ideiaImagemPreviewWrap" style="display:none; margin-top:8px;">
+          <img id="ideiaImagemPreview" style="max-width:100%; max-height:180px; border-radius:8px; border:1px solid var(--line); display:block;">
+          <button type="button" class="back-btn" id="ideiaImagemRemoveBtn" style="margin-top:6px; margin-bottom:0;">Remover imagem</button>
+        </div>
       </div>
       <div class="field">
         <label>Isso pertence a...</label>
@@ -2935,6 +2945,7 @@ function ideiaCardHtml(idea){
         <span title="Prioridade">${prioridadeIcon(idea.prioridade)}</span>
         <button type="button" class="ideia-del" data-id="${idea.id}" title="Excluir">✕</button>
       </div>
+      ${idea.imagem_url ? `<img src="${idea.imagem_url}" class="ideia-img-thumb" data-img="${idea.imagem_url}" alt="Print anexado">` : ''}
       <div class="ideia-titulo">${idea.titulo || 'Sem título'}</div>
       ${idea.descricao ? `<div class="ideia-desc">${idea.descricao}</div>` : ''}
       <div class="ideia-meta">
@@ -2959,6 +2970,8 @@ function wireIdeiaColumn(colEl){
     if(starBtn) starBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleIdeiaFavorito(card.dataset.id); });
     const delBtn = card.querySelector('.ideia-del');
     if(delBtn) delBtn.addEventListener('click', (e)=>{ e.stopPropagation(); deleteIdeia(card.dataset.id); });
+    const img = card.querySelector('.ideia-img-thumb');
+    if(img) img.addEventListener('click', (e)=>{ e.stopPropagation(); window.open(img.dataset.img, '_blank'); });
   });
   colEl.addEventListener('dragover', (e)=>{ e.preventDefault(); colEl.classList.add('drag-over'); });
   colEl.addEventListener('dragleave', ()=>{ colEl.classList.remove('drag-over'); });
@@ -3011,7 +3024,7 @@ async function saveIdeia(idea){
   const { error } = await supabaseClient.from('ideias').upsert({
     id: idea.id, titulo: idea.titulo || 'Sem título', descricao: idea.descricao || null,
     categoria: idea.categoria, prioridade: idea.prioridade, estagio: idea.estagio,
-    tags: idea.tags || [], favorito: !!idea.favorito,
+    tags: idea.tags || [], favorito: !!idea.favorito, imagem_url: idea.imagem_url || null,
     criado_em: idea.criado_em, atualizado_em: idea.atualizado_em
   });
   if(error) console.error(error);
@@ -3044,16 +3057,43 @@ async function deleteIdeia(id){
   renderIdeias();
 }
 
+let ideiaImagemFile = null;
+
+function setIdeiaImagemFile(file){
+  ideiaImagemFile = file || null;
+  const wrap = document.getElementById('ideiaImagemPreviewWrap');
+  const img = document.getElementById('ideiaImagemPreview');
+  if(ideiaImagemFile){
+    img.src = URL.createObjectURL(ideiaImagemFile);
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+    img.src = '';
+  }
+}
+
 function openIdeiaModal(){
   document.getElementById('ideiaTitulo').value = '';
   document.getElementById('ideiaDescricao').value = '';
   document.getElementById('ideiaCategoria').value = 'Sistema A10';
   document.getElementById('ideiaPrioridade').value = 'quando_der';
   document.getElementById('ideiaTags').value = '';
+  document.getElementById('ideiaImagemInput').value = '';
+  setIdeiaImagemFile(null);
   document.getElementById('ideiaModalOverlay').style.display = 'flex';
 }
 function closeIdeiaModal(){
   document.getElementById('ideiaModalOverlay').style.display = 'none';
+  setIdeiaImagemFile(null);
+}
+
+async function uploadIdeiaImagem(ideaId, file){
+  const ext = (file.type.split('/')[1] || 'png').replace('jpeg','jpg');
+  const path = `${ideaId}.${ext}`;
+  const { error } = await supabaseClient.storage.from('ideias-imagens').upload(path, file, { upsert: true });
+  if(error){ console.error(error); return null; }
+  const { data } = supabaseClient.storage.from('ideias-imagens').getPublicUrl(path);
+  return data.publicUrl;
 }
 
 async function createIdeia(){
@@ -3071,9 +3111,13 @@ async function createIdeia(){
     estagio: 'faisca',
     tags,
     favorito: false,
+    imagem_url: null,
     criado_em: now,
     atualizado_em: now
   };
+  if(ideiaImagemFile){
+    idea.imagem_url = await uploadIdeiaImagem(idea.id, ideiaImagemFile);
+  }
   const { error } = await supabaseClient.from('ideias').insert(idea);
   if(error){ console.error(error); alert('Não foi possível salvar a ideia agora.'); return; }
   closeIdeiaModal();
@@ -4124,6 +4168,24 @@ document.getElementById('closeIdeiaModal').addEventListener('click', closeIdeiaM
 document.getElementById('cancelIdeiaBtn').addEventListener('click', closeIdeiaModal);
 document.getElementById('saveIdeiaBtn').addEventListener('click', createIdeia);
 document.getElementById('ideiaModalOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'ideiaModalOverlay') closeIdeiaModal(); });
+document.getElementById('ideiaImagemInput').addEventListener('change', (e)=>{
+  if(e.target.files && e.target.files[0]) setIdeiaImagemFile(e.target.files[0]);
+});
+document.getElementById('ideiaImagemRemoveBtn').addEventListener('click', ()=>{
+  document.getElementById('ideiaImagemInput').value = '';
+  setIdeiaImagemFile(null);
+});
+document.getElementById('ideiaModalOverlay').addEventListener('paste', (e)=>{
+  const items = e.clipboardData && e.clipboardData.items;
+  if(!items) return;
+  for(const item of items){
+    if(item.type && item.type.startsWith('image/')){
+      const file = item.getAsFile();
+      if(file){ setIdeiaImagemFile(file); e.preventDefault(); }
+      break;
+    }
+  }
+});
 document.getElementById('logoutBtn4').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
   showLoginView();
