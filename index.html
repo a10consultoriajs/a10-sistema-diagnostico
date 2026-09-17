@@ -835,7 +835,7 @@ try{
     </div>
 
     <div class="clients-toolbar">
-      <input type="text" id="vendasSearchInput" placeholder="Buscar por cliente...">
+      <input type="text" id="vendasSearchInput" placeholder="Buscar por cliente, CPF ou data de envio...">
       <button class="back-btn" id="logoutBtn2" style="margin-bottom:0;">Sair</button>
     </div>
 
@@ -2800,11 +2800,23 @@ async function criarPedidoSimples(displayName, referenceItem){
 function renderVendasGrid(){
   const grid = document.getElementById('vendasGrid');
   const empty = document.getElementById('vendasEmptyState');
-  const q = (document.getElementById('vendasSearchInput').value || '').toLowerCase();
+  const q = (document.getElementById('vendasSearchInput').value || '').toLowerCase().trim();
+  const qDigits = q.replace(/\D/g,'');
 
   const modeItems = getVendasModePeriodItems();
   const filtered = modeItems
-    .filter(v => (v.cliente||'').toLowerCase().includes(q))
+    .filter(v => {
+      if(!q) return true;
+      const nome = (v.cliente||'').toLowerCase();
+      if(nome.includes(q)) return true;
+      const cpf = (v.cpf_cnpj||'').toLowerCase();
+      if(cpf.includes(q)) return true;
+      const cpfDigits = (v.cpf_cnpj||'').replace(/\D/g,'');
+      if(qDigits && cpfDigits.includes(qDigits)) return true;
+      const dataEnvio = formatDateBR(v.data_envio_lista||'').toLowerCase();
+      if(dataEnvio.includes(q)) return true;
+      return false;
+    })
     .filter(v => !vendasStatusFilter || (v.execucao||'Sem status') === vendasStatusFilter)
     .filter(v => !vendasPrazoFilter || getPrazoStatus(v) === vendasPrazoFilter);
 
