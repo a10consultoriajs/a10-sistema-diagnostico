@@ -184,19 +184,34 @@
   /* ---------- Vendas ---------- */
   .period-filter-row{ display:flex; gap:14px; align-items:flex-end; margin-bottom: 16px; flex-wrap:wrap; }
   .period-filter-row .field{ flex: 0 0 160px; }
-  .period-preset-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 8px; }
+  .filter-dropdown{ position:relative; display:inline-block; margin-bottom: 8px; }
+  .filter-dropdown-btn{
+    display:flex; align-items:center; gap:8px; background: var(--paper-panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 9px 14px; font-size: 13px; color: var(--ink); cursor:pointer; font-weight:500;
+  }
+  .filter-dropdown-btn:hover{ border-color: var(--gold-soft); }
+  .filter-dropdown-caret{ font-size: 10px; color: var(--ink-soft); }
+  .filter-dropdown-menu{
+    display:none; flex-direction:column; gap: 2px; position:absolute; top: calc(100% + 6px); left: 0;
+    background: var(--paper-panel); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.45); padding: 8px; min-width: 230px; z-index: 55; max-height: 320px; overflow-y:auto;
+  }
+  .filter-dropdown-menu.open{ display:flex; }
+  .filter-dropdown-divider{ height:1px; background: var(--line); margin: 6px 4px; }
+  .filter-dropdown-newtag{ display:flex; gap:6px; padding: 6px 4px 2px; }
+  .filter-dropdown-newtag input{
+    flex:1; border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; font-size: 12.5px;
+    background: var(--paper); color: var(--ink); font-family: inherit;
+  }
+  .filter-dropdown-newtag button{
+    background: var(--gold); color:#3a2e05; border:none; border-radius: 8px; padding: 0 10px; font-size: 12px; font-weight:600; cursor:pointer;
+  }
   .period-label{ font-size: 12.5px; color: var(--ink-soft); margin-bottom: 14px; }
   .period-label strong{ color: var(--gold-soft); }
   .dashboard-vendas{ grid-template-columns: repeat(5, 1fr); }
   .dashboard-vendas .stat-value{ font-size: 18px; word-break: break-word; }
   @media (max-width: 900px){ .dashboard-vendas{ grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 560px){ .dashboard-vendas{ grid-template-columns: repeat(2, 1fr); } }
-  .status-chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 18px; }
-  .status-chip{
-    background: var(--paper-panel); border: 1px solid var(--line); border-radius: 20px;
-    padding: 6px 12px; font-size: 12px; color: var(--ink-soft); cursor:pointer;
-  }
-  .status-chip.active{ border-color: var(--navy); color: var(--navy); font-weight:600; }
   .btn-select-group{ display:flex; flex-wrap:wrap; gap:6px; }
   .btn-select{
     background: var(--paper-panel); border: 1px solid var(--line); border-radius: 20px;
@@ -612,13 +627,18 @@ try{
       <div class="plan-list" id="overviewSearchList"></div>
     </div>
 
-    <div class="period-preset-row" id="periodPresetRow">
-      <button type="button" class="status-chip" data-preset="mes_atual">Mês atual</button>
-      <button type="button" class="status-chip" data-preset="mes_anterior">Mês anterior</button>
-      <button type="button" class="status-chip" data-preset="3m">Últimos 3 meses</button>
-      <button type="button" class="status-chip" data-preset="6m">Últimos 6 meses</button>
-      <button type="button" class="status-chip" data-preset="12m">Últimos 12 meses</button>
-      <button type="button" class="status-chip" data-preset="custom">Período personalizado</button>
+    <div class="filter-dropdown" id="periodDropdownWrap">
+      <button type="button" class="filter-dropdown-btn" id="periodDropdownBtn">
+        <span id="periodDropdownBtnText">📅 Período</span><span class="filter-dropdown-caret">▾</span>
+      </button>
+      <div class="filter-dropdown-menu" id="periodDropdownMenu">
+        <button type="button" class="view-tab" data-preset="mes_atual">Mês atual</button>
+        <button type="button" class="view-tab" data-preset="mes_anterior">Mês anterior</button>
+        <button type="button" class="view-tab" data-preset="3m">Últimos 3 meses</button>
+        <button type="button" class="view-tab" data-preset="6m">Últimos 6 meses</button>
+        <button type="button" class="view-tab" data-preset="12m">Últimos 12 meses</button>
+        <button type="button" class="view-tab" data-preset="custom">Período personalizado</button>
+      </div>
     </div>
     <div class="period-label" id="periodActiveLabel"></div>
     <div class="period-filter-row" id="customPeriodRow" style="display:none;">
@@ -758,7 +778,12 @@ try{
       <div class="stat-card"><div class="stat-value" id="vdTotalLucro">R$ 0</div><div class="stat-label">Lucro</div></div>
       <div class="stat-card"><div class="stat-value" id="vdTotalQt">0</div><div class="stat-label">Serviços</div></div>
     </div>
-    <div class="status-chip-row" id="vendasStatusChips"></div>
+    <div class="filter-dropdown" id="statusFilterWrap">
+      <button type="button" class="filter-dropdown-btn" id="statusFilterBtn">
+        <span id="statusFilterBtnText">🏷️ Etiquetas</span><span class="filter-dropdown-caret">▾</span>
+      </button>
+      <div class="filter-dropdown-menu" id="vendasStatusChips"></div>
+    </div>
 
     <div class="clients-toolbar">
       <input type="text" id="vendasSearchInput" placeholder="Buscar por cliente...">
@@ -1100,8 +1125,13 @@ function remanescenteOf(v){
 }
 function lucroOf(v){
   const tag = normalizeServicoTag(v.servico);
-  if(tag === 'Consulta Simples' || tag === 'Consulta completa') return Number(v.lucro)||0;
-  return Number(v.margem_lucro)||0;
+  if(tag === 'Consulta Simples' || tag === 'Consulta completa'){
+    return (Number(v.valor_pago)||0) - (Number(v.custo)||0);
+  }
+  if(tag === 'Limpa nome'){
+    return (Number(v.recebido)||0) - (Number(v.nota_fiscal)||0) - (Number(v.taxa_inclusao)||0);
+  }
+  return (Number(v.recebido)||0) - (Number(v.custo_operacional)||0);
 }
 
 function businessDaysSince(startISO){
@@ -1308,10 +1338,15 @@ function applyPeriodPreset(preset){
   renderOverview();
 }
 
+const PERIOD_PRESET_LABELS = {
+  mes_atual: 'Mês atual', mes_anterior: 'Mês anterior', '3m': 'Últimos 3 meses',
+  '6m': 'Últimos 6 meses', '12m': 'Últimos 12 meses', custom: 'Período personalizado'
+};
 function updatePeriodPresetUI(){
-  document.querySelectorAll('#periodPresetRow .status-chip').forEach(btn=>{
+  document.querySelectorAll('#periodDropdownMenu .view-tab').forEach(btn=>{
     btn.classList.toggle('active', btn.dataset.preset === overviewActivePreset);
   });
+  document.getElementById('periodDropdownBtnText').textContent = '📅 ' + (PERIOD_PRESET_LABELS[overviewActivePreset] || 'Período');
   const label = document.getElementById('periodActiveLabel');
   if(overviewPeriodFrom && overviewPeriodTo){
     label.innerHTML = `Período selecionado: <strong>${formatDateBR(overviewPeriodFrom)} a ${formatDateBR(overviewPeriodTo)}</strong>`;
@@ -1899,6 +1934,17 @@ function servicoMatchesMode(v, mode){
 
 let vendasIndex = [];
 let vendasStatusFilter = null;
+const BASE_EXEC_TAGS = ['Próximos envios','Enviados','Concluídos','Agravo'];
+let customExecTags = [];
+try{ customExecTags = JSON.parse(localStorage.getItem('a10:customExecTags') || '[]'); }catch(e){ customExecTags = []; }
+function saveCustomExecTags(){ try{ localStorage.setItem('a10:customExecTags', JSON.stringify(customExecTags)); }catch(e){} }
+function allExecTags(){
+  const extra = [];
+  vendasIndex.forEach(v => {
+    if(v.execucao && !BASE_EXEC_TAGS.includes(v.execucao) && !customExecTags.includes(v.execucao) && !extra.includes(v.execucao)) extra.push(v.execucao);
+  });
+  return [...BASE_EXEC_TAGS, ...customExecTags, ...extra];
+}
 let vendasPrazoFilter = null;
 let vendasExpanded = new Set();
 let salesMode = 'limpa_nome';
@@ -2052,26 +2098,51 @@ function renderVendasDashboard(){
     el.classList.toggle('active', el.dataset.filter === vendasPrazoFilter);
   });
 
+  document.getElementById('statusFilterBtnText').textContent = '🏷️ ' + (vendasStatusFilter || 'Etiquetas');
+
   const chipsEl = document.getElementById('vendasStatusChips');
   chipsEl.innerHTML = '';
-  Object.keys(statusCounts).sort().forEach(st => {
+  allExecTags().forEach(st => {
     const chip = document.createElement('button');
     chip.type = 'button';
-    chip.className = 'status-chip' + (vendasStatusFilter === st ? ' active' : '');
-    chip.textContent = `${st} (${statusCounts[st]})`;
+    chip.className = 'view-tab' + (vendasStatusFilter === st ? ' active' : '');
+    chip.textContent = `${st} (${statusCounts[st]||0})`;
     chip.addEventListener('click', ()=>{
       vendasStatusFilter = (vendasStatusFilter === st) ? null : st;
       renderVendasDashboard();
       renderVendasGrid();
+      document.getElementById('vendasStatusChips').classList.remove('open');
     });
     chipsEl.appendChild(chip);
   });
+  const divider = document.createElement('div');
+  divider.className = 'filter-dropdown-divider';
+  chipsEl.appendChild(divider);
+  const newTagRow = document.createElement('div');
+  newTagRow.className = 'filter-dropdown-newtag';
+  newTagRow.innerHTML = `<input type="text" placeholder="Nova etiqueta..." id="newExecTagInput"><button type="button" id="newExecTagBtn">+ Criar</button>`;
+  chipsEl.appendChild(newTagRow);
+  newTagRow.querySelector('#newExecTagBtn').addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const input = document.getElementById('newExecTagInput');
+    const name = input.value.trim();
+    if(!name) return;
+    if(!customExecTags.includes(name) && !BASE_EXEC_TAGS.includes(name)){
+      customExecTags.push(name);
+      saveCustomExecTags();
+    }
+    input.value = '';
+    renderVendasDashboard();
+    renderVendasGrid();
+  });
+  newTagRow.querySelector('#newExecTagInput').addEventListener('click', (e)=> e.stopPropagation());
 }
 
 function vendaItemHtml(v){
-  const execOptions = ['Próximos envios','Enviados','Concluídos','Agravo'];
+  const execOptions = allExecTags();
   if(v.execucao && !execOptions.includes(v.execucao)) execOptions.push(v.execucao);
-  const execOpts = execOptions.map(o=>`<option value="${o}" ${o===v.execucao?'selected':''}>${o}</option>`).join('');
+  const execOpts = execOptions.map(o=>`<option value="${o}" ${o===v.execucao?'selected':''}>${o}</option>`).join('')
+    + `<option value="__new_tag__">+ Criar nova etiqueta...</option>`;
   const currentTag = normalizeServicoTag(v.servico);
   const servicoOpts = SERVICO_TAGS.map(t=>`<option value="${t}" ${t===currentTag?'selected':''}>${t}</option>`).join('');
   const prazo = getPrazoStatus(v);
@@ -2233,6 +2304,23 @@ function wireVendaItem(itemEl, v){
     if(field === 'servico') return;
     const evt = (input.tagName === 'SELECT') ? 'change' : 'input';
     input.addEventListener(evt, (e)=>{
+      if(field === 'execucao' && e.target.value === '__new_tag__'){
+        const name = prompt('Nome da nova etiqueta:');
+        if(name && name.trim()){
+          const trimmed = name.trim();
+          if(!customExecTags.includes(trimmed) && !BASE_EXEC_TAGS.includes(trimmed)){
+            customExecTags.push(trimmed);
+            saveCustomExecTags();
+          }
+          v.execucao = trimmed;
+          saveVenda(v);
+          renderVendasDashboard();
+          renderVendasGrid();
+        } else {
+          e.target.value = v.execucao || '';
+        }
+        return;
+      }
       if(input.dataset.date){
         maskDateInput(e.target);
         const iso = parseDateBRtoISO(e.target.value);
@@ -3754,6 +3842,21 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
   showLoginView();
 });
 
+function wireDropdownToggle(btnId, menuId){
+  const btn = document.getElementById(btnId);
+  const menu = document.getElementById(menuId);
+  if(!btn || !menu) return;
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.querySelectorAll('.filter-dropdown-menu.open, .nav-dropdown.open').forEach(m=>{ if(m !== menu) m.classList.remove('open'); });
+    menu.classList.toggle('open');
+  });
+  document.addEventListener('click', (e)=>{
+    if(menu.classList.contains('open') && !menu.contains(e.target) && !btn.contains(e.target)){
+      menu.classList.remove('open');
+    }
+  });
+}
 document.getElementById('menuToggleBtn').addEventListener('click', (e)=>{
   e.stopPropagation();
   document.getElementById('navDropdown').classList.toggle('open');
@@ -3818,9 +3921,14 @@ document.getElementById('overviewClearPeriodBtn').addEventListener('click', ()=>
   updatePeriodPresetUI();
   renderOverview();
 });
-document.querySelectorAll('#periodPresetRow .status-chip').forEach(btn=>{
-  btn.addEventListener('click', ()=> applyPeriodPreset(btn.dataset.preset));
+document.querySelectorAll('#periodDropdownMenu .view-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    applyPeriodPreset(btn.dataset.preset);
+    document.getElementById('periodDropdownMenu').classList.remove('open');
+  });
 });
+wireDropdownToggle('periodDropdownBtn', 'periodDropdownMenu');
+wireDropdownToggle('statusFilterBtn', 'vendasStatusChips');
 updatePeriodPresetUI();
 document.getElementById('logoutBtn3').addEventListener('click', async ()=>{
   await supabaseClient.auth.signOut();
