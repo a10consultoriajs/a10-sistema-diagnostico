@@ -96,8 +96,6 @@
   .view-tab.active{ background: var(--gold); color:#3a2e05; font-weight:600; }
   .nav-dropdown-divider{ height:1px; background: var(--line); margin: 6px 4px; }
 
-  .overview-charts-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
-  @media (max-width: 720px){ .overview-charts-grid{ grid-template-columns: 1fr; } }
   .monthly-charts-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0 22px; }
   @media (max-width: 900px){ .monthly-charts-grid{ grid-template-columns: 1fr; } }
   .chart-card{
@@ -741,17 +739,6 @@ try{
       <div class="chart-card">
         <label>Quantidade de serviços por categoria</label>
         <div class="chart-canvas-wrap"><canvas id="chartCategoriaPizza3D"></canvas><div class="chart-empty-state" id="emptyCategoriaPizza3D" style="display:none;">Sem dados neste período.</div></div>
-      </div>
-    </div>
-
-    <div class="overview-charts-grid">
-      <div class="criteria-card">
-        <label>Recebido por categoria</label>
-        <div class="history-chart" id="overviewChartRecebido"></div>
-      </div>
-      <div class="criteria-card">
-        <label>Lucro por categoria</label>
-        <div class="history-chart" id="overviewChartLucro"></div>
       </div>
     </div>
 
@@ -1579,23 +1566,6 @@ function overviewCategoryTotals(){
   return totals;
 }
 
-function renderOverviewChart(elId, totals, field, barClass){
-  const shortLabels = { 'Acompanhamento/Rating': 'Acomp./Rating', 'Limpa Nome': 'Limpa Nome', 'Consultas': 'Consultas' };
-  const cats = Object.keys(totals).sort((a,b)=> totals[b][field] - totals[a][field]);
-  const maxV = Math.max(...cats.map(k=>totals[k][field]), 1);
-  const el = document.getElementById(elId);
-  el.innerHTML = cats.map(k => {
-    const h = Math.max(4, Math.round((totals[k][field]/maxV)*100));
-    return `
-      <div class="history-bar-col">
-        <div class="history-bar-value">${moneyBRL(totals[k][field])}</div>
-        <div class="history-bar${barClass ? (' '+barClass) : ''}" style="height:${h}%;"></div>
-        <div class="history-bar-date">${shortLabels[k] || k}</div>
-      </div>
-    `;
-  }).join('');
-}
-
 const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function formatMonthLabel(key){
   const [y,m] = key.split('-');
@@ -1786,8 +1756,6 @@ function renderOverview(){
   document.getElementById('ovQtHint').textContent = `${current.qt} serviço${current.qt===1?'':'s'} no período`;
 
   renderCategoryQtyPie3D(totals);
-  renderOverviewChart('overviewChartRecebido', totals, 'recebido');
-  renderOverviewChart('overviewChartLucro', totals, 'lucro', 'current');
   renderMonthlyDashboard();
   applyStatCardVisibility();
   if(overviewActiveKind) renderOverviewDrilldown(overviewActiveKind);
