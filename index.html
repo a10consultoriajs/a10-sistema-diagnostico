@@ -2491,9 +2491,11 @@ function vendaItemSimplesHtml(v){
     <div class="pedido-full">
     <div class="vfields">
       <div class="vfield"><label>Data da contratação</label><input type="text" inputmode="numeric" data-field="data_entrada" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_entrada)}"></div>
+      <div class="vfield"><label>Valor fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
       <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
       <div class="vfield"><label>Custo</label><input type="text" data-field="custo" data-money="1" value="${formatBRL(v.custo)}"></div>
-      <div class="vfield"><label>Lucro</label><input type="text" value="${formatBRL(lucro)}" readonly></div>
+      <div class="vfield"><label>Remanescente</label><input type="text" class="vf-remanescente" value="${formatBRL(remanescenteOf(v))}" readonly></div>
+      <div class="vfield"><label>Lucro</label><input type="text" class="vf-lucro" value="${formatBRL(lucro)}" readonly></div>
     </div>
     ${ordensServicoListHtml(v)}
     <div class="venda-update-row">
@@ -2536,9 +2538,10 @@ function wireVendaItemSimples(itemEl, v){
       } else {
         v[field] = input.dataset.money ? parseBRLInput(e.target) : e.target.value;
       }
-      v.fechado = Number(v.recebido)||0;
-      if(['recebido','custo'].includes(field)){
-        const lucroInput = itemEl.querySelector('.pedido-full .vfields input[readonly]');
+      if(['fechado','recebido','custo'].includes(field)){
+        const remInput = itemEl.querySelector('.vf-remanescente');
+        if(remInput) remInput.value = formatBRL(remanescenteOf(v));
+        const lucroInput = itemEl.querySelector('.vf-lucro');
         if(lucroInput) lucroInput.value = formatBRL((Number(v.recebido)||0) - (Number(v.custo)||0));
       }
       saveVenda(v);
