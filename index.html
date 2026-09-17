@@ -264,6 +264,24 @@
   }
   .vg-name-input:hover{ border-color: var(--line); }
   .vg-name-input:focus{ border-color: var(--gold-soft); background: var(--paper); outline:none; }
+  .vg-name-row{ display:flex; align-items:center; gap: 2px; }
+  .venda-group-menu-wrap{ position:relative; }
+  .venda-group-menu-btn{
+    border:none; background:none; cursor:pointer; font-size: 16px; line-height:1; color: var(--ink-soft);
+    padding: 2px 6px; border-radius: 6px;
+  }
+  .venda-group-menu-btn:hover{ background: var(--paper); color: var(--ink); }
+  .venda-group-menu{
+    display:none; flex-direction:column; position:absolute; top: calc(100% + 4px); left:0;
+    background: var(--paper-panel); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.35); padding: 6px; min-width: 170px; z-index: 40;
+  }
+  .venda-group-menu.open{ display:flex; }
+  .venda-group-menu-delete{
+    border:none; background:none; text-align:left; padding: 8px 10px; border-radius: 7px; font-size: 13px;
+    color: var(--status-atraso); cursor:pointer;
+  }
+  .venda-group-menu-delete:hover{ background: var(--status-atraso-bg); }
   .venda-group-head .vg-sub{ font-size: 12px; color: var(--ink-soft); }
   .vg-date{ font-size: 11px; color: var(--ink-soft); }
   .venda-historico{ margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--ink-soft); }
@@ -2781,7 +2799,15 @@ function renderVendasGrid(){
     wrap.innerHTML = `
       <div class="venda-group-head">
         <div>
-          <input type="text" class="vg-name-input" value="${displayName}">
+          <div class="vg-name-row">
+            <input type="text" class="vg-name-input" value="${displayName}">
+            <div class="venda-group-menu-wrap">
+              <button type="button" class="venda-group-menu-btn" title="Mais opções">⋮</button>
+              <div class="venda-group-menu">
+                <button type="button" class="venda-group-menu-delete">🗑️ Excluir cliente</button>
+              </div>
+            </div>
+          </div>
           <div class="vg-sub">${totals.qt} serviço${totals.qt===1?'':'s'} · ${items.length} pedido${items.length===1?'':'s'}</div>
         </div>
         <div class="venda-group-totals">
@@ -2830,6 +2856,23 @@ function renderVendasGrid(){
       renderVendasGrid();
     });
 
+    const menuBtn = wrap.querySelector('.venda-group-menu-btn');
+    const menu = wrap.querySelector('.venda-group-menu');
+    menuBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      document.querySelectorAll('.venda-group-menu.open').forEach(m=>{ if(m !== menu) m.classList.remove('open'); });
+      menu.classList.toggle('open');
+    });
+    document.addEventListener('click', (e)=>{
+      if(menu.classList.contains('open') && !menu.contains(e.target) && !menuBtn.contains(e.target)){
+        menu.classList.remove('open');
+      }
+    });
+    menu.querySelector('.venda-group-menu-delete').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      deleteClienteVendas(items, displayName);
+    });
+
     wrap.querySelector('.venda-group-head').addEventListener('click', ()=>{
       if(vendasExpanded.has(key)) vendasExpanded.delete(key); else vendasExpanded.add(key);
       renderVendasGrid();
@@ -2863,6 +2906,20 @@ async function deleteVenda(id){
   const { error } = await supabaseClient.from('vendas').delete().eq('id', id);
   if(error){ console.error(error); alert('Não foi possível excluir agora.'); return; }
   vendasIndex = vendasIndex.filter(v => v.id !== id);
+  renderVendasDashboard();
+  renderVendasGrid();
+}
+
+async function deleteClienteVendas(items, displayName){
+  const msg = items.length > 1
+    ? `Excluir todos os ${items.length} pedidos de "${displayName}"? Essa ação não pode ser desfeita.`
+    : `Excluir a venda de "${displayName}"? Essa ação não pode ser desfeita.`;
+  if(!confirm(msg)) return;
+  const ids = items.map(v => v.id);
+  const { error } = await supabaseClient.from('vendas').delete().in('id', ids);
+  if(error){ console.error(error); alert('Não foi possível excluir agora.'); return; }
+  const idSet = new Set(ids);
+  vendasIndex = vendasIndex.filter(v => !idSet.has(v.id));
   renderVendasDashboard();
   renderVendasGrid();
 }
