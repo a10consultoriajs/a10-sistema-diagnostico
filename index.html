@@ -515,7 +515,9 @@
   .credit-row input[data-field="banco"]{ flex: 1 1 110px; }
   .credit-row select[data-field="tipo"]{ flex: 1 1 130px; }
   .credit-row input[data-field="valor"]{ flex: 0 0 110px; }
+  .credit-row input[data-field="vencimento"]{ flex: 0 0 150px; }
   .credit-row .rm-btn{ border:none; background:none; color: var(--ink-soft); cursor:pointer; font-size: 14px; padding: 2px 6px; }
+  .parcela-pago-toggle{ display:flex; align-items:center; gap: 4px; font-size: 12.5px; color: var(--ink-soft); white-space: nowrap; }
   .credit-section-label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-top: 12px; display:block; }
   .venda-update-row{ display:flex; align-items:center; justify-content:flex-end; gap:10px; margin-top: 14px; }
   .venda-update-status{ font-size: 12px; color: var(--status-good); }
@@ -2287,11 +2289,105 @@ function maskDateInput(el){
 function getPrazoStatus(v){
   const done = ['ENTREGUE','CONCLUIDO','CONCLUÍDO','CONCLUÍDOS','CONCLUIDOS'].includes((v.execucao||'').toUpperCase());
   if(done) return 'entregue';
+  if(normalizeServicoTag(v.servico) === 'Limpa nome' && v.data_envio_lista){
+    const start = new Date(v.data_envio_lista + 'T00:00:00');
+    if(!isNaN(start.getTime())){
+      const dias = Number(v.previsao_dias) || 20;
+      const diffDays = Math.floor((new Date() - start) / 86400000);
+      return diffDays > dias ? 'atraso' : 'no_prazo';
+    }
+  }
   if(!v.data_entrada) return 'no_prazo';
   const start = new Date(v.data_entrada + 'T00:00:00');
   if(isNaN(start.getTime())) return 'no_prazo';
   const diffDays = Math.floor((new Date() - start) / 86400000);
   return diffDays > 30 ? 'atraso' : 'no_prazo';
+}
+
+function parcelasAtrasadasCount(v){
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  return (v.parcelas||[]).filter(p => {
+    if(p.pago || !p.vencimento) return false;
+    const venc = new Date(p.vencimento + 'T00:00:00');
+    return !isNaN(venc.getTime()) && venc < hoje;
+  }).length;
+}
+
+function parcelaStatusLabel(p){
+  if(p.pago) return 'Paga';
+  if(!p.vencimento) return 'Pendente';
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const venc = new Date(p.vencimento + 'T00:00:00');
+  if(isNaN(venc.getTime())) return 'Pendente';
+  return venc < hoje ? 'Atrasada' : 'Pendente';
+}
+
+function parcelasListHtml(v){
+  const rows = (v.parcelas||[]).map((p,idx) => {
+    const status = parcelaStatusLabel(p);
+    const statusClass = status === 'Paga' ? 'svc-concluido' : status === 'Atrasada' ? 'svc-atraso' : 'svc-andamento';
+    return `
+    <div class="credit-row parcela-row" data-idx="${idx}">
+      <input type="text" data-field="valor" data-money="1" placeholder="R$ 0,00" value="${formatBRL(p.valor)}">
+      <input type="text" inputmode="numeric" data-field="vencimento" data-date="1" placeholder="Vencimento DD/MM/AAAA" maxlength="10" value="${formatDateBR(p.vencimento)}">
+      <label class="parcela-pago-toggle"><input type="checkbox" data-field="pago" ${p.pago ? 'checked' : ''}> Paga</label>
+      <span class="svc-badge ${statusClass}">${status}</span>
+      <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
+    </div>
+  `;
+  }).join('');
+  return `
+    <div class="credit-section-label">Parcelas combinadas com o cliente</div>
+    <div class="credit-rows" data-parcelas-list>${rows}</div>
+    <button type="button" class="add-list-row add-parcela">+ adicionar parcela</button>
+  `;
+}
+
+function wireParcelasList(itemEl, v){
+  const list = itemEl.querySelector('[data-parcelas-list]');
+  if(!list) return;
+  list.querySelectorAll('.parcela-row').forEach(row => {
+    const idx = Number(row.dataset.idx);
+    row.querySelectorAll('[data-field]').forEach(inp => {
+      const field = inp.dataset.field;
+      const evt = inp.type === 'checkbox' ? 'change' : 'input';
+      inp.addEventListener(evt, (e)=>{
+        v.parcelas = v.parcelas || [];
+        v.parcelas[idx] = v.parcelas[idx] || { valor: 0, vencimento: '', pago: false };
+        if(field === 'pago'){
+          v.parcelas[idx].pago = e.target.checked;
+        } else if(field === 'valor'){
+          v.parcelas[idx].valor = parseBRLInput(e.target);
+        } else if(field === 'vencimento'){
+          maskDateInput(e.target);
+          const iso = parseDateBRtoISO(e.target.value);
+          if(!iso) return;
+          v.parcelas[idx].vencimento = iso;
+        }
+        saveVenda(v);
+        renderVendasDashboard();
+        renderVendasGrid();
+      });
+    });
+    const rmBtn = row.querySelector('.rm-btn');
+    if(rmBtn) rmBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      v.parcelas.splice(idx,1);
+      saveVenda(v);
+      renderVendasDashboard();
+      renderVendasGrid();
+    });
+  });
+  const addBtn = itemEl.querySelector('.add-parcela');
+  if(addBtn){
+    addBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      v.parcelas = v.parcelas || [];
+      v.parcelas.push({ valor: 0, vencimento: '', pago: false });
+      saveVenda(v);
+      renderVendasGrid();
+    });
+  }
 }
 
 function prazoLabel(status){
@@ -2486,6 +2582,10 @@ function vendaItemHtml(v){
   const pagBadgeHtml = pagStatus
     ? `<span class="svc-badge ${pagStatus==='atraso'?'svc-atraso':'svc-andamento'}">💰 ${pagStatus==='atraso'?'Pagamento em atraso':'Pagamento em dia'}</span>`
     : '';
+  const parcelasAtrasadas = parcelasAtrasadasCount(v);
+  const parcelasBadgeHtml = parcelasAtrasadas > 0
+    ? `<span class="svc-badge svc-atraso">📆 ${parcelasAtrasadas} parcela${parcelasAtrasadas>1?'s':''} atrasada${parcelasAtrasadas>1?'s':''}</span>`
+    : '';
   return `
     <div class="venda-item-top">
       <button type="button" class="pedido-toggle-btn chevron" title="Expandir/recolher">▶</button>
@@ -2493,6 +2593,7 @@ function vendaItemHtml(v){
       <span class="vg-date">Contratado em ${formatDateBR(v.data_entrada) || '—'}</span>
       <span class="svc-badge ${prazoBadgeClass(prazo)}">${prazoLabel(prazo)}</span>
       ${pagBadgeHtml}
+      ${parcelasBadgeHtml}
       <select data-field="execucao">${execOpts}</select>
       <span class="pedido-mini-stat">${miniStat}</span>
       <button type="button" class="del-venda-btn" title="Excluir">✕ excluir</button>
@@ -2525,7 +2626,8 @@ function vendaItemHtml(v){
       ` : ''}
       ${isLimpaNome ? `
         <div class="vfield"><label>Data da contratação</label><input type="text" inputmode="numeric" data-field="data_entrada" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_entrada)}"></div>
-        <div class="vfield"><label>Envio da lista</label><input type="text" inputmode="numeric" data-field="data_envio_lista" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_envio_lista)}"></div>
+        <div class="vfield"><label>Protocolo (envio da lista)</label><input type="text" inputmode="numeric" data-field="data_envio_lista" data-date="1" placeholder="DD/MM/AAAA" maxlength="10" value="${formatDateBR(v.data_envio_lista)}"></div>
+        <div class="vfield"><label>Previsão (dias após o protocolo)</label><input type="number" min="7" max="30" data-field="previsao_dias" value="${v.previsao_dias || 20}"></div>
         <div class="vfield"><label>Valor fechado</label><input type="text" data-field="fechado" data-money="1" value="${formatBRL(v.fechado)}"></div>
         <div class="vfield"><label>Valor recebido</label><input type="text" data-field="recebido" data-money="1" value="${formatBRL(v.recebido)}"></div>
         <div class="vfield"><label>Valor remanescente</label><input type="text" data-field="remanescente" data-money="1" value="${formatBRL(remanescenteOf(v))}" readonly></div>
@@ -2543,6 +2645,7 @@ function vendaItemHtml(v){
       </div>
     </div>
     ${isLimpaNome ? ordensServicoListHtml(v) : ''}
+    ${isLimpaNome ? parcelasListHtml(v) : ''}
     ${isLimpaNome ? `
     <div class="credit-section-label">Pagamentos recebidos</div>
     <div class="credit-rows" data-recebimentos-list>
@@ -2748,7 +2851,7 @@ function wireVendaItemSimples(itemEl, v){
 
 function wireVendaItem(itemEl, v){
   itemEl.querySelectorAll('[data-field]').forEach(input => {
-    if(input.closest('[data-recebimentos-list]') || input.closest('[data-ordens-list]')) return;
+    if(input.closest('[data-recebimentos-list]') || input.closest('[data-ordens-list]') || input.closest('[data-parcelas-list]')) return;
     const field = input.dataset.field;
     if(field === 'servico') return;
     const evt = (input.tagName === 'SELECT') ? 'change' : 'input';
@@ -2781,10 +2884,11 @@ function wireVendaItem(itemEl, v){
       if(['fechado','recebido','custo','valor_pago','custo_operacional','nota_fiscal','taxa_inclusao'].includes(field)) recalcLucro(v, itemEl);
       saveVenda(v);
       renderVendasDashboard();
-      if(field === 'execucao' || field === 'data_vencimento_remanescente' || (field === 'data_entrada' && input.dataset.date)) renderVendasGrid();
+      if(field === 'execucao' || field === 'data_vencimento_remanescente' || field === 'previsao_dias' || (field === 'data_entrada' && input.dataset.date) || (field === 'data_envio_lista' && input.dataset.date)) renderVendasGrid();
     });
   });
   wireOrdensServicoList(itemEl, v);
+  wireParcelasList(itemEl, v);
   wirePedidoToggle(itemEl, v);
   const servicoSelect = itemEl.querySelector('[data-field="servico"]');
   if(servicoSelect){
