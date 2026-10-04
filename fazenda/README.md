@@ -11,6 +11,7 @@ estoque, máquinas e serviços (horas automáticas), funcionários e salários, 
 1. Publique esta pasta em uma hospedagem com **HTTPS** (ex.: GitHub Pages) ou rode localmente:
    `npx http-server fazenda -p 8080` e abra <http://localhost:8080>.
 2. Na primeira abertura, crie o **administrador** (e, se quiser, carregue os dados de demonstração).
+   **Guarde o código de recuperação** que aparece em seguida: é com ele que se redefine a senha em "Esqueci minha senha".
 3. Cadastre os usuários em **Configurações › Usuários** (perfis Gerente, Funcionário, Ordenha, Estoque…).
 4. No celular, use **"Adicionar à tela inicial"** para instalar como aplicativo.
 

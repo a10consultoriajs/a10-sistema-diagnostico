@@ -34,6 +34,10 @@ create table if not exists settings (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table settings add column if not exists value jsonb;
+alter table settings add column if not exists created_at timestamptz;
+alter table settings add column if not exists updated_at timestamptz;
+alter table settings add column if not exists extra jsonb;
 comment on table settings is 'Configurações (chave/valor)';
 create index if not exists settings_synced_at_idx on settings (synced_at);
 drop trigger if exists settings_before_write on settings;
@@ -63,6 +67,18 @@ create table if not exists roles (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table roles add column if not exists created_at timestamptz;
+alter table roles add column if not exists updated_at timestamptz;
+alter table roles add column if not exists created_by text;
+alter table roles add column if not exists deleted_at timestamptz;
+alter table roles add column if not exists deleted_by text;
+alter table roles add column if not exists delete_reason text;
+alter table roles add column if not exists is_demo boolean;
+alter table roles add column if not exists name text;
+alter table roles add column if not exists description text;
+alter table roles add column if not exists system boolean;
+alter table roles add column if not exists permissions jsonb;
+alter table roles add column if not exists extra jsonb;
 comment on table roles is 'Perfis de acesso';
 create index if not exists roles_synced_at_idx on roles (synced_at);
 drop trigger if exists roles_before_write on roles;
@@ -94,9 +110,32 @@ create table if not exists users (
   active                 boolean,
   last_login             timestamptz,
   must_change_password   boolean,
+  recovery_hash          text,
+  recovery_salt          text,
+  recovery_created_at    timestamptz,
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table users add column if not exists created_at timestamptz;
+alter table users add column if not exists updated_at timestamptz;
+alter table users add column if not exists created_by text;
+alter table users add column if not exists deleted_at timestamptz;
+alter table users add column if not exists deleted_by text;
+alter table users add column if not exists delete_reason text;
+alter table users add column if not exists is_demo boolean;
+alter table users add column if not exists name text;
+alter table users add column if not exists username text;
+alter table users add column if not exists password_hash text;
+alter table users add column if not exists password_salt text;
+alter table users add column if not exists role_id text;
+alter table users add column if not exists employee_id text;
+alter table users add column if not exists active boolean;
+alter table users add column if not exists last_login timestamptz;
+alter table users add column if not exists must_change_password boolean;
+alter table users add column if not exists recovery_hash text;
+alter table users add column if not exists recovery_salt text;
+alter table users add column if not exists recovery_created_at timestamptz;
+alter table users add column if not exists extra jsonb;
 comment on table users is 'Usuários do sistema';
 create index if not exists users_synced_at_idx on users (synced_at);
 create unique index if not exists users_username_idx on users (username) where deleted_at is null;
@@ -143,6 +182,34 @@ create table if not exists animals (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table animals add column if not exists created_at timestamptz;
+alter table animals add column if not exists updated_at timestamptz;
+alter table animals add column if not exists created_by text;
+alter table animals add column if not exists deleted_at timestamptz;
+alter table animals add column if not exists deleted_by text;
+alter table animals add column if not exists delete_reason text;
+alter table animals add column if not exists is_demo boolean;
+alter table animals add column if not exists code integer;
+alter table animals add column if not exists tag text;
+alter table animals add column if not exists name text;
+alter table animals add column if not exists sex text;
+alter table animals add column if not exists species text;
+alter table animals add column if not exists breed text;
+alter table animals add column if not exists category text;
+alter table animals add column if not exists birth_date date;
+alter table animals add column if not exists birth_weight numeric;
+alter table animals add column if not exists current_weight numeric;
+alter table animals add column if not exists sire_id text;
+alter table animals add column if not exists dam_id text;
+alter table animals add column if not exists sire_name text;
+alter table animals add column if not exists dam_name text;
+alter table animals add column if not exists entry_date date;
+alter table animals add column if not exists origin text;
+alter table animals add column if not exists status text;
+alter table animals add column if not exists exit_date date;
+alter table animals add column if not exists photo text;
+alter table animals add column if not exists notes text;
+alter table animals add column if not exists extra jsonb;
 comment on table animals is 'Rebanho — identidade digital de cada animal';
 create index if not exists animals_synced_at_idx on animals (synced_at);
 create index if not exists animals_code_idx on animals (code);
@@ -180,6 +247,25 @@ create table if not exists animal_births (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table animal_births add column if not exists created_at timestamptz;
+alter table animal_births add column if not exists updated_at timestamptz;
+alter table animal_births add column if not exists created_by text;
+alter table animal_births add column if not exists deleted_at timestamptz;
+alter table animal_births add column if not exists deleted_by text;
+alter table animal_births add column if not exists delete_reason text;
+alter table animal_births add column if not exists is_demo boolean;
+alter table animal_births add column if not exists number integer;
+alter table animal_births add column if not exists animal_id text;
+alter table animal_births add column if not exists birth_date date;
+alter table animal_births add column if not exists sire_id text;
+alter table animal_births add column if not exists dam_id text;
+alter table animal_births add column if not exists sire_name text;
+alter table animal_births add column if not exists dam_name text;
+alter table animal_births add column if not exists weight numeric;
+alter table animal_births add column if not exists responsible text;
+alter table animal_births add column if not exists reproduction_id text;
+alter table animal_births add column if not exists notes text;
+alter table animal_births add column if not exists extra jsonb;
 comment on table animal_births is 'Nascimentos (cria → animal)';
 create index if not exists animal_births_synced_at_idx on animal_births (synced_at);
 drop trigger if exists animal_births_before_write on animal_births;
@@ -211,6 +297,20 @@ create table if not exists animal_deaths (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table animal_deaths add column if not exists created_at timestamptz;
+alter table animal_deaths add column if not exists updated_at timestamptz;
+alter table animal_deaths add column if not exists created_by text;
+alter table animal_deaths add column if not exists deleted_at timestamptz;
+alter table animal_deaths add column if not exists deleted_by text;
+alter table animal_deaths add column if not exists delete_reason text;
+alter table animal_deaths add column if not exists is_demo boolean;
+alter table animal_deaths add column if not exists animal_id text;
+alter table animal_deaths add column if not exists date date;
+alter table animal_deaths add column if not exists age_days integer;
+alter table animal_deaths add column if not exists cause text;
+alter table animal_deaths add column if not exists responsible text;
+alter table animal_deaths add column if not exists notes text;
+alter table animal_deaths add column if not exists extra jsonb;
 comment on table animal_deaths is 'Mortalidade';
 create index if not exists animal_deaths_synced_at_idx on animal_deaths (synced_at);
 create index if not exists animal_deaths_date_idx on animal_deaths (date);
@@ -243,6 +343,20 @@ create table if not exists animal_weights (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table animal_weights add column if not exists created_at timestamptz;
+alter table animal_weights add column if not exists updated_at timestamptz;
+alter table animal_weights add column if not exists created_by text;
+alter table animal_weights add column if not exists deleted_at timestamptz;
+alter table animal_weights add column if not exists deleted_by text;
+alter table animal_weights add column if not exists delete_reason text;
+alter table animal_weights add column if not exists is_demo boolean;
+alter table animal_weights add column if not exists animal_id text;
+alter table animal_weights add column if not exists date date;
+alter table animal_weights add column if not exists weight numeric;
+alter table animal_weights add column if not exists age_days integer;
+alter table animal_weights add column if not exists responsible text;
+alter table animal_weights add column if not exists notes text;
+alter table animal_weights add column if not exists extra jsonb;
 comment on table animal_weights is 'Pesagens';
 create index if not exists animal_weights_synced_at_idx on animal_weights (synced_at);
 create index if not exists animal_weights_date_idx on animal_weights (date);
@@ -280,6 +394,25 @@ create table if not exists animal_health (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table animal_health add column if not exists created_at timestamptz;
+alter table animal_health add column if not exists updated_at timestamptz;
+alter table animal_health add column if not exists created_by text;
+alter table animal_health add column if not exists deleted_at timestamptz;
+alter table animal_health add column if not exists deleted_by text;
+alter table animal_health add column if not exists delete_reason text;
+alter table animal_health add column if not exists is_demo boolean;
+alter table animal_health add column if not exists animal_id text;
+alter table animal_health add column if not exists type text;
+alter table animal_health add column if not exists date date;
+alter table animal_health add column if not exists description text;
+alter table animal_health add column if not exists product_id text;
+alter table animal_health add column if not exists quantity numeric;
+alter table animal_health add column if not exists cost numeric;
+alter table animal_health add column if not exists responsible text;
+alter table animal_health add column if not exists next_date date;
+alter table animal_health add column if not exists next_done boolean;
+alter table animal_health add column if not exists notes text;
+alter table animal_health add column if not exists extra jsonb;
 comment on table animal_health is 'Saúde: vacinações, medicamentos, tratamentos, doenças, consultas (campo type)';
 create index if not exists animal_health_synced_at_idx on animal_health (synced_at);
 create index if not exists animal_health_date_idx on animal_health (date);
@@ -318,6 +451,26 @@ create table if not exists animal_reproduction (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table animal_reproduction add column if not exists created_at timestamptz;
+alter table animal_reproduction add column if not exists updated_at timestamptz;
+alter table animal_reproduction add column if not exists created_by text;
+alter table animal_reproduction add column if not exists deleted_at timestamptz;
+alter table animal_reproduction add column if not exists deleted_by text;
+alter table animal_reproduction add column if not exists delete_reason text;
+alter table animal_reproduction add column if not exists is_demo boolean;
+alter table animal_reproduction add column if not exists animal_id text;
+alter table animal_reproduction add column if not exists date date;
+alter table animal_reproduction add column if not exists type text;
+alter table animal_reproduction add column if not exists bull_id text;
+alter table animal_reproduction add column if not exists bull_name text;
+alter table animal_reproduction add column if not exists responsible text;
+alter table animal_reproduction add column if not exists pregnancy_status text;
+alter table animal_reproduction add column if not exists confirmation_date date;
+alter table animal_reproduction add column if not exists expected_calving date;
+alter table animal_reproduction add column if not exists actual_calving date;
+alter table animal_reproduction add column if not exists birth_id text;
+alter table animal_reproduction add column if not exists notes text;
+alter table animal_reproduction add column if not exists extra jsonb;
 comment on table animal_reproduction is 'Reprodução: coberturas, inseminações, gestação e parto';
 create index if not exists animal_reproduction_synced_at_idx on animal_reproduction (synced_at);
 create index if not exists animal_reproduction_date_idx on animal_reproduction (date);
@@ -350,6 +503,20 @@ create table if not exists milk_production (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table milk_production add column if not exists created_at timestamptz;
+alter table milk_production add column if not exists updated_at timestamptz;
+alter table milk_production add column if not exists created_by text;
+alter table milk_production add column if not exists deleted_at timestamptz;
+alter table milk_production add column if not exists deleted_by text;
+alter table milk_production add column if not exists delete_reason text;
+alter table milk_production add column if not exists is_demo boolean;
+alter table milk_production add column if not exists date date;
+alter table milk_production add column if not exists animal_id text;
+alter table milk_production add column if not exists shift text;
+alter table milk_production add column if not exists liters numeric;
+alter table milk_production add column if not exists responsible text;
+alter table milk_production add column if not exists notes text;
+alter table milk_production add column if not exists extra jsonb;
 comment on table milk_production is 'Produção de leite — 1 linha por animal/data/ordenha';
 create index if not exists milk_production_synced_at_idx on milk_production (synced_at);
 create index if not exists milk_production_date_idx on milk_production (date);
@@ -389,6 +556,27 @@ create table if not exists inventory (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table inventory add column if not exists created_at timestamptz;
+alter table inventory add column if not exists updated_at timestamptz;
+alter table inventory add column if not exists created_by text;
+alter table inventory add column if not exists deleted_at timestamptz;
+alter table inventory add column if not exists deleted_by text;
+alter table inventory add column if not exists delete_reason text;
+alter table inventory add column if not exists is_demo boolean;
+alter table inventory add column if not exists code text;
+alter table inventory add column if not exists name text;
+alter table inventory add column if not exists category text;
+alter table inventory add column if not exists unit text;
+alter table inventory add column if not exists unit_weight_kg numeric;
+alter table inventory add column if not exists quantity numeric;
+alter table inventory add column if not exists min_qty numeric;
+alter table inventory add column if not exists max_qty numeric;
+alter table inventory add column if not exists unit_cost numeric;
+alter table inventory add column if not exists supplier text;
+alter table inventory add column if not exists location text;
+alter table inventory add column if not exists active boolean;
+alter table inventory add column if not exists notes text;
+alter table inventory add column if not exists extra jsonb;
 comment on table inventory is 'Produtos do estoque (inclui ingredientes de ração)';
 create index if not exists inventory_synced_at_idx on inventory (synced_at);
 drop trigger if exists inventory_before_write on inventory;
@@ -428,6 +616,28 @@ create table if not exists inventory_movements (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table inventory_movements add column if not exists created_at timestamptz;
+alter table inventory_movements add column if not exists updated_at timestamptz;
+alter table inventory_movements add column if not exists created_by text;
+alter table inventory_movements add column if not exists deleted_at timestamptz;
+alter table inventory_movements add column if not exists deleted_by text;
+alter table inventory_movements add column if not exists delete_reason text;
+alter table inventory_movements add column if not exists is_demo boolean;
+alter table inventory_movements add column if not exists product_id text;
+alter table inventory_movements add column if not exists date date;
+alter table inventory_movements add column if not exists type text;
+alter table inventory_movements add column if not exists quantity numeric;
+alter table inventory_movements add column if not exists unit_cost numeric;
+alter table inventory_movements add column if not exists total numeric;
+alter table inventory_movements add column if not exists supplier text;
+alter table inventory_movements add column if not exists invoice text;
+alter table inventory_movements add column if not exists destination text;
+alter table inventory_movements add column if not exists reason text;
+alter table inventory_movements add column if not exists responsible text;
+alter table inventory_movements add column if not exists ref_table text;
+alter table inventory_movements add column if not exists ref_id text;
+alter table inventory_movements add column if not exists notes text;
+alter table inventory_movements add column if not exists extra jsonb;
 comment on table inventory_movements is 'Entradas, saídas e ajustes de estoque (ref_table/ref_id = origem automática)';
 create index if not exists inventory_movements_synced_at_idx on inventory_movements (synced_at);
 create index if not exists inventory_movements_date_idx on inventory_movements (date);
@@ -464,6 +674,24 @@ create table if not exists feed_batches (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table feed_batches add column if not exists created_at timestamptz;
+alter table feed_batches add column if not exists updated_at timestamptz;
+alter table feed_batches add column if not exists created_by text;
+alter table feed_batches add column if not exists deleted_at timestamptz;
+alter table feed_batches add column if not exists deleted_by text;
+alter table feed_batches add column if not exists delete_reason text;
+alter table feed_batches add column if not exists is_demo boolean;
+alter table feed_batches add column if not exists lot_number text;
+alter table feed_batches add column if not exists date date;
+alter table feed_batches add column if not exists time time;
+alter table feed_batches add column if not exists operator_id text;
+alter table feed_batches add column if not exists feed_type text;
+alter table feed_batches add column if not exists total_kg numeric;
+alter table feed_batches add column if not exists balance_kg numeric;
+alter table feed_batches add column if not exists cost_total numeric;
+alter table feed_batches add column if not exists cost_per_kg numeric;
+alter table feed_batches add column if not exists notes text;
+alter table feed_batches add column if not exists extra jsonb;
 comment on table feed_batches is 'Lotes de ração (batidas da fábrica)';
 create index if not exists feed_batches_synced_at_idx on feed_batches (synced_at);
 create index if not exists feed_batches_lot_number_idx on feed_batches (lot_number);
@@ -496,6 +724,19 @@ create table if not exists feed_batch_items (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table feed_batch_items add column if not exists created_at timestamptz;
+alter table feed_batch_items add column if not exists updated_at timestamptz;
+alter table feed_batch_items add column if not exists created_by text;
+alter table feed_batch_items add column if not exists deleted_at timestamptz;
+alter table feed_batch_items add column if not exists deleted_by text;
+alter table feed_batch_items add column if not exists delete_reason text;
+alter table feed_batch_items add column if not exists is_demo boolean;
+alter table feed_batch_items add column if not exists batch_id text;
+alter table feed_batch_items add column if not exists product_id text;
+alter table feed_batch_items add column if not exists quantity numeric;
+alter table feed_batch_items add column if not exists kg numeric;
+alter table feed_batch_items add column if not exists unit_cost numeric;
+alter table feed_batch_items add column if not exists extra jsonb;
 comment on table feed_batch_items is 'Composição de cada lote';
 create index if not exists feed_batch_items_synced_at_idx on feed_batch_items (synced_at);
 drop trigger if exists feed_batch_items_before_write on feed_batch_items;
@@ -531,6 +772,24 @@ create table if not exists feed_distribution (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table feed_distribution add column if not exists created_at timestamptz;
+alter table feed_distribution add column if not exists updated_at timestamptz;
+alter table feed_distribution add column if not exists created_by text;
+alter table feed_distribution add column if not exists deleted_at timestamptz;
+alter table feed_distribution add column if not exists deleted_by text;
+alter table feed_distribution add column if not exists delete_reason text;
+alter table feed_distribution add column if not exists is_demo boolean;
+alter table feed_distribution add column if not exists date date;
+alter table feed_distribution add column if not exists responsible_id text;
+alter table feed_distribution add column if not exists batch_id text;
+alter table feed_distribution add column if not exists feed_type text;
+alter table feed_distribution add column if not exists quantity_kg numeric;
+alter table feed_distribution add column if not exists animals_count integer;
+alter table feed_distribution add column if not exists kg_per_animal numeric;
+alter table feed_distribution add column if not exists area text;
+alter table feed_distribution add column if not exists herd_category text;
+alter table feed_distribution add column if not exists notes text;
+alter table feed_distribution add column if not exists extra jsonb;
 comment on table feed_distribution is 'Distribuição de ração ao rebanho';
 create index if not exists feed_distribution_synced_at_idx on feed_distribution (synced_at);
 create index if not exists feed_distribution_date_idx on feed_distribution (date);
@@ -568,6 +827,25 @@ create table if not exists machines (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table machines add column if not exists created_at timestamptz;
+alter table machines add column if not exists updated_at timestamptz;
+alter table machines add column if not exists created_by text;
+alter table machines add column if not exists deleted_at timestamptz;
+alter table machines add column if not exists deleted_by text;
+alter table machines add column if not exists delete_reason text;
+alter table machines add column if not exists is_demo boolean;
+alter table machines add column if not exists name text;
+alter table machines add column if not exists type text;
+alter table machines add column if not exists brand text;
+alter table machines add column if not exists model text;
+alter table machines add column if not exists year integer;
+alter table machines add column if not exists identification text;
+alter table machines add column if not exists hourmeter numeric;
+alter table machines add column if not exists fuel_type text;
+alter table machines add column if not exists status text;
+alter table machines add column if not exists responsible_id text;
+alter table machines add column if not exists notes text;
+alter table machines add column if not exists extra jsonb;
 comment on table machines is 'Máquinas';
 create index if not exists machines_synced_at_idx on machines (synced_at);
 drop trigger if exists machines_before_write on machines;
@@ -606,6 +884,27 @@ create table if not exists machine_services (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table machine_services add column if not exists created_at timestamptz;
+alter table machine_services add column if not exists updated_at timestamptz;
+alter table machine_services add column if not exists created_by text;
+alter table machine_services add column if not exists deleted_at timestamptz;
+alter table machine_services add column if not exists deleted_by text;
+alter table machine_services add column if not exists delete_reason text;
+alter table machine_services add column if not exists is_demo boolean;
+alter table machine_services add column if not exists date date;
+alter table machine_services add column if not exists machine_id text;
+alter table machine_services add column if not exists operator_id text;
+alter table machine_services add column if not exists service_type text;
+alter table machine_services add column if not exists activity text;
+alter table machine_services add column if not exists area text;
+alter table machine_services add column if not exists start_time time;
+alter table machine_services add column if not exists end_time time;
+alter table machine_services add column if not exists hours numeric;
+alter table machine_services add column if not exists hourmeter_start numeric;
+alter table machine_services add column if not exists hourmeter_end numeric;
+alter table machine_services add column if not exists fuel_liters numeric;
+alter table machine_services add column if not exists notes text;
+alter table machine_services add column if not exists extra jsonb;
 comment on table machine_services is 'Serviços de máquina (controle do tratorista)';
 create index if not exists machine_services_synced_at_idx on machine_services (synced_at);
 create index if not exists machine_services_date_idx on machine_services (date);
@@ -645,6 +944,27 @@ create table if not exists machine_maintenance (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table machine_maintenance add column if not exists created_at timestamptz;
+alter table machine_maintenance add column if not exists updated_at timestamptz;
+alter table machine_maintenance add column if not exists created_by text;
+alter table machine_maintenance add column if not exists deleted_at timestamptz;
+alter table machine_maintenance add column if not exists deleted_by text;
+alter table machine_maintenance add column if not exists delete_reason text;
+alter table machine_maintenance add column if not exists is_demo boolean;
+alter table machine_maintenance add column if not exists machine_id text;
+alter table machine_maintenance add column if not exists date date;
+alter table machine_maintenance add column if not exists type text;
+alter table machine_maintenance add column if not exists description text;
+alter table machine_maintenance add column if not exists parts text;
+alter table machine_maintenance add column if not exists product_id text;
+alter table machine_maintenance add column if not exists product_qty numeric;
+alter table machine_maintenance add column if not exists cost numeric;
+alter table machine_maintenance add column if not exists hourmeter numeric;
+alter table machine_maintenance add column if not exists responsible text;
+alter table machine_maintenance add column if not exists next_date date;
+alter table machine_maintenance add column if not exists next_hourmeter numeric;
+alter table machine_maintenance add column if not exists notes text;
+alter table machine_maintenance add column if not exists extra jsonb;
 comment on table machine_maintenance is 'Manutenções';
 create index if not exists machine_maintenance_synced_at_idx on machine_maintenance (synced_at);
 create index if not exists machine_maintenance_date_idx on machine_maintenance (date);
@@ -681,6 +1001,24 @@ create table if not exists fuel_records (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table fuel_records add column if not exists created_at timestamptz;
+alter table fuel_records add column if not exists updated_at timestamptz;
+alter table fuel_records add column if not exists created_by text;
+alter table fuel_records add column if not exists deleted_at timestamptz;
+alter table fuel_records add column if not exists deleted_by text;
+alter table fuel_records add column if not exists delete_reason text;
+alter table fuel_records add column if not exists is_demo boolean;
+alter table fuel_records add column if not exists date date;
+alter table fuel_records add column if not exists machine_id text;
+alter table fuel_records add column if not exists fuel_type text;
+alter table fuel_records add column if not exists liters numeric;
+alter table fuel_records add column if not exists total_value numeric;
+alter table fuel_records add column if not exists responsible text;
+alter table fuel_records add column if not exists hourmeter numeric;
+alter table fuel_records add column if not exists product_id text;
+alter table fuel_records add column if not exists service_id text;
+alter table fuel_records add column if not exists notes text;
+alter table fuel_records add column if not exists extra jsonb;
 comment on table fuel_records is 'Abastecimentos';
 create index if not exists fuel_records_synced_at_idx on fuel_records (synced_at);
 create index if not exists fuel_records_date_idx on fuel_records (date);
@@ -720,6 +1058,27 @@ create table if not exists employees (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table employees add column if not exists created_at timestamptz;
+alter table employees add column if not exists updated_at timestamptz;
+alter table employees add column if not exists created_by text;
+alter table employees add column if not exists deleted_at timestamptz;
+alter table employees add column if not exists deleted_by text;
+alter table employees add column if not exists delete_reason text;
+alter table employees add column if not exists is_demo boolean;
+alter table employees add column if not exists name text;
+alter table employees add column if not exists cpf text;
+alter table employees add column if not exists phone text;
+alter table employees add column if not exists address text;
+alter table employees add column if not exists birth_date date;
+alter table employees add column if not exists position text;
+alter table employees add column if not exists admission_date date;
+alter table employees add column if not exists salary numeric;
+alter table employees add column if not exists contract_type text;
+alter table employees add column if not exists bank text;
+alter table employees add column if not exists pix text;
+alter table employees add column if not exists status text;
+alter table employees add column if not exists notes text;
+alter table employees add column if not exists extra jsonb;
 comment on table employees is 'Funcionários (dados pessoais — acesso restrito)';
 create index if not exists employees_synced_at_idx on employees (synced_at);
 drop trigger if exists employees_before_write on employees;
@@ -759,6 +1118,28 @@ create table if not exists employee_payments (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table employee_payments add column if not exists created_at timestamptz;
+alter table employee_payments add column if not exists updated_at timestamptz;
+alter table employee_payments add column if not exists created_by text;
+alter table employee_payments add column if not exists deleted_at timestamptz;
+alter table employee_payments add column if not exists deleted_by text;
+alter table employee_payments add column if not exists delete_reason text;
+alter table employee_payments add column if not exists is_demo boolean;
+alter table employee_payments add column if not exists employee_id text;
+alter table employee_payments add column if not exists month text;
+alter table employee_payments add column if not exists base_salary numeric;
+alter table employee_payments add column if not exists additions numeric;
+alter table employee_payments add column if not exists overtime_hours numeric;
+alter table employee_payments add column if not exists overtime_value numeric;
+alter table employee_payments add column if not exists vales_value numeric;
+alter table employee_payments add column if not exists advances_value numeric;
+alter table employee_payments add column if not exists discounts_value numeric;
+alter table employee_payments add column if not exists others numeric;
+alter table employee_payments add column if not exists net numeric;
+alter table employee_payments add column if not exists payment_date date;
+alter table employee_payments add column if not exists status text;
+alter table employee_payments add column if not exists notes text;
+alter table employee_payments add column if not exists extra jsonb;
 comment on table employee_payments is 'Controle mensal de salário';
 create index if not exists employee_payments_synced_at_idx on employee_payments (synced_at);
 drop trigger if exists employee_payments_before_write on employee_payments;
@@ -795,6 +1176,25 @@ create table if not exists employee_advances (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table employee_advances add column if not exists created_at timestamptz;
+alter table employee_advances add column if not exists updated_at timestamptz;
+alter table employee_advances add column if not exists created_by text;
+alter table employee_advances add column if not exists deleted_at timestamptz;
+alter table employee_advances add column if not exists deleted_by text;
+alter table employee_advances add column if not exists delete_reason text;
+alter table employee_advances add column if not exists is_demo boolean;
+alter table employee_advances add column if not exists employee_id text;
+alter table employee_advances add column if not exists date date;
+alter table employee_advances add column if not exists amount numeric;
+alter table employee_advances add column if not exists type text;
+alter table employee_advances add column if not exists reason text;
+alter table employee_advances add column if not exists payment_method text;
+alter table employee_advances add column if not exists installments integer;
+alter table employee_advances add column if not exists installment_value numeric;
+alter table employee_advances add column if not exists first_month text;
+alter table employee_advances add column if not exists status text;
+alter table employee_advances add column if not exists notes text;
+alter table employee_advances add column if not exists extra jsonb;
 comment on table employee_advances is 'Vales e adiantamentos (parcelados)';
 create index if not exists employee_advances_synced_at_idx on employee_advances (synced_at);
 create index if not exists employee_advances_date_idx on employee_advances (date);
@@ -827,6 +1227,20 @@ create table if not exists employee_discounts (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table employee_discounts add column if not exists created_at timestamptz;
+alter table employee_discounts add column if not exists updated_at timestamptz;
+alter table employee_discounts add column if not exists created_by text;
+alter table employee_discounts add column if not exists deleted_at timestamptz;
+alter table employee_discounts add column if not exists deleted_by text;
+alter table employee_discounts add column if not exists delete_reason text;
+alter table employee_discounts add column if not exists is_demo boolean;
+alter table employee_discounts add column if not exists employee_id text;
+alter table employee_discounts add column if not exists date date;
+alter table employee_discounts add column if not exists month text;
+alter table employee_discounts add column if not exists description text;
+alter table employee_discounts add column if not exists amount numeric;
+alter table employee_discounts add column if not exists notes text;
+alter table employee_discounts add column if not exists extra jsonb;
 comment on table employee_discounts is 'Descontos';
 create index if not exists employee_discounts_synced_at_idx on employee_discounts (synced_at);
 create index if not exists employee_discounts_date_idx on employee_discounts (date);
@@ -855,6 +1269,16 @@ create table if not exists alerts (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table alerts add column if not exists created_at timestamptz;
+alter table alerts add column if not exists updated_at timestamptz;
+alter table alerts add column if not exists created_by text;
+alter table alerts add column if not exists deleted_at timestamptz;
+alter table alerts add column if not exists deleted_by text;
+alter table alerts add column if not exists delete_reason text;
+alter table alerts add column if not exists is_demo boolean;
+alter table alerts add column if not exists status text;
+alter table alerts add column if not exists by text;
+alter table alerts add column if not exists extra jsonb;
 comment on table alerts is 'Estado dos alertas (lido/resolvido/ignorado) por chave';
 create index if not exists alerts_synced_at_idx on alerts (synced_at);
 drop trigger if exists alerts_before_write on alerts;
@@ -888,6 +1312,22 @@ create table if not exists audit_logs (
   extra                  jsonb,
   synced_at              timestamptz not null default clock_timestamp()
 );
+alter table audit_logs add column if not exists created_at timestamptz;
+alter table audit_logs add column if not exists updated_at timestamptz;
+alter table audit_logs add column if not exists created_by text;
+alter table audit_logs add column if not exists deleted_at timestamptz;
+alter table audit_logs add column if not exists deleted_by text;
+alter table audit_logs add column if not exists delete_reason text;
+alter table audit_logs add column if not exists is_demo boolean;
+alter table audit_logs add column if not exists ts timestamptz;
+alter table audit_logs add column if not exists user_id text;
+alter table audit_logs add column if not exists user_name text;
+alter table audit_logs add column if not exists action text;
+alter table audit_logs add column if not exists table_name text;
+alter table audit_logs add column if not exists record_id text;
+alter table audit_logs add column if not exists description text;
+alter table audit_logs add column if not exists changes jsonb;
+alter table audit_logs add column if not exists extra jsonb;
 comment on table audit_logs is 'Auditoria de todas as alterações';
 create index if not exists audit_logs_synced_at_idx on audit_logs (synced_at);
 drop trigger if exists audit_logs_before_write on audit_logs;

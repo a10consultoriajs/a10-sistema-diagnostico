@@ -1,6 +1,6 @@
 // Service worker: guarda o aplicativo no aparelho para funcionar sem internet.
 // Estratégia "stale-while-revalidate": abre na hora a versão guardada e baixa a nova em segundo plano.
-const CACHE = 'fmr-app-v1';
+const CACHE = 'fmr-app-v2'; // aumente ao publicar uma versão nova
 const FILES = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './assets/logo.png', './assets/logo-pdf.jpg', './assets/favicon.png', './assets/icon-192.png', './assets/icon-512.png',
@@ -12,7 +12,7 @@ const FILES = [
   './js/pages/reports.js', './js/pages/alerts.js', './js/pages/settings.js', './js/pages/quick.js',
 ];
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));

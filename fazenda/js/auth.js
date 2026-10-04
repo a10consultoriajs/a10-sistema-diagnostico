@@ -121,3 +121,42 @@ export async function setPassword(userId, password) {
   db.update('users', userId, { password_hash: hash, password_salt: salt, must_change_password: false },
     { description: `${db.getAuditUser()?.name || 'Sistema'} alterou a senha do usuário ${db.get('users', userId)?.username}` });
 }
+
+// ---------- Código de recuperação ----------
+// Cada usuário pode ter um código (ex.: K7QM-3XHP-9TBA) mostrado UMA vez. Só o hash fica gravado.
+// Com ele, na tela de login, a pessoa redefine a própria senha; o código usado é trocado por um novo.
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem I, O, 0 e 1 para não confundir
+const normCode = (c) => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+export function genRecoveryCode() {
+  const b = crypto.getRandomValues(new Uint8Array(12));
+  return [...b].map(x => CODE_ALPHABET[x % 32]).join('').match(/.{4}/g).join('-');
+}
+export async function setRecoveryCode(userId, { description } = {}) {
+  const u = db.get('users', userId);
+  const code = genRecoveryCode();
+  const { hash, salt } = await hashPassword(normCode(code));
+  db.update('users', userId, { recovery_hash: hash, recovery_salt: salt, recovery_created_at: nowISO() },
+    { description: description || `${db.getAuditUser()?.name || 'Sistema'} gerou um novo código de recuperação para o usuário ${u.username}` });
+  return code;
+}
+// Algum administrador ativo tem código cadastrado?
+export const adminHasRecovery = () => db.all('users').some(u => u.active && u.recovery_hash && (db.get('roles', u.role_id)?.permissions || []).includes('users.manage'));
+
+export async function recoverPassword(username, code, newPassword) {
+  const f = JSON.parse(localStorage.getItem(FAIL_KEY) || '{"n":0,"t":0}');
+  if (f.n >= 5 && Date.now() - f.t < 60000) throw new Error('Muitas tentativas. Aguarde 1 minuto e tente novamente.');
+  const u = db.find('users', x => x.username.toLowerCase() === String(username).trim().toLowerCase());
+  const ok = u && u.active && u.recovery_hash && (await hashPassword(normCode(code), u.recovery_salt)).hash === u.recovery_hash;
+  if (!ok) {
+    localStorage.setItem(FAIL_KEY, JSON.stringify({ n: (f.n >= 5 ? 0 : f.n) + 1, t: Date.now() }));
+    throw new Error('Usuário ou código de recuperação incorretos.');
+  }
+  const prob = passwordProblem(newPassword);
+  if (prob) throw new Error(prob);
+  localStorage.removeItem(FAIL_KEY);
+  const { hash, salt } = await hashPassword(newPassword);
+  db.update('users', u.id, { password_hash: hash, password_salt: salt, must_change_password: false },
+    { description: `Senha do usuário ${u.username} redefinida com o código de recuperação` });
+  // o código usado deixa de valer: gera um novo
+  return setRecoveryCode(u.id, { description: `Novo código de recuperação gerado para ${u.username} (o anterior foi usado)` });
+}

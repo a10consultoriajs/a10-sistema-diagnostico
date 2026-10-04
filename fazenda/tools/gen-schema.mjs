@@ -52,6 +52,9 @@ for (const [t, def] of Object.entries(SCHEMA)) {
   lines.push(`  ${'synced_at'.padEnd(22)} timestamptz not null default clock_timestamp()`);
   w(lines.join(',\n'));
   w(');');
+  // rodar o SQL de novo em um banco existente acrescenta as colunas novas
+  for (const c of columnsOf(t)) { const [type] = def[c].split(' '); if (def[c] !== 'text pk') w(`alter table ${t} add column if not exists ${c} ${TYPES[type] || 'text'};`); }
+  w(`alter table ${t} add column if not exists extra jsonb;`);
   w(`comment on table ${t} is '${def._doc.replace(/'/g, "''")}';`);
   w(`create index if not exists ${t}_synced_at_idx on ${t} (synced_at);`);
   for (const c of columnsOf(t)) {
