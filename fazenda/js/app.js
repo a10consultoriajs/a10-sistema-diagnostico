@@ -2,7 +2,7 @@
 import * as db from './db.js';
 import * as auth from './auth.js';
 import { ensureDefaults, farm } from './config.js';
-import { icon, $, $$, toast, confirmDialog } from './ui.js';
+import { icon, $, $$, toast, confirmDialog, recoveryCodeHTML, bindRecoveryCode, showRecoveryCodeModal } from './ui.js';
 import { esc, normalize, debounce, fmtDateTime, pad, fmtDate } from './util.js';
 import { animalLabel, isActive } from './services.js';
 import { computeAlerts, openAlerts } from './alerts.js';
@@ -148,6 +148,7 @@ function userMenu(e) {
   const u = auth.currentUser();
   m.innerHTML = `<div style="padding:8px 12px"><b>${esc(u.name)}</b><div class="muted small">${esc(u.username)} · ${esc(auth.currentRole()?.name || '')}</div></div>
     <button data-a="pw">${icon('shield', 18)} Alterar minha senha</button>
+    <button data-a="rc">${icon('refresh', 18)} Gerar código de recuperação</button>
     ${auth.can('backup.manage') ? `<a href="#/config/backup">${icon('database', 18)} Backup</a>` : ''}
     <button data-a="out">${icon('logout', 18)} Sair</button>`;
   document.body.appendChild(m);
@@ -155,6 +156,7 @@ function userMenu(e) {
   setTimeout(() => document.addEventListener('click', close), 0);
   m.querySelector('[data-a=out]').onclick = () => { auth.logout(); history.replaceState(null, '', location.pathname); boot(); };
   m.querySelector('[data-a=pw]').onclick = () => settings.changeOwnPassword();
+  m.querySelector('[data-a=rc]').onclick = () => newOwnRecoveryCode();
 }
 
 // ---------- Pesquisa global ----------
@@ -224,7 +226,7 @@ export function render() {
   if (!r) { page.innerHTML = `<div class="empty-state"><h2>Página não encontrada</h2><p><a href="${homeRoute()}">Voltar ao início</a></p></div>`; return; }
   if (r.perm && !allowed(r.perm)) { page.innerHTML = `<div class="card empty-state">${icon('shield', 36)}<h2>Acesso restrito</h2><p>Seu perfil (${esc(auth.currentRole()?.name)}) não tem permissão para esta área.</p><a class="btn btn-primary" href="${homeRoute()}">Voltar</a></div>`; drawNav(); return; }
   try {
-    page.innerHTML = demoBanner();
+    page.innerHTML = recoveryBanner() + demoBanner();
     const holder = document.createElement('div'); page.appendChild(holder);
     r.fn(holder, { params: r.params, query });
     bindDemoBanner();
@@ -235,11 +237,23 @@ export function render() {
   auth.touch();
 }
 const isDemo = () => db.all('animals').some(a => a.is_demo) || db.all('employees').some(e => e.is_demo);
+async function newOwnRecoveryCode() {
+  const u = auth.currentUser();
+  if (u.recovery_hash && !await confirmDialog('Gerar um novo código de recuperação? O código anterior deixa de funcionar.', { ok: 'Gerar novo código' })) return;
+  const code = await auth.setRecoveryCode(u.id);
+  showRecoveryCodeModal(code, u.username);
+}
+function recoveryBanner() {
+  const u = auth.currentUser();
+  if (u.recovery_hash || !auth.can('users.manage')) return '';
+  return `<div class="demo-banner no-print" style="background:var(--rose-100);border-color:var(--rose-200);color:var(--rose-700)">${icon('shield', 18)}<span><b>Você ainda não tem código de recuperação.</b> Sem ele, se esquecer a senha não será possível entrar.</span><button class="btn btn-sm btn-ghost" id="mk-rc">Gerar agora</button></div>`;
+}
 function demoBanner() {
   if (!isDemo()) return '';
   return `<div class="demo-banner no-print">${icon('alert', 18)}<span><b>DADOS DE DEMONSTRAÇÃO</b> — os registros atuais são fictícios, apenas para conhecer o sistema.</span>${auth.can('settings.edit') ? '<button class="btn btn-sm btn-ghost" id="rm-demo">Remover dados de demonstração</button>' : ''}</div>`;
 }
 function bindDemoBanner() {
+  const rc = $('#mk-rc'); if (rc) rc.onclick = () => newOwnRecoveryCode();
   const b = $('#rm-demo'); if (!b) return;
   b.onclick = async () => {
     if (!await confirmDialog('Remover <b>todos</b> os dados de demonstração? Os registros que você lançou continuam.', { ok: 'Remover', danger: true })) return;
@@ -262,9 +276,11 @@ function loginScreen(msg = '') {
       <label class="field"><span class="lbl">Senha</span><input class="input" name="p" type="password" autocomplete="current-password" required></label>
       <div class="form-error" id="login-err" ${msg ? '' : 'hidden'}>${esc(msg)}</div>
       <button class="btn btn-primary btn-lg">Entrar</button>
+      <button type="button" class="link-btn" id="forgot">Esqueci minha senha</button>
       <div class="muted small" style="text-align:center">${navigator.onLine ? '' : 'Sem internet: o login funciona offline neste aparelho.'}</div>
     </form></div></div>`;
   const form = $('#login-form');
+  $('#forgot').onclick = () => forgotScreen(form.u.value);
   form.u.focus();
   form.onsubmit = async (e) => {
     e.preventDefault();
@@ -302,11 +318,67 @@ function setupScreen() {
     db.setSetting('farm', { ...farm(), name: form.farm.value.trim() });
     const u = await auth.createUser({ name: form.name.value.trim(), username: form.u.value.trim(), password: form.p.value, role_id: 'role-admin' });
     await auth.login(u.username, form.p.value);
+    const code = await auth.setRecoveryCode(u.id, { description: `Código de recuperação criado para o administrador ${u.username}` });
     if (form.demo.checked) {
       try { const { loadDemo } = await import('./seed.js'); await loadDemo(); }
       catch (e2) { console.error(e2); toast('Não foi possível carregar todos os dados de demonstração: ' + e2.message, 'err', 6000); }
     }
-    start();
+    codeScreen(code, u.username, 'Administrador criado! Guarde o código de recuperação', start);
+  };
+}
+
+// Tela cheia com o código de recuperação; só continua depois de confirmar que guardou
+function codeScreen(code, username, title, next) {
+  root.innerHTML = `<div class="login-page"><div class="login-card"><div class="brand"><img src="${esc(farm().logo || 'assets/logo.png')}" alt=""></div>
+    <form id="code-form"><div><h2>${esc(title)}</h2><div class="muted small">Usuário: <b>${esc(username)}</b></div></div>
+    ${recoveryCodeHTML(code, username)}<button class="btn btn-primary btn-lg" disabled>Continuar</button></form></div></div>`;
+  const form = $('#code-form'), btn = $('button.btn-primary', form);
+  bindRecoveryCode(form, code, username, (ok) => { btn.disabled = !ok; });
+  form.onsubmit = (e) => { e.preventDefault(); next(); };
+}
+
+// Esqueci minha senha: usuário + código de recuperação → nova senha
+function forgotScreen(username = '') {
+  const legacy = !auth.adminHasRecovery();
+  root.innerHTML = `<div class="login-page"><div class="login-card"><div class="brand"><img src="${esc(farm().logo || 'assets/logo.png')}" alt=""></div>
+    <form id="forgot-form"><div><h2>Redefinir senha</h2><div class="muted small">Use o código de recuperação que apareceu quando o usuário foi criado. Se você não é administrador, peça ao administrador para trocar sua senha em Configurações › Usuários.</div></div>
+      <label class="field"><span class="lbl">Usuário</span><input class="input" name="u" required autocapitalize="none" value="${esc(username)}"></label>
+      <label class="field"><span class="lbl">Código de recuperação</span><input class="input" name="c" required autocapitalize="characters" autocomplete="off" placeholder="XXXX-XXXX-XXXX"></label>
+      <label class="field"><span class="lbl">Nova senha</span><input class="input" name="p" type="password" required autocomplete="new-password"><span class="hint">Mínimo 6 caracteres, com letras e números.</span></label>
+      <label class="field"><span class="lbl">Repita a nova senha</span><input class="input" name="p2" type="password" required autocomplete="new-password"></label>
+      <div class="form-error" id="forgot-err" hidden></div>
+      <button class="btn btn-primary btn-lg">Redefinir senha</button>
+      <button type="button" class="btn btn-ghost" id="forgot-back">Voltar ao login</button>
+      ${legacy ? `<div class="reset-box"><b>Não tem código?</b><p class="muted small" style="margin:6px 0 10px">Este aparelho foi configurado antes do código de recuperação existir. Sem a senha, a única saída é <b>recomeçar o sistema neste aparelho</b>: um arquivo de backup com os dados atuais é baixado antes, e tudo volta para a primeira configuração.</p>
+        <button type="button" class="btn btn-danger" id="forgot-reset">Recomeçar este aparelho</button></div>` : ''}
+    </form></div></div>`;
+  const form = $('#forgot-form');
+  (username ? form.c : form.u).focus();
+  $('#forgot-back').onclick = () => loginScreen();
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const err = (m) => { $('#forgot-err').hidden = false; $('#forgot-err').textContent = m; };
+    if (form.p.value !== form.p2.value) return err('As senhas não conferem.');
+    const btn = $('button.btn-primary', form); btn.disabled = true; btn.textContent = 'Verificando…';
+    try {
+      const uname = form.u.value.trim(), pw = form.p.value;
+      const code = await auth.recoverPassword(uname, form.c.value, pw);
+      await auth.login(uname, pw);
+      codeScreen(code, uname, 'Senha redefinida! Guarde o seu NOVO código', () => { history.replaceState(null, '', homeRoute()); start(); });
+    } catch (e2) { err(e2.message); btn.disabled = false; btn.textContent = 'Redefinir senha'; }
+  };
+  const reset = $('#forgot-reset');
+  if (reset) reset.onclick = async () => {
+    const r = await confirmDialog('Todos os dados do sistema da fazenda <b>neste aparelho</b> serão apagados (um backup será baixado antes). Para confirmar, digite <b>APAGAR</b>.', { title: 'Recomeçar este aparelho', ok: 'Apagar e recomeçar', danger: true, input: 'Digite APAGAR' });
+    if (!r) return;
+    if (r.value.trim().toUpperCase() !== 'APAGAR') { toast('Nada foi apagado: a palavra digitada não confere.', 'warn'); return; }
+    const { downloadJSON } = await import('./export.js');
+    await db.flush();
+    downloadJSON(db.exportData(), `backup-antes-de-recomecar-${new Date().toISOString().slice(0, 10)}.json`);
+    await new Promise(res => setTimeout(res, 800)); // dá tempo de o download começar
+    await db.wipeAll();
+    Object.keys(localStorage).filter(k => k.startsWith('fmr_')).forEach(k => localStorage.removeItem(k));
+    location.replace(location.pathname);
   };
 }
 
@@ -370,6 +442,13 @@ export async function boot() {
 }
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  // quando uma versão nova do app é instalada, recarrega uma vez para usá-la (só se já havia versão anterior)
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded || document.querySelector('.modal-wrap, [data-hold].dirty')) return;
+    reloaded = true; location.reload();
+  });
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW', e)));
 }
 if (navigator.storage?.persist) navigator.storage.persist().catch(() => { });

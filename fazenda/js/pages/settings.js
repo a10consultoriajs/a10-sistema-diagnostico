@@ -3,7 +3,7 @@ import * as db from '../db.js';
 import * as auth from '../auth.js';
 import * as sync from '../sync.js';
 import { can, currentUser, PERMISSIONS } from '../auth.js';
-import { icon, $, $$, tabs, pageHead, openForm, toast, confirmDialog, mountTable, badge, resizeImage } from '../ui.js';
+import { icon, $, $$, tabs, pageHead, openForm, toast, confirmDialog, mountTable, badge, resizeImage, showRecoveryCodeModal } from '../ui.js';
 import { esc, fmtDateTime, fmtDate, normalize, nowISO } from '../util.js';
 import { DEFAULT_SETTINGS, LIST_LABELS, farm, alertsCfg, payrollCfg } from '../config.js';
 import { TABLE_LABELS } from '../db.js';
@@ -93,6 +93,7 @@ function userForm(u = null) {
       { name: 'employee_id', label: 'Funcionário vinculado', type: 'ref', source: 'employee', hint: 'Preenche automaticamente o responsável nos lançamentos.' },
       { name: 'password', label: u ? 'Nova senha (deixe em branco para manter)' : 'Senha', type: 'password', required: !u, hint: 'Mínimo 6 caracteres, com letras e números.' },
       ...(u ? [{ name: 'active', label: 'Usuário ativo (pode entrar no sistema)', type: 'checkbox' }] : []),
+      { name: 'new_code', label: u ? `Gerar novo código de recuperação${u.recovery_hash ? ' (o atual deixa de valer)' : ''}` : 'Gerar código de recuperação para este usuário', type: 'checkbox', default: !u, hint: 'O código é mostrado uma única vez. Com ele a pessoa redefine a senha sozinha na tela de login.' },
     ],
     onSubmit: async (v) => {
       if (v.password && auth.passwordProblem(v.password)) throw new Error(auth.passwordProblem(v.password));
@@ -103,9 +104,11 @@ function userForm(u = null) {
         }
         db.update('users', u.id, { name: v.name, role_id: v.role_id, employee_id: v.employee_id, active: v.active !== false });
         if (v.password) await auth.setPassword(u.id, v.password);
+        if (v.new_code) showRecoveryCodeModal(await auth.setRecoveryCode(u.id), u.username);
       } else {
         if (!/^[a-z0-9._-]{3,}$/i.test(v.username)) throw new Error('Usuário: pelo menos 3 letras/números, sem espaços.');
-        await auth.createUser({ name: v.name, username: v.username, password: v.password, role_id: v.role_id, employee_id: v.employee_id });
+        const nu = await auth.createUser({ name: v.name, username: v.username, password: v.password, role_id: v.role_id, employee_id: v.employee_id });
+        if (v.new_code) showRecoveryCodeModal(await auth.setRecoveryCode(nu.id), nu.username);
       }
       toast('Usuário salvo.');
     },
@@ -118,6 +121,7 @@ function usuarios(el) {
   mountTable($('#t', el), { id: 'users', rows: db.all('users'), defaultSort: { key: 'name', dir: 'asc' },
     columns: [{ key: 'name', label: 'Nome' }, { key: 'username', label: 'Usuário' }, { key: 'role', label: 'Perfil', value: (u) => db.get('roles', u.role_id)?.name, render: (u) => esc(db.get('roles', u.role_id)?.name || '—') },
       { key: 'emp', label: 'Funcionário', render: (u) => esc(db.get('employees', u.employee_id)?.name || '—'), hideSm: true }, { key: 'last_login', label: 'Último acesso', render: (u) => u.last_login ? fmtDateTime(u.last_login) : '—', hideSm: true },
+      { key: 'rc', label: 'Código de recuperação', value: (u) => u.recovery_hash ? 1 : 0, render: (u) => u.recovery_hash ? badge('Cadastrado', 'green') : badge('Não tem', 'gold'), hideSm: true },
       { key: 'active', label: 'Situação', render: (u) => u.active ? badge('Ativo', 'green') : badge('Inativo', 'neutral') }],
     onRowClick: (u) => userForm(u) });
 }

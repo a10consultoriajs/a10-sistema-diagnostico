@@ -7,7 +7,7 @@ const base = { id: 'text pk', created_at: 'ts', updated_at: 'ts', created_by: 't
 export const SCHEMA = {
   settings: { _doc: 'Configurações (chave/valor)', id: 'text pk', value: 'json', created_at: 'ts', updated_at: 'ts' },
   roles: { _doc: 'Perfis de acesso', ...base, name: 'text', description: 'text', system: 'bool', permissions: 'json' },
-  users: { _doc: 'Usuários do sistema', ...base, name: 'text', username: 'text unique', password_hash: 'text', password_salt: 'text', role_id: 'ref roles', employee_id: 'ref employees', active: 'bool', last_login: 'ts', must_change_password: 'bool' },
+  users: { _doc: 'Usuários do sistema', ...base, name: 'text', username: 'text unique', password_hash: 'text', password_salt: 'text', role_id: 'ref roles', employee_id: 'ref employees', active: 'bool', last_login: 'ts', must_change_password: 'bool', recovery_hash: 'text', recovery_salt: 'text', recovery_created_at: 'ts' },
 
   animals: { _doc: 'Rebanho — identidade digital de cada animal', ...base, code: 'int unique', tag: 'text', name: 'text', sex: 'text', species: 'text', breed: 'text', category: 'text', birth_date: 'date', birth_weight: 'num', current_weight: 'num', sire_id: 'ref animals', dam_id: 'ref animals', sire_name: 'text', dam_name: 'text', entry_date: 'date', origin: 'text', status: 'text', exit_date: 'date', photo: 'text', notes: 'text' },
   animal_births: { _doc: 'Nascimentos (cria → animal)', ...base, number: 'int', animal_id: 'ref animals', birth_date: 'date', sire_id: 'ref animals', dam_id: 'ref animals', sire_name: 'text', dam_name: 'text', weight: 'num', responsible: 'text', reproduction_id: 'ref animal_reproduction', notes: 'text' },

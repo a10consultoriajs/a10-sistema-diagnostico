@@ -191,6 +191,8 @@ Calculados automaticamente a cada alteração (limites em Configurações › Re
 
 - Senhas com PBKDF2-SHA256 (150 mil iterações, sal aleatório); nunca guardadas em texto.
 - Bloqueio de 1 minuto após 5 tentativas erradas; sessão expira após N horas sem uso (configurável).
+- **Esqueci minha senha**: cada usuário pode ter um **código de recuperação** (ex.: `K7QM-3XHP-9TBA`), mostrado uma única vez — ao criar o administrador, ao criar um usuário ou em "Gerar código de recuperação" (menu do usuário). Só o hash do código é gravado. Na tela de login, "Esqueci minha senha" pede usuário + código + nova senha; o código usado deixa de valer e um novo é mostrado. Administradores sem código veem um aviso no topo das telas. Usuários sem código pedem ao administrador para trocar a senha em Configurações › Usuários.
+- Aparelho configurado antes do código existir e sem nenhuma senha de administrador: a tela "Esqueci minha senha" oferece **recomeçar este aparelho** (exige digitar APAGAR; baixa antes um backup com todos os dados e apaga só o sistema da fazenda deste navegador).
 - Exige HTTPS (ou localhost) — necessário para a criptografia e o funcionamento offline.
 - Auditoria automática: usuário, data, hora, ação e valores anteriores/novos
   (ex.: *"João alterou Produção de leite "Mimosa · #00005 — 26/09/2026 Manhã": litros de 18 para 20."*).

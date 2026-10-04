@@ -402,3 +402,9 @@ select.input { padding-right: 32px; }
   .table th { position: static; }
   .chart-box { height: 220px; break-inside: avoid; }
 }
+
+/* Código de recuperação */
+.recovery p { margin: 0 0 12px; }
+.recovery-code { font: 700 26px/1.2 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; letter-spacing: .08em; text-align: center; padding: 16px 10px; margin: 0 0 12px; background: var(--gold-100); border: 2px dashed #D9B45A; border-radius: 12px; color: #4A3708; user-select: all; overflow-wrap: anywhere; }
+.link-btn { background: none; border: 0; color: var(--green-700); font: inherit; font-weight: 650; cursor: pointer; padding: 6px; text-decoration: underline; }
+.reset-box { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 4px; }

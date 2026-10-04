@@ -143,7 +143,7 @@ function auditLog(action, table, row, description, changes) {
 }
 // Campos que apontam para outras tabelas: mostrados pelo nome na auditoria
 const REF_FIELDS = { sire_id: 'animals', dam_id: 'animals', bull_id: 'animals', animal_id: 'animals', product_id: 'inventory', employee_id: 'employees', operator_id: 'employees', responsible_id: 'employees', machine_id: 'machines', batch_id: 'feed_batches', role_id: 'roles' };
-const HIDDEN_FIELDS = new Set(['photo', 'password_hash', 'password_salt', 'birth_id', 'reproduction_id', 'service_id', 'ref_id', 'updated_at', 'created_at', 'last_login']);
+const HIDDEN_FIELDS = new Set(['photo', 'password_hash', 'password_salt', 'recovery_hash', 'recovery_salt', 'recovery_created_at', 'birth_id', 'reproduction_id', 'service_id', 'ref_id', 'updated_at', 'created_at', 'last_login']);
 function fmtVal(v, k) {
   if (v == null || v === '') return 'vazio';
   if (REF_FIELDS[k]) { const r = mem[REF_FIELDS[k]]?.get(v); return r ? labeler(REF_FIELDS[k], r) : String(v); }

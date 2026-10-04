@@ -475,3 +475,24 @@ export const emptyState = (msg, action = '') => `<div class="empty-state">${icon
 export const pageHead = (title, sub = '', actions = '') => `<div class="page-head"><div><h1>${esc(title)}</h1>${sub ? `<p class="muted">${sub}</p>` : ''}</div><div class="page-actions">${actions}</div></div>`;
 export const tabs = (list, active, attr = 'data-tab') => `<div class="tabs" role="tablist">${list.map(([k, l]) => `<button class="tab ${k === active ? 'on' : ''}" ${attr}="${k}" role="tab">${esc(l)}</button>`).join('')}</div>`;
 export const dateCell = (d) => esc(fmtDate(d));
+
+// ---------- Exibição do código de recuperação (mostrado uma única vez) ----------
+export const recoveryCodeHTML = (code, username) => `<div class="recovery">
+  <p>Guarde este código em lugar seguro (papel na gaveta, foto no celular, e-mail para você mesmo). Ele é a <b>única forma de redefinir a senha</b> de <b>${esc(username)}</b> sem perder dados, e <b>não será mostrado de novo</b>.</p>
+  <div class="recovery-code" aria-label="Código de recuperação">${esc(code)}</div>
+  <div class="page-actions" style="justify-content:center"><button type="button" class="btn btn-ghost" data-rc="copy">${icon('check', 18)} Copiar</button><button type="button" class="btn btn-ghost" data-rc="dl">${icon('download', 18)} Baixar arquivo</button></div>
+  <label class="field check"><input type="checkbox" data-rc="ok"> <span>Anotei ou guardei o código</span></label></div>`;
+export function bindRecoveryCode(root, code, username, onReady) {
+  $('[data-rc=copy]', root).onclick = async () => { try { await navigator.clipboard.writeText(code); toast('Código copiado.'); } catch { toast('Não foi possível copiar. Anote o código.', 'warn'); } };
+  $('[data-rc=dl]', root).onclick = () => {
+    const txt = `Fazenda Mar de Rosas — código de recuperação\n\nUsuário: ${username}\nCódigo: ${code}\nGerado em: ${new Date().toLocaleString('pt-BR')}\n\nNa tela de login, toque em "Esqueci minha senha" e informe o usuário e este código.\nCada código só pode ser usado uma vez.\n`;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' })); a.download = `codigo-recuperacao-${username}.txt`; a.click();
+  };
+  $('[data-rc=ok]', root).onchange = (e) => onReady(e.target.checked);
+}
+export function showRecoveryCodeModal(code, username) {
+  const m = modal({ title: 'Código de recuperação', size: 'sm', body: recoveryCodeHTML(code, username), footer: `<button class="btn btn-primary btn-lg" data-done disabled>Pronto</button>` });
+  const done = $('[data-done]', m.el);
+  bindRecoveryCode(m.el, code, username, (ok) => { done.disabled = !ok; });
+  done.onclick = () => m.close();
+}
