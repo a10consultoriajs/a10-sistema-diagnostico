@@ -13,6 +13,9 @@ nem de internet).
 | `exemplo-preenchido.pdf` | Como fica preenchido automaticamente. |
 | `exemplo-em-branco.pdf` | Como fica a via para preencher à mão. |
 | `previa/pagina-N.png` | As 5 páginas em imagem, para olhar sem abrir o PDF. |
+| `contrato.docx` | A mesma minuta em Word, para o preenchimento automático. |
+| `gerar-docx.js` | Gera o `.docx`. Rode `node gerar-docx.js` depois de mudar o texto. |
+| `assets/marca-dagua-word.png` | Marca d'água do Word: já girada e translúcida (ver abaixo). |
 
 São **5 páginas**: 4 de contrato + 1 de anexo (a minuta anterior tinha 8).
 
@@ -75,6 +78,32 @@ Campo não informado vira **linha pontilhada**, para preencher à mão.
 - `A10Contrato.porExtenso(3450.9)` → `"três mil, quatrocentos e cinquenta reais e noventa centavos"`
 - `A10Contrato.marcarPaginas()` — redistribui a marca d'água; só é preciso
   chamar se você alterar o conteúdo por fora do `preencher()`.
+
+## A versão em Word
+
+`contrato.docx` tem o mesmo texto e os mesmos campos `{{CAMPO}}`, para
+find-and-replace. São 4 páginas (o HTML dá 5: a fonte e o entrelinhamento
+diferem).
+
+Dois cuidados ao automatizar:
+
+- **Não abra e salve o arquivo no Word antes de usar como modelo.** O Word
+  costuma fragmentar o texto em vários *runs* do XML ao salvar, e um campo
+  partido ao meio (`{{CONTRA` + `TANTE_NOME}}`) deixa de ser encontrado pelo
+  find-and-replace. Como gerado pelo script, cada campo está inteiro num
+  único *run* — conferido.
+- **A tabela de beneficiários não tem campo.** Ela sai com 4 linhas em
+  branco; o sistema precisa inserir as linhas, não substituir um token.
+
+Diferenças em relação ao HTML, porque o formato exige:
+
+- Fonte **Calibri**, no lugar da pilha Segoe UI. Está em toda parte, inclusive
+  no Google Docs, e não troca sozinha de desenho na máquina do cliente.
+- A **marca d'água** é uma imagem flutuante no cabeçalho, atrás do texto —
+  é assim que o Word faz marca d'água. O Word não tem opacidade de imagem
+  nem rotação confiável entre leitores, então os dois efeitos já vão
+  gravados no PNG (`assets/marca-dagua-word.png`).
+- Rodapé com **"Página X de Y"**, que o HTML não tinha.
 
 ## Gerar o PDF
 
