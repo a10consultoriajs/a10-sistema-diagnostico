@@ -34,6 +34,8 @@
     width:112mm; height:24mm;
     margin-top:-12mm;
     transform:translateX(-50%) rotate(-28deg);
+    /* na tela .doc tem padding que o papel nao tem; ver marcarPaginas */
+    transform:translateX(-50%) translateY(var(--desloc-tela, 0px)) rotate(-28deg);
     background:url('data:image/png;base64,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') center/contain no-repeat;
     opacity:.07;
     z-index:-1;
@@ -135,9 +137,9 @@
   .lista td:last-child{width:52mm;}
 
   /* ---------- assinaturas ---------- */
-  .assinaturas{margin-top:9mm;break-inside:avoid; page-break-inside:avoid;}
-  .local-data{text-align:center;margin-bottom:10mm;font-size:9.6pt;}
-  .grade-ass{display:flex;gap:14mm;margin-bottom:9mm;}
+  .assinaturas{margin-top:7.5mm;break-inside:avoid; page-break-inside:avoid;}
+  .local-data{text-align:center;margin-bottom:8.5mm;font-size:9.6pt;}
+  .grade-ass{display:flex;gap:14mm;margin-bottom:7.5mm;}
   .campo-ass{flex:1 1 0;text-align:center;}
   .campo-ass .linha{border-top:1px solid #8d948f;padding-top:1.5mm;}
   .campo-ass .papel{
@@ -149,16 +151,16 @@
   /* ---------- anexo ---------- */
   .quebra{break-before:page; page-break-before:always; height:0;}
   .faixa-anexo{
-    background:var(--verde);color:#fff;padding:3mm 5mm;
-    margin:0 0 5.5mm;border-radius:1.5mm;
+    background:var(--verde);color:#fff;padding:2.6mm 5mm;
+    margin:0 0 4.5mm;border-radius:1.5mm;
     border-bottom:2px solid var(--ouro-claro);
     break-after:avoid; page-break-after:avoid;
   }
   .faixa-anexo h2{color:#fff;border:0;padding:0;margin:0;font-size:10.4pt;}
   .faixa-anexo p{margin:1mm 0 0;font-size:8.4pt;opacity:.9;}
-  .orientacoes{display:grid;grid-template-columns:1fr 1fr;gap:3mm 5mm;margin-bottom:5.5mm;}
+  .orientacoes{display:grid;grid-template-columns:1fr 1fr;gap:2.3mm 4mm;margin-bottom:4mm;}
   .orientacao{
-    border:1px solid var(--linha);border-radius:1.5mm;padding:2.8mm 3.5mm;
+    border:1px solid var(--linha);border-radius:1.5mm;padding:2.3mm 3mm;
     break-inside:avoid; page-break-inside:avoid;
   }
   .orientacao h3{
@@ -171,7 +173,7 @@
   .ciencia{list-style:none;margin:0;padding:0;}
   .ciencia li{
     position:relative;
-    padding:2mm 0 2mm 7mm;
+    padding:1.6mm 0 1.6mm 7mm;
     border-bottom:1px dotted var(--linha);
     font-size:9.2pt;text-align:justify;
     break-inside:avoid; page-break-inside:avoid;
@@ -184,7 +186,7 @@
   }
 
   .rodape-doc{
-    margin-top:8mm;padding-top:2.5mm;
+    margin-top:6mm;padding-top:2.5mm;
     border-top:1px solid var(--linha);
     font-size:7.4pt;color:var(--grafite);text-align:center;
     break-inside:avoid; page-break-inside:avoid;
@@ -201,6 +203,7 @@
   @page{size:A4;margin:16mm 18mm 18mm;}
   @media print{
     body{background:#fff;}
+    .marca-pagina{transform:translateX(-50%) rotate(-28deg);}
     .doc{width:auto;margin:0;padding:0;box-shadow:none;}
     .so-tela{display:none !important;}
   }
@@ -326,7 +329,7 @@
     <div class="item"><div class="n">5.2</div><div class="t">
       O valor da cl&aacute;usula 5.1 &eacute; o <strong>&uacute;nico devido</strong> pelo CONTRATANTE e engloba todas as medidas
       administrativas, extrajudiciais e judiciais necess&aacute;rias. N&atilde;o haver&aacute; cobran&ccedil;a adicional a qualquer t&iacute;tulo,
-      ressalvadas apenas as custas e taxas processuais de nova demanda prevista na cl&aacute;usula 8.2.
+      ressalvada apenas a taxa judicial de inclus&atilde;o de nova demanda, prevista na cl&aacute;usula 8.2.
     </div></div>
 
     <h2>6. Prazo e entrega</h2>
@@ -366,13 +369,22 @@
     </div></div>
     <div class="item"><div class="n">8.2</div><div class="t">
       Caso seja necess&aacute;ria nova a&ccedil;&atilde;o judicial para restabelecer a tutela anteriormente obtida, a CONTRATADA
-      arca <strong>integralmente com os honor&aacute;rios advocat&iacute;cios</strong>, cabendo ao CONTRATANTE apenas as taxas
-      processuais e custas judiciais da nova demanda.
+      arca <strong>integralmente com os honor&aacute;rios advocat&iacute;cios e com as taxas cont&aacute;beis, nestas
+      inclu&iacute;dos todos os impostos</strong>, cabendo ao CONTRATANTE apenas o pagamento da <strong>taxa judicial de
+      inclus&atilde;o</strong> da nova demanda.
     </div></div>
     <div class="item"><div class="n">8.3</div><div class="t">
       A tutela antecipada &eacute; medida <strong>provis&oacute;ria</strong>, concedida com base na situa&ccedil;&atilde;o f&aacute;tica e jur&iacute;dica do
       momento do pedido. Decis&otilde;es judiciais supervenientes, mudan&ccedil;a das circunst&acirc;ncias, atos de terceiros ou
       medidas dos &oacute;rg&atilde;os de prote&ccedil;&atilde;o ao cr&eacute;dito podem alterar seus efeitos, independentemente da atua&ccedil;&atilde;o das partes.
+    </div></div>
+    <div class="item"><div class="n">8.4</div><div class="t">
+      Em palavras claras, para total compreens&atilde;o do CONTRATANTE: <strong>os d&eacute;bitos podem voltar a ser
+      registrados</strong> e, se isso acontecer, a CONTRATADA cobre a situa&ccedil;&atilde;o pela garantia das cl&aacute;usulas 8.1 e
+      8.2. Pela experi&ecirc;ncia de mais de {{ANOS_EXPERIENCIA}} anos da CONTRATADA nesta atividade, o intervalo
+      m&eacute;dio entre uma a&ccedil;&atilde;o e a seguinte &eacute; de cerca de {{INTERVALO_MESES}} meses, podendo ser maior ou menor, e a
+      taxa judicial de inclus&atilde;o costuma variar entre R$ {{TAXA_INCLUSAO_MIN}} e R$ {{TAXA_INCLUSAO_MAX}}. Esses
+      n&uacute;meros s&atilde;o m&eacute;dias do hist&oacute;rico da CONTRATADA e n&atilde;o constituem compromisso de prazo nem de valor.
     </div></div>
 
     <h2>9. Inadimplemento e multa</h2>
@@ -508,6 +520,9 @@
       <li>Fui informado(a) de que este contrato &eacute; <strong>t&iacute;tulo executivo</strong> e pode ser protestado em caso de
           descumprimento da cl&aacute;usula 5 (cl&aacute;usula 9.3).</li>
       <li>Reconhe&ccedil;o que meus direitos e deveres est&atilde;o expressos exclusivamente neste instrumento e seu anexo.</li>
+      <li>Estou ciente de que <strong>os d&eacute;bitos podem voltar a ser registrados</strong>, inclusive em caso de
+          agravo no processo, e de que a CONTRATADA cobre essa situa&ccedil;&atilde;o pela garantia da cl&aacute;usula 8,
+          cabendo a mim apenas a taxa judicial de inclus&atilde;o da nova demanda (cl&aacute;usula 8.2).</li>
       <li>Autorizo o tratamento dos meus dados pessoais nos termos da cl&aacute;usula 11 (LGPD).</li>
     </ul>
 
@@ -561,6 +576,9 @@
     linhasBeneficiariosVazias:null, /* null = 4 linhas em branco so se nao houver lista */
     valor:null, valorExtenso:'', formaPagamento:'PIX',
     prazoDias:30, prazoProrrogacao:20,
+    /* medias historicas citadas na clausula 8.4; mude aqui se mudarem */
+    anosExperiencia:7, intervaloMeses:12,
+    taxaInclusaoMin:'200,00', taxaInclusaoMax:'300,00',
     foro:'', cidadeAssinatura:'', dataAssinatura:null, dataEmissao:null
   };
 
@@ -678,6 +696,10 @@
       FORMA_PAGAMENTO: d.formaPagamento,
       PRAZO_DIAS: d.prazoDias,
       PRAZO_PRORROGACAO: d.prazoProrrogacao,
+      ANOS_EXPERIENCIA: d.anosExperiencia,
+      INTERVALO_MESES: d.intervaloMeses,
+      TAXA_INCLUSAO_MIN: typeof d.taxaInclusaoMin === 'number' ? moeda(d.taxaInclusaoMin) : d.taxaInclusaoMin,
+      TAXA_INCLUSAO_MAX: typeof d.taxaInclusaoMax === 'number' ? moeda(d.taxaInclusaoMax) : d.taxaInclusaoMax,
       FORO: d.foro,
       CIDADE_ASSINATURA: d.cidadeAssinatura,
       DATA_EXTENSO: d.dataAssinatura ? dataExtenso(d.dataAssinatura) : dataExtenso(null)
@@ -733,13 +755,47 @@
     var folha = ALTURA_UTIL_MM * pxPorMm();
     if(!(folha > 0)) return 0;
 
-    var paginas = Math.max(1, Math.ceil(doc.scrollHeight / folha));
+    /* Na impressao .doc fica sem padding; na tela ele tem. Como offsetTop e
+       scrollHeight incluem esse padding, tudo e medido em deslocamento DENTRO
+       do conteudo, que e o que vale no papel. A tela depois e compensada pelo
+       CSS, via --desloc-tela. */
+    var estilo = getComputedStyle(doc);
+    var folgaTopo = parseFloat(estilo.paddingTop) || 0;
+    var folgaBase = parseFloat(estilo.paddingBottom) || 0;
+    var alturaConteudo = doc.scrollHeight - folgaTopo - folgaBase;
+    doc.style.setProperty('--desloc-tela', folgaTopo + 'px');
+
+    /* Cada .quebra joga o que vem depois para o topo da folha seguinte, entao
+       o documento nao e uma fita continua: e uma sequencia de blocos, cada um
+       comecando numa folha nova. As marcas sao absolutas e vivem num espaco
+       continuo, logo a conta tem de ser feita bloco a bloco - senao elas
+       escorregam de folha a partir da primeira quebra. */
+    var blocos = [], inicio = 0;
+    var quebras = doc.querySelectorAll('.quebra');
+    for(var q = 0; q < quebras.length; q++){
+      var corte = quebras[q].offsetTop - folgaTopo;
+      blocos.push({ inicio: inicio, altura: corte - inicio });
+      inicio = corte;
+    }
+    blocos.push({ inicio: inicio, altura: alturaConteudo - inicio });
+
+    /* O Chrome posiciona um elemento absoluto pela sua coordenada no espaco
+       continuo: folha = floor(top / altura_util), sem considerar a quebra.
+       Entao as marcas vao em intervalos regulares; o que os blocos mudam e
+       QUANTAS folhas existem, nao onde cada marca entra. */
+    var paginas = 0;
+    for(var b = 0; b < blocos.length; b++){
+      if(blocos[b].altura > 0) paginas += Math.max(1, Math.ceil(blocos[b].altura / folha));
+    }
+    paginas = Math.max(1, paginas);
+
     for(var p = 0; p < paginas; p++){
       var marca = document.createElement('div');
       marca.className = 'marca-pagina';
       marca.style.top = (p * folha + folha / 2) + 'px';
       doc.appendChild(marca);
     }
+
     return paginas;
   }
 

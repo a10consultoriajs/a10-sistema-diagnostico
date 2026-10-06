@@ -15,6 +15,10 @@ nem de internet).
 
 São **5 páginas**: 4 de contrato + 1 de anexo (a minuta anterior tinha 8).
 
+As médias citadas na cláusula 8.4 (anos de experiência, intervalo entre ações e
+faixa da taxa de inclusão) são campos com valor padrão: mudam em
+`PADRAO`, dentro do `contrato-modelo.html`, sem precisar mexer no texto.
+
 ## Preenchimento automático
 
 O documento expõe `window.A10Contrato`. Os nomes dos campos já batem com o
@@ -55,6 +59,9 @@ A10Contrato.preencher(
 | `valorExtenso` | — | só se quiser sobrescrever o automático |
 | `formaPagamento` | — | padrão `PIX` |
 | `prazoDias`, `prazoProrrogacao` | — | padrão `30` e `20` |
+| `anosExperiencia` | — | citado na cláusula 8.4; padrão `7` |
+| `intervaloMeses` | — | intervalo médio entre ações, cláusula 8.4; padrão `12` |
+| `taxaInclusaoMin`, `taxaInclusaoMax` | — | faixa da taxa de inclusão, cláusula 8.4; padrão `'200,00'` e `'300,00'` |
 | `foro`, `cidadeAssinatura` | — | |
 | `dataAssinatura`, `dataEmissao` | `venda.data_entrada` | padrão: hoje |
 
