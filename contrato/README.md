@@ -7,8 +7,9 @@ nem de internet).
 | Arquivo | Para que serve |
 |---|---|
 | `contrato-modelo.html` | O contrato. Abra no navegador e use **Salvar em PDF / Imprimir**. |
-| `assets/logo-a10.png` | Logo do cabeçalho (fonte do base64 embutido). |
-| `assets/marca-dagua.png` | Marca d'água (fonte do base64 embutido). |
+| `assets/logo-a10-vertical.png` | Logo do cabeçalho (fonte do base64 embutido). |
+| `assets/marca-dagua.png` | Marca d'água: a mesma arte, em baixa opacidade. |
+| `assets/logo-a10.png` | Logo horizontal antiga, sobre fundo verde. Não é usada no contrato. |
 | `exemplo-preenchido.pdf` | Como fica preenchido automaticamente. |
 | `exemplo-em-branco.pdf` | Como fica a via para preencher à mão. |
 | `previa/pagina-N.png` | As 5 páginas em imagem, para olhar sem abrir o PDF. |
