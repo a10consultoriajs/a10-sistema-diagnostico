@@ -6,12 +6,13 @@
 <title>Contrato A10 Consultoria</title>
 <style>
   :root{
-    --verde:#036938;
-    --ouro:#cfa956;
-    --tinta:#1b1b1b;
-    --cinza:#5c6660;
-    --linha:#d7ded9;
-    --fundo-suave:#f4f7f5;
+    --preto:#0f0f0f;        /* texto e titulos */
+    --grafite:#4a4a4a;      /* texto secundario e rotulos */
+    --verde:#036938;        /* marca: faixas, numeracao, destaques */
+    --ouro:#8a6d1f;         /* acento em texto (escurecido p/ legibilidade) */
+    --ouro-claro:#cfa956;   /* acento em filetes: o dourado da logo */
+    --linha:#d9d9d9;        /* bordas neutras */
+    --fundo-suave:#f5f5f5;  /* celulas de rotulo */
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -19,7 +20,7 @@
     font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
     font-size:10.2pt;
     line-height:1.48;
-    color:var(--tinta);
+    color:var(--preto);
     background:#8a908c;
     -webkit-print-color-adjust:exact;
     print-color-adjust:exact;
@@ -56,7 +57,7 @@
     align-items:center;
     justify-content:space-between;
     gap:12mm;
-    border-bottom:2.5px solid var(--verde);
+    border-bottom:2.5px solid var(--preto);
     padding-bottom:4.5mm;
     margin-bottom:6mm;
   }
@@ -64,24 +65,24 @@
   .cabecalho .doc-ref{
     text-align:right;
     font-size:7.6pt;
-    color:var(--cinza);
+    color:var(--grafite);
     line-height:1.45;
   }
-  .cabecalho .doc-ref strong{color:var(--verde);display:block;font-size:8.4pt;letter-spacing:.06em;}
+  .cabecalho .doc-ref strong{color:var(--preto);display:block;font-size:8.4pt;letter-spacing:.06em;}
 
   h1{
     font-size:13.4pt;
     line-height:1.28;
-    color:var(--verde);
+    color:var(--preto);
     margin:0 0 1mm;
     text-transform:uppercase;
   }
   .subtitulo{
     font-size:8.6pt;
-    color:var(--cinza);
+    color:var(--grafite);
     margin:0 0 5.5mm;
     padding-bottom:3.5mm;
-    border-bottom:1px solid var(--linha);
+    border-bottom:1px solid var(--ouro-claro);
   }
 
   /* ---------- clausulas ---------- */
@@ -89,10 +90,10 @@
     font-size:9.4pt;
     letter-spacing:.09em;
     text-transform:uppercase;
-    color:var(--verde);
+    color:var(--preto);
     margin:5.5mm 0 2.2mm;
     padding-left:3.2mm;
-    border-left:3px solid var(--ouro);
+    border-left:3px solid var(--ouro-claro);
     break-after:avoid; page-break-after:avoid;
   }
   h2:first-of-type{margin-top:0;}
@@ -118,7 +119,7 @@
   .dados{break-inside:avoid; page-break-inside:avoid;}
   .dados td{border:1px solid var(--linha);padding:1.6mm 2.6mm;vertical-align:middle;}
   .dados td.rot{
-    width:30mm;background:var(--fundo-suave);color:var(--cinza);
+    width:30mm;background:var(--fundo-suave);color:var(--grafite);
     font-size:7.6pt;letter-spacing:.07em;text-transform:uppercase;
     font-weight:600;white-space:nowrap;
   }
@@ -128,6 +129,7 @@
   .lista th{
     background:var(--verde);color:#fff;font-size:7.6pt;letter-spacing:.08em;
     text-transform:uppercase;font-weight:600;padding:1.7mm 2.6mm;text-align:left;
+    border-bottom:2px solid var(--ouro-claro);
   }
   .lista td{border:1px solid var(--linha);padding:1.7mm 2.6mm;height:7mm;}
   .lista td:last-child{width:52mm;}
@@ -140,15 +142,16 @@
   .campo-ass .linha{border-top:1px solid #8d948f;padding-top:1.5mm;}
   .campo-ass .papel{
     font-size:8pt;font-weight:700;letter-spacing:.07em;
-    text-transform:uppercase;color:var(--verde);
+    text-transform:uppercase;color:var(--preto);
   }
-  .campo-ass .quem{font-size:8.4pt;color:var(--cinza);margin-top:.5mm;}
+  .campo-ass .quem{font-size:8.4pt;color:var(--grafite);margin-top:.5mm;}
 
   /* ---------- anexo ---------- */
   .quebra{break-before:page; page-break-before:always; height:0;}
   .faixa-anexo{
     background:var(--verde);color:#fff;padding:3mm 5mm;
     margin:0 0 5.5mm;border-radius:1.5mm;
+    border-bottom:2px solid var(--ouro-claro);
     break-after:avoid; page-break-after:avoid;
   }
   .faixa-anexo h2{color:#fff;border:0;padding:0;margin:0;font-size:10.4pt;}
@@ -159,7 +162,7 @@
     break-inside:avoid; page-break-inside:avoid;
   }
   .orientacao h3{
-    margin:0 0 1.1mm;font-size:8.6pt;color:var(--verde);
+    margin:0 0 1.1mm;font-size:8.6pt;color:var(--preto);
     text-transform:uppercase;letter-spacing:.05em;
   }
   .orientacao p{margin:0;font-size:8.8pt;color:#333;text-align:justify;}
@@ -183,7 +186,7 @@
   .rodape-doc{
     margin-top:8mm;padding-top:2.5mm;
     border-top:1px solid var(--linha);
-    font-size:7.4pt;color:var(--cinza);text-align:center;
+    font-size:7.4pt;color:var(--grafite);text-align:center;
     break-inside:avoid; page-break-inside:avoid;
   }
 
@@ -209,11 +212,11 @@
   /* ---------- barra de acoes (so na tela) ---------- */
   .so-tela{
     position:fixed;top:0;left:0;right:0;z-index:50;
-    background:var(--verde);color:#fff;padding:7px 16px;
+    background:var(--preto);color:#fff;padding:7px 16px;
     display:flex;align-items:center;gap:12px;font-size:13px;
   }
   .so-tela button{
-    background:var(--ouro);border:0;color:#2a2102;font-weight:700;
+    background:var(--ouro-claro);border:0;color:#2a2102;font-weight:700;
     font-size:12px;padding:6px 14px;border-radius:4px;cursor:pointer;
   }
   .so-tela span{opacity:.85;}
