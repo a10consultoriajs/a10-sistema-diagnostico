@@ -11,6 +11,7 @@ nem de internet).
 | `assets/marca-dagua.png` | Marca d'água (fonte do base64 embutido). |
 | `exemplo-preenchido.pdf` | Como fica preenchido automaticamente. |
 | `exemplo-em-branco.pdf` | Como fica a via para preencher à mão. |
+| `previa/pagina-N.png` | As 5 páginas em imagem, para olhar sem abrir o PDF. |
 
 São **5 páginas**: 4 de contrato + 1 de anexo (a minuta anterior tinha 8).
 
